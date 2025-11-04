@@ -236,7 +236,7 @@ function render() {
     });
     document.getElementById('loadShared').addEventListener('click', () => {
   // If running from GitHub Pages or local server, this will fetch parts.csv
-  const url = 'parts.csv';
+  const url = 'Part Prices Fire App 251104';
 
   fetch(url)
     .then(res => {
