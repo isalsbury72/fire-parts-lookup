@@ -20,7 +20,8 @@ td.notes{color:#6b7280;font-size:12px;max-width:420px;white-space:normal}@media(
 footer{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #eee;padding:8px 12px;display:flex;gap:8px;align-items:center}.pill{flex:1;display:flex;gap:8px}.pill input{flex:1;padding:10px 12px;border-radius:999px;border:1px solid #ddd}.small{font-size:12px;color:#6b7280}</style></head>
 <body><header><img src="icons/icon-192.png"><h1>Fire Parts Lookup</h1><div class="ver">v5.1.2</div></header>
 <main><div class="card"><div class="row"><input id="q" type="search" placeholder="Search...">
-<label class="btn" for="csv">Load CSV</label><input id="csv" type="file" accept=".csv"/><button id="clearCache" class="btn">Clear data</button></div>
+<label class="btn" for="csv">Load CSV</label><input id="csv" type="file" accept=".csv"/><button id="loadShared" class="btn">Load Shared File</button>
+<button id="clearCache" class="btn">Clear data</button></div>
 <div class="hint">Headers: SUPPLIER, TYPE, DESCRIPTION, PARTNUMBER, PRICE, NOTES.</div><div id="copyArea" class="copycell small" title="Tap and hold to copy"></div></div>
 <table id="tbl">
   <thead>
