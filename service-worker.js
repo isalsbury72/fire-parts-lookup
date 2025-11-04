@@ -1,4 +1,4 @@
-const CACHE = 'parts-lookup-v520';
+const CACHE = 'parts-lookup-v521';
 const ASSETS = [
   './',
   './index.html',
@@ -6,7 +6,6 @@ const ASSETS = [
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png',
-  './parts.csv',
   'https://cdn.jsdelivr.net/npm/fuse.js@7.0.0',
   'https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js'
 ];

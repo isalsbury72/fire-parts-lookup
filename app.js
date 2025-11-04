@@ -1,4 +1,4 @@
-/* Fire Parts Lookup v5.2.0 — shared CSV, highlight, sorting */
+/* Fire Parts Lookup v5.2.1 — shared CSV, highlight, sorting */
 const state = { rows: [], fuse: null };
 let sortState = { key: 'SUPPLIER', dir: 1 }; // 1 = asc, -1 = desc
 
@@ -13,7 +13,7 @@ function toast(msg, ok=false){
   });
   document.body.appendChild(t); setTimeout(()=>t.remove(), 2600);
 }
-toast('Loaded v5.2.0', true);
+toast('Loaded v5.2.1', true);
 
 const els = {
   q: document.getElementById('q'),
@@ -38,7 +38,7 @@ const els = {
 const cached = localStorage.getItem('parts_csv');
 if (cached) parseCSV(cached);
 
-// CSV upload
+// CSV upload from device
 els.csv.addEventListener('change', (e) => {
   const file = e.target.files[0];
   if (!file) return;
@@ -55,7 +55,7 @@ els.csv.addEventListener('change', (e) => {
   reader.readAsText(file);
 });
 
-// Load shared CSV (from parts.csv in same folder / GitHub repo)
+// Load shared CSV (parts.csv in same folder / repo)
 els.loadShared.addEventListener('click', () => {
   const url = 'parts.csv';
   fetch(url)
@@ -184,7 +184,7 @@ function applySort(rows){
     if (primary !== 0) return primary;
     const d = (a.DESCRIPTION||'').localeCompare((b.DESCRIPTION||''), undefined, { numeric:true, sensitivity:'base' });
     if (d !== 0) return d;
-    return (a.PARTNUMBER||'').localeCompare((b.PARTNUMBER||''), undefined, { numeric:true, sensitivity:'base' });
+    return (a.PARTNUMBER||'').localeCompare((b.PARTNUMBER||'', undefined, {numeric:true, sensitivity:'base'}));
   });
 }
 
