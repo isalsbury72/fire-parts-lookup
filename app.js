@@ -234,6 +234,26 @@ function render() {
       sel.removeAllRanges();
       sel.addRange(range);
     });
+    document.getElementById('loadShared').addEventListener('click', () => {
+  // If running from GitHub Pages or local server, this will fetch parts.csv
+  const url = 'parts.csv';
+
+  fetch(url)
+    .then(res => {
+      if (!res.ok) throw new Error('Network response was not ok');
+      return res.text();
+    })
+    .then(text => {
+      localStorage.setItem('parts_csv', text);
+      parseCSV(text);
+      toast('Loaded shared CSV', true);
+    })
+    .catch(err => {
+      toast('Error loading shared file', false);
+      console.error(err);
+    });
+});
+
     els.tbl.appendChild(tr);
   });
   els.count.textContent = rows.length.toString();
