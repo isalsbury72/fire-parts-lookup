@@ -1,40 +1,89 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Fire Parts Lookup v5.1.2</title><meta name="theme-color" content="#3b82f6"/>
-<link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icons/icon-192.png">
-<style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:0;background:#fafafa;color:#111}
-/* highlight style */
-mark.hl { background: #fff59d; padding: 0 2px; border-radius: 2px; }
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fire Parts Lookup v5.2.0</title>
+  <meta name="theme-color" content="#3b82f6" />
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; background:#fafafa; color:#111; }
+    header { position: sticky; top:0; background:#3b82f6; color:#fff; padding:12px 16px; display:flex; align-items:center; gap:12px; z-index:10; }
+    header img { width:28px; height:28px; border-radius:6px; }
+    h1 { font-size:18px; margin:0; }
+    .ver { margin-left:auto; background:#fff; color:#1d4ed8; font-weight:600; padding:2px 8px; border-radius:999px; font-size:12px; }
+    main { padding: 12px 16px 80px; }
+    .card { background:#fff; border:1px solid #eee; border-radius:12px; padding:12px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+    .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    input[type="search"] { flex:1; padding:10px 12px; border-radius:8px; border:1px solid #ddd; font-size:16px; }
+    input[type="file"] { display:none; }
+    .btn { display:inline-flex; align-items:center; gap:4px; padding:8px 10px; border-radius:8px; border:1px solid #ddd; background:#fff; cursor:pointer; font-size:13px; }
+    .hint { font-size:12px; color:#555; margin-top:6px; }
+    table { width:100%; border-collapse:collapse; margin-top:12px; }
+    th, td { text-align:left; padding:8px 6px; border-bottom:1px solid #eee; font-size:13px; vertical-align: top; }
+    th { position: sticky; top: 64px; background:#fafafa; z-index:5; }
+    .badge { font-size:12px; background:#f3f4f6; padding:3px 7px; border-radius:999px; border:1px solid #e5e7eb; }
+    .copycell { user-select: all; background:#fffbe6; border:1px dashed #facc15; border-radius:8px; padding:8px; margin-top:8px; font-size:13px; min-height: 18px; }
+    td.notes { color:#6b7280; font-size:12px; max-width: 420px; white-space: normal; }
+    @media (max-width: 600px) { td.notes { max-width: 180px; } }
+    footer { position: fixed; bottom:0; left:0; right:0; background:#fff; border-top:1px solid #eee; padding:8px 12px; display:flex; gap:8px; align-items:center; }
+    .pill { flex:1; display:flex; gap:8px; }
+    .pill input { flex:1; padding:8px 10px; border-radius:999px; border:1px solid #ddd; font-size:13px; }
+    .small { font-size:12px; color:#6b7280; }
+    mark.hl { background:#fff176; padding:0 1px; border-radius:2px; }
+    th.sortable { cursor:pointer; user-select:none; }
+    th.sortable .arrow { opacity:0.7; margin-left:4px; font-size:11px; }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="icons/icon-192.png" alt="icon">
+    <h1>Fire Parts Lookup</h1>
+    <div class="ver">v5.2.0</div>
+  </header>
+  <main>
+    <div class="card">
+      <div class="row">
+        <input id="q" type="search" placeholder="Search by description, part number, supplier..." autocomplete="off">
+        <label class="btn" for="csv">Load CSV</label>
+        <input id="csv" type="file" accept=".csv" />
+        <button id="loadShared" class="btn">Load shared file</button>
+        <button id="clearCache" class="btn">Clear data</button>
+      </div>
+      <div class="hint">
+        Headers (any order): <code>SUPPLIER, TYPE, DESCRIPTION, PARTNUMBER, PRICE, NOTES</code>. Last loaded CSV (including shared) is cached for offline use.
+      </div>
+      <div id="copyArea" class="copycell small" title="Tap and hold to copy"></div>
+    </div>
+    <table id="tbl">
+      <thead>
+        <tr>
+          <th id="thSUPPLIER" class="sortable">SUPPLIER <span class="arrow"></span></th>
+          <th id="thDESCRIPTION" class="sortable">DESCRIPTION <span class="arrow"></span></th>
+          <th id="thPARTNUMBER" class="sortable">PARTNUMBER <span class="arrow"></span></th>
+          <th id="thPRICE" class="sortable">PRICE <span class="arrow"></span></th>
+          <th id="thNOTES" class="sortable">NOTES <span class="arrow"></span></th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </main>
+  <footer>
+    <div class="pill">
+      <input id="supplierFilter" placeholder="Filter supplier (optional)">
+      <input id="typeFilter" placeholder="Filter type (optional)">
+    </div>
+    <div class="small">Items: <span id="count">0</span></div>
+  </footer>
 
-/* make headers look clickable */
-th.sortable { cursor: pointer; user-select: none; }
-
-header{position:sticky;top:0;background:#3b82f6;color:#fff;padding:12px 16px;display:flex;align-items:center;gap:12px}
-header img{width:28px;height:28px;border-radius:6px}h1{font-size:18px;margin:0}.ver{margin-left:auto;background:#fff;color:#1d4ed8;font-weight:600;padding:2px 8px;border-radius:999px;font-size:12px}
-main{padding:12px 16px 80px}.card{background:#fff;border:1px solid #eee;border-radius:12px;padding:12px;box-shadow:0 1px 2px rgba(0,0,0,0.04)}
-.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}input[type=search]{flex:1;padding:10px 12px;border-radius:8px;border:1px solid #ddd;font-size:16px}
-input[type=file]{display:none}.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 12px;border-radius:8px;border:1px solid #ddd;background:#fff;cursor:pointer}
-.hint{font-size:12px;color:#555;margin-top:6px}table{width:100%;border-collapse:collapse;margin-top:12px}
-th,td{text-align:left;padding:10px 8px;border-bottom:1px solid #eee;font-size:14px;vertical-align:top}th{position:sticky;top:56px;background:#fafafa;z-index:1}
-.badge{font-size:12px;background:#f3f4f6;padding:4px 8px;border-radius:999px;border:1px solid #e5e7eb}.copycell{user-select:all;background:#fffbe6;border:1px dashed #facc15;border-radius:8px;padding:8px;margin-top:8px;font-size:13px;min-height:18px}
-td.notes{color:#6b7280;font-size:12px;max-width:420px;white-space:normal}@media(max-width:600px){td.notes{max-width:180px}}
-footer{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #eee;padding:8px 12px;display:flex;gap:8px;align-items:center}.pill{flex:1;display:flex;gap:8px}.pill input{flex:1;padding:10px 12px;border-radius:999px;border:1px solid #ddd}.small{font-size:12px;color:#6b7280}</style></head>
-<body><header><img src="icons/icon-192.png"><h1>Fire Parts Lookup</h1><div class="ver">v5.1.2</div></header>
-<main><div class="card"><div class="row"><input id="q" type="search" placeholder="Search...">
-<label class="btn" for="csv">Load CSV</label><input id="csv" type="file" accept=".csv"/><button id="loadShared" class="btn">Load Shared File</button>
-<button id="clearCache" class="btn">Clear data</button></div>
-<div class="hint">Headers: SUPPLIER, TYPE, DESCRIPTION, PARTNUMBER, PRICE, NOTES.</div><div id="copyArea" class="copycell small" title="Tap and hold to copy"></div></div>
-<table id="tbl">
-  <thead>
-    <tr>
-      <th id="h-supplier"   class="sortable">SUPPLIER</th>
-      <th id="h-description" class="sortable">DESCRIPTION</th>
-      <th id="h-partnumber"  class="sortable">PARTNUMBER</th>
-      <th id="h-price"       class="sortable">PRICE</th>
-      <th id="h-notes"       class="sortable">NOTES</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
-<footer><div class="pill"><input id="supplierFilter" placeholder="Filter supplier"><input id="typeFilter" placeholder="Filter type"></div><div class="small">Items: <span id="count">0</span></div></footer>
-<script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0"></script><script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script><script src="app.js"></script>
-<script>if('serviceWorker' in navigator && (location.protocol==='https:'||location.hostname==='localhost'))window.addEventListener('load',()=>navigator.serviceWorker.register('service-worker.js'));</script></body></html>
+  <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('service-worker.js'));
+    }
+  </script>
+</body>
+</html>

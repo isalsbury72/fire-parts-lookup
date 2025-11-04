@@ -1,21 +1,19 @@
-/* v5.1.2 +highlight +sortable headers */
-const state = {
-  rows: [],
-  fuse: null,
-  sort: { key: 'SUPPLIER', asc: true } // default: Supplier A→Z
-};
+/* Fire Parts Lookup v5.2.0 — shared CSV, highlight, sorting */
+const state = { rows: [], fuse: null };
+let sortState = { key: 'SUPPLIER', dir: 1 }; // 1 = asc, -1 = desc
 
 function toast(msg, ok=false){
   const t = document.createElement('div');
   t.textContent = msg;
-  t.style.position='fixed'; t.style.bottom='16px'; t.style.left='50%'; t.style.transform='translateX(-50%)';
-  t.style.padding='10px 14px'; t.style.borderRadius='8px';
-  t.style.border='1px solid ' + (ok?'#10b981':'#f59e0b');
-  t.style.background='#fff'; t.style.boxShadow='0 6px 20px rgba(0,0,0,0.12)';
-  t.style.zIndex='9999'; t.style.fontSize='14px';
+  Object.assign(t.style, {
+    position:'fixed', bottom:'16px', left:'50%', transform:'translateX(-50%)',
+    padding:'10px 14px', borderRadius:'8px', background:'#fff',
+    border:`1px solid ${ok ? '#10b981' : '#f59e0b'}`, boxShadow:'0 6px 20px rgba(0,0,0,0.12)',
+    zIndex:'9999', fontSize:'14px'
+  });
   document.body.appendChild(t); setTimeout(()=>t.remove(), 2600);
 }
-toast('Loaded v5.1.2', true);
+toast('Loaded v5.2.0', true);
 
 const els = {
   q: document.getElementById('q'),
@@ -26,12 +24,13 @@ const els = {
   typeFilter: document.getElementById('typeFilter'),
   copyArea: document.getElementById('copyArea'),
   clearCache: document.getElementById('clearCache'),
-  h: {
-    SUPPLIER:   document.getElementById('h-supplier'),
-    DESCRIPTION:document.getElementById('h-description'),
-    PARTNUMBER: document.getElementById('h-partnumber'),
-    PRICE:      document.getElementById('h-price'),
-    NOTES:      document.getElementById('h-notes'),
+  loadShared: document.getElementById('loadShared'),
+  th: {
+    SUPPLIER: document.getElementById('thSUPPLIER'),
+    DESCRIPTION: document.getElementById('thDESCRIPTION'),
+    PARTNUMBER: document.getElementById('thPARTNUMBER'),
+    PRICE: document.getElementById('thPRICE'),
+    NOTES: document.getElementById('thNOTES'),
   }
 };
 
@@ -39,11 +38,14 @@ const els = {
 const cached = localStorage.getItem('parts_csv');
 if (cached) parseCSV(cached);
 
-// Inputs
+// CSV upload
 els.csv.addEventListener('change', (e) => {
   const file = e.target.files[0];
   if (!file) return;
-  if (!file.name.toLowerCase().endsWith('.csv')) { toast('Please choose a .csv file (not Excel .xlsx)', false); return; }
+  if (!file.name.toLowerCase().endsWith('.csv')) {
+    toast('Please choose a .csv file (not Excel .xlsx)', false); 
+    return;
+  }
   const reader = new FileReader();
   reader.onload = () => {
     const text = reader.result;
@@ -51,6 +53,25 @@ els.csv.addEventListener('change', (e) => {
     parseCSV(text);
   };
   reader.readAsText(file);
+});
+
+// Load shared CSV (from parts.csv in same folder / GitHub repo)
+els.loadShared.addEventListener('click', () => {
+  const url = 'parts.csv';
+  fetch(url)
+    .then(res => {
+      if (!res.ok) throw new Error('Network response was not ok');
+      return res.text();
+    })
+    .then(text => {
+      localStorage.setItem('parts_csv', text);
+      parseCSV(text);
+      toast('Loaded shared CSV', true);
+    })
+    .catch(err => {
+      console.error(err);
+      toast('Error loading shared file', false);
+    });
 });
 
 els.q.addEventListener('input', render);
@@ -64,25 +85,23 @@ els.clearCache.addEventListener('click', () => {
 });
 
 // Sorting header clicks
-Object.entries(els.h).forEach(([key, el]) => {
-  el.addEventListener('click', () => setSort(key));
+Object.entries(els.th).forEach(([key, thEl]) => {
+  thEl.addEventListener('click', () => {
+    if (sortState.key === key) {
+      sortState.dir = -sortState.dir; // toggle
+    } else {
+      sortState = { key, dir: 1 };
+    }
+    render();
+  });
 });
-
-function setSort(key){
-  if (state.sort.key === key) {
-    state.sort.asc = !state.sort.asc; // toggle
-  } else {
-    state.sort.key = key;
-    state.sort.asc = true; // new key defaults to ascending
-  }
-  render();
-}
 
 function parseCSV(text) {
   const res = Papa.parse(text, { header: true, skipEmptyLines: true, dynamicTyping: false });
   if (!res || !res.data) { toast('Could not parse CSV', false); return; }
   const headers = (res.meta.fields || []).map(h => (h||'').toString().trim());
   const find = (name) => headers.find(h => h.toLowerCase() === name.toLowerCase()) || null;
+
   const map = {
     supplier: find('SUPPLIER'),
     type: find('TYPE'),
@@ -93,7 +112,10 @@ function parseCSV(text) {
   };
   const required = ['supplier','description','partnumber','price'];
   const missing = required.filter(k => !map[k]);
-  if (missing.length) { toast('Missing headers: ' + missing.join(', '), false); return; }
+  if (missing.length) {
+    toast('Missing headers: ' + missing.join(', '), false);
+    return;
+  }
 
   state.rows = res.data.map((r) => ({
     SUPPLIER: (r[map.supplier] ?? '').toString().trim(),
@@ -105,11 +127,7 @@ function parseCSV(text) {
   }));
 
   if (!state.rows.length) { toast('CSV loaded but contained 0 rows.', false); render(); return; }
-  state.fuse = new Fuse(state.rows, {
-    threshold: 0.35,
-    ignoreLocation: true,
-    keys: ['DESCRIPTION','PARTNUMBER','SUPPLIER','TYPE','NOTES']
-  });
+  state.fuse = new Fuse(state.rows, { threshold: 0.35, ignoreLocation: true, keys: ['DESCRIPTION','PARTNUMBER','SUPPLIER','TYPE','NOTES'] });
   render();
 }
 
@@ -125,59 +143,58 @@ function fmtPrice(n) {
   return '$' + n.toFixed(2);
 }
 
-// ---------- highlight helpers ----------
 function escapeHTML(s) {
   return s == null ? '' : s.replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 }
-function escapeRegExp(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
-function highlightText(text, tokens) {
-  let out = escapeHTML(text ?? '');
-  tokens.forEach(tok => {
-    if (!tok) return;
-    const re = new RegExp(`(${escapeRegExp(tok)})`, 'ig');
-    out = out.replace(re, '<mark class="hl">$1</mark>');
-  });
+
+function escReg(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+function highlight(text, tokens){
+  if (!text) return '';
+  if (!tokens || !tokens.length) return escapeHTML(text);
+  const pattern = tokens.map(escReg).join('|');
+  const re = new RegExp(pattern, 'gi');
+  let last = 0, out = '';
+  for (let m; (m = re.exec(text)) !== null; ) {
+    out += escapeHTML(text.slice(last, m.index));
+    out += `<mark class="hl">${escapeHTML(m[0])}</mark>`;
+    last = m.index + m[0].length;
+  }
+  out += escapeHTML(text.slice(last));
   return out;
 }
 
-// ---------- sorting ----------
-function applySort(rows) {
-  const { key, asc } = state.sort;
-  const dir = asc ? 1 : -1;
-  const norm = (v) => (v ?? '').toString();
-
-  if (key === 'PRICE') {
-    return rows.sort((a,b) => {
-      const A = (a.PRICE === '' || a.PRICE == null) ? Number.POSITIVE_INFINITY : a.PRICE;
-      const B = (b.PRICE === '' || b.PRICE == null) ? Number.POSITIVE_INFINITY : b.PRICE;
-      if (A !== B) return (A - B) * dir;
-      // tie-breakers
-      const s = norm(a.SUPPLIER).localeCompare(norm(b.SUPPLIER), undefined, {numeric:true, sensitivity:'base'});
-      if (s !== 0) return s * dir;
-      return norm(a.PARTNUMBER).localeCompare(norm(b.PARTNUMBER), undefined, {numeric:true, sensitivity:'base'}) * dir;
-    });
-  }
-
-  return rows.sort((a,b) => {
-    const A = norm(a[key]);
-    const B = norm(b[key]);
-    const cmp = A.localeCompare(B, undefined, { numeric: true, sensitivity: 'base' });
-    if (cmp !== 0) return cmp * dir;
-    // tie-breakers for tidy lists
-    const s = norm(a.SUPPLIER).localeCompare(norm(b.SUPPLIER), undefined, {numeric:true, sensitivity:'base'});
-    if (s !== 0) return s * dir;
-    return norm(a.PARTNUMBER).localeCompare(norm(b.PARTNUMBER), undefined, {numeric:true, sensitivity:'base'}) * dir;
+function applySort(rows){
+  const k = sortState.key;
+  const dir = sortState.dir;
+  const cmp = (a, b) => {
+    const av = a?.[k], bv = b?.[k];
+    if (k === 'PRICE') {
+      const an = typeof av === 'number' ? av : Number.POSITIVE_INFINITY;
+      const bn = typeof bv === 'number' ? bv : Number.POSITIVE_INFINITY;
+      return (an - bn) * dir;
+    }
+    const as = (av ?? '').toString();
+    const bs = (bv ?? '').toString();
+    const res = as.localeCompare(bs, undefined, { numeric:true, sensitivity:'base' });
+    return res * dir;
+  };
+  rows.sort((a,b) => {
+    const primary = cmp(a,b);
+    if (primary !== 0) return primary;
+    const d = (a.DESCRIPTION||'').localeCompare((b.DESCRIPTION||''), undefined, { numeric:true, sensitivity:'base' });
+    if (d !== 0) return d;
+    return (a.PARTNUMBER||'').localeCompare((b.PARTNUMBER||''), undefined, { numeric:true, sensitivity:'base' });
   });
 }
 
-function renderSortIndicators(){
-  const arrows = { true: ' ↑', false: ' ↓' };
-  Object.entries(els.h).forEach(([key, el]) => {
-    const base = key; // same as header text
-    if (state.sort.key === key) {
-      el.textContent = base + arrows[state.sort.asc];
-    } else {
-      el.textContent = base;
+function setHeaderArrows(){
+  Object.entries(els.th).forEach(([key, thEl]) => {
+    const span = thEl.querySelector('.arrow');
+    if (!span) return;
+    span.textContent = '';
+    if (sortState.key === key) {
+      span.textContent = sortState.dir === 1 ? '▲' : '▼';
     }
   });
 }
@@ -188,9 +205,9 @@ function render() {
   const s = els.supplierFilter.value.trim().toLowerCase();
   const t = els.typeFilter.value.trim().toLowerCase();
 
-  // exact-first search across key fields; fallback to fuzzy
+  let qTokens = [];
   if (q) {
-    const qTokens = q.toLowerCase().split(/\s+/).filter(Boolean);
+    qTokens = q.toLowerCase().split(/\s+/).filter(Boolean);
     const exact = rows.filter(r => {
       const hay = (
         (r.PARTNUMBER || '') + ' ' +
@@ -207,26 +224,21 @@ function render() {
   if (s) rows = rows.filter(r => r.SUPPLIER.toLowerCase().includes(s));
   if (t) rows = rows.filter(r => r.TYPE.toLowerCase().includes(t));
 
-  // apply current sort choice
   applySort(rows);
-  renderSortIndicators();
-
-  // prepare tokens for highlighting
-  const tokens = els.q.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  setHeaderArrows();
 
   els.tbl.innerHTML = '';
   rows.forEach(r => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td>${highlightText(r.SUPPLIER, tokens)}</td>
-      <td>${highlightText(r.DESCRIPTION, tokens)}</td>
-      <td><span class="badge">${highlightText(r.PARTNUMBER, tokens)}</span></td>
+      <td>${highlight(r.SUPPLIER, qTokens)}</td>
+      <td>${highlight(r.DESCRIPTION, qTokens)}</td>
+      <td><span class="badge">${highlight(r.PARTNUMBER, qTokens)}</span></td>
       <td>${fmtPrice(r.PRICE)}</td>
-      <td class="notes">${highlightText(r.NOTES || '', tokens)}</td>
+      <td class="notes">${highlight(r.NOTES || '', qTokens)}</td>
     `;
     tr.addEventListener('click', () => {
       const priceText = fmtPrice(r.PRICE) ? `${fmtPrice(r.PRICE)} each` : '';
-      // NOTES intentionally not included in copy bar
       els.copyArea.textContent = `${r.SUPPLIER} — ${r.DESCRIPTION} — ${r.PARTNUMBER} — ${priceText}`.trim();
       const range = document.createRange();
       range.selectNodeContents(els.copyArea);
@@ -234,26 +246,6 @@ function render() {
       sel.removeAllRanges();
       sel.addRange(range);
     });
-    document.getElementById('loadShared').addEventListener('click', () => {
-  // If running from GitHub Pages or local server, this will fetch parts.csv
-  const url = 'Part Prices Fire App 251104';
-
-  fetch(url)
-    .then(res => {
-      if (!res.ok) throw new Error('Network response was not ok');
-      return res.text();
-    })
-    .then(text => {
-      localStorage.setItem('parts_csv', text);
-      parseCSV(text);
-      toast('Loaded shared CSV', true);
-    })
-    .catch(err => {
-      toast('Error loading shared file', false);
-      console.error(err);
-    });
-});
-
     els.tbl.appendChild(tr);
   });
   els.count.textContent = rows.length.toString();
