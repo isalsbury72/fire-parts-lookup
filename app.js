@@ -63,11 +63,15 @@ els.loadShared.addEventListener('click', () => {
       if (!res.ok) throw new Error('Network response was not ok');
       return res.text();
     })
-    .then(text => {
-      localStorage.setItem('parts_csv', text);
-      parseCSV(text);
-      toast('Loaded shared CSV', true);
-    })
+.then(text => {
+  localStorage.setItem('parts_csv', text);
+  parseCSV(text);
+  const now = new Date();
+  const formatted = now.toLocaleString();
+  document.getElementById('lastLoaded').textContent = formatted;
+  localStorage.setItem('lastLoaded', formatted);
+  toast('Loaded shared CSV', true);
+})
     .catch(err => {
       console.error(err);
       toast('Error loading shared file', false);
