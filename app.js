@@ -57,7 +57,7 @@ els.csv.addEventListener('change', (e) => {
 
 // Load shared CSV (parts.csv in same folder / repo)
 els.loadShared.addEventListener('click', () => {
-const url = 'https://onedrive.live.com/download?cid=583D778A54B66AD7&resid=583D778A54B66AD7!EREZjTt58FRIlv3KYBs1CewBinpnxQCIvMT1ljR0CCl5ww';
+  const url = 'parts.csv';
   fetch(url)
     .then(res => {
       if (!res.ok) throw new Error('Network response was not ok');
