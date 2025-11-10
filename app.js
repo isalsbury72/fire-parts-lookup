@@ -85,6 +85,8 @@ els.csv.addEventListener('change', (e) => {
 
 // Load shared CSV (parts.csv in same folder / repo)
 els.loadShared.addEventListener('click', () => {
+  if (!ensureAccess()) return;
+
   const url = 'Parts.csv';
   fetch(url)
     .then(res => {
