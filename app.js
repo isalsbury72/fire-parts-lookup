@@ -1,4 +1,4 @@
-/* Fire Parts Lookup v5.2.1 — shared CSV, highlight, sorting */
+  /* Fire Parts Lookup v5.2.1 — shared CSV, highlight, sorting */
 const state = { rows: [], fuse: null };
 let sortState = { key: 'SUPPLIER', dir: 1 }; // 1 = asc, -1 = desc
 
@@ -43,6 +43,12 @@ const els = {
 // Load cached CSV if present
 const cached = localStorage.getItem('parts_csv');
 if (cached) parseCSV(cached);
+
+const savedLastLoaded = localStorage.getItem('lastLoaded');
+if (savedLastLoaded) {
+  const el = document.getElementById('lastLoaded');
+  if (el) el.textContent = savedLastLoaded;
+}
 
 // CSV upload from device
 els.csv.addEventListener('change', (e) => {
