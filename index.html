@@ -69,13 +69,16 @@
       <tbody></tbody>
     </table>
   </main>
-  <footer>
-    <div class="pill">
-      <input id="supplierFilter" placeholder="Filter supplier (optional)">
-      <input id="typeFilter" placeholder="Filter type (optional)">
-    </div>
-    <div class="small">Items: <span id="count">0</span></div>
-  </footer>
+<footer>
+  <div class="pill">
+    <input id="supplierFilter" placeholder="Filter supplier (optional)">
+    <input id="typeFilter" placeholder="Filter type (optional)">
+  </div>
+  <div class="small">
+    Items: <span id="count">0</span><br>
+    Last loaded: <span id="lastLoaded">never</span>
+  </div>
+</footer>
 
   <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
