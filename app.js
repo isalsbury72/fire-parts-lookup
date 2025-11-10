@@ -38,7 +38,7 @@ const els = {
 const cached = localStorage.getItem('parts_csv');
 if (cached) parseCSV(cached);
 
-const  = localStorage.getItem('lastLoaded');
+const savedLastLoaded = localStorage.getItem('lastLoaded');
 if (savedLastLoaded) {
   const el = document.getElementById('lastLoaded');
   if (el) el.textContent = savedLastLoaded;
