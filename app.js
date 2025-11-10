@@ -2,12 +2,6 @@
 const state = { rows: [], fuse: null };
 let sortState = { key: 'SUPPLIER', dir: 1 }; // 1 = asc, -1 = desc
 
-const savedLastLoaded = localStorage.getItem('lastLoaded');
-if (savedLastLoaded) {
-  const el = document.getElementById('lastLoaded');
-  if (el) el.textContent = savedLastLoaded;
-}
-
 function toast(msg, ok=false){
   const t = document.createElement('div');
   t.textContent = msg;
@@ -44,7 +38,7 @@ const els = {
 const cached = localStorage.getItem('parts_csv');
 if (cached) parseCSV(cached);
 
-const savedLastLoaded = localStorage.getItem('lastLoaded');
+const  = localStorage.getItem('lastLoaded');
 if (savedLastLoaded) {
   const el = document.getElementById('lastLoaded');
   if (el) el.textContent = savedLastLoaded;
