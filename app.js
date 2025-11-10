@@ -2,6 +2,28 @@
 const state = { rows: [], fuse: null };
 let sortState = { key: 'SUPPLIER', dir: 1 }; // 1 = asc, -1 = desc
 
+// One-time access code for loading shared data
+const ACCESS_CODE = 'FP2025'; // change this if you like
+
+function ensureAccess() {
+  const ok = localStorage.getItem('hasAccess');
+  if (ok === 'yes') return true;
+
+  const entered = prompt('Enter access code to load shared data:');
+  if (!entered) {
+    toast('Access code required.', false);
+    return false;
+  }
+  if (entered.trim() !== ACCESS_CODE) {
+    toast('Incorrect access code.', false);
+    return false;
+  }
+
+  localStorage.setItem('hasAccess', 'yes');
+  toast('Access granted on this device.', true);
+  return true;
+}
+
 function toast(msg, ok=false){
   const t = document.createElement('div');
   t.textContent = msg;
