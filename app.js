@@ -78,10 +78,16 @@ els.loadShared.addEventListener('click', () => {
 .then(text => {
   localStorage.setItem('parts_csv', text);
   parseCSV(text);
-  const now = new Date();
-  const formatted = now.toLocaleString();
-  document.getElementById('lastLoaded').textContent = formatted;
-  localStorage.setItem('lastLoaded', formatted);
+const now = new Date();
+const formatted = now.toLocaleString('en-AU', {
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit'
+});
+document.getElementById('lastLoaded').textContent = formatted;
+localStorage.setItem('lastLoaded', formatted);
   toast('Loaded shared CSV', true);
 })
     .catch(err => {
