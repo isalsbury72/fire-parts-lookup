@@ -88,11 +88,13 @@ els.csv.addEventListener('change', (e) => {
     return;
   }
   const reader = new FileReader();
-  reader.onload = () => {
-    const text = reader.result;
-    localStorage.setItem('parts_csv', text);
-    parseCSV(text);
-  };
+reader.onload = () => {
+  const text = reader.result;
+  localStorage.setItem('parts_csv', text);
+  parseCSV(text);
+  const count = state.rows.length;
+  toast(`Loaded CSV from device (${count} items)`, true);
+};
   reader.readAsText(file);
 });
 
