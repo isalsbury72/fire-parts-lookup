@@ -68,32 +68,40 @@
 </div>
 
   <main>
+  <!-- Parts page (existing content) -->
+  <div id="partsPage">
     <div class="card">
-      <div class="row">
-        <input id="q" type="search" placeholder="Search by description, part number, supplier..." autocomplete="off">
-        <label class="btn" for="csv">Load CSV</label>
-        <input id="csv" type="file" accept=".csv" />
-        <button id="loadShared" class="btn">Load shared file</button>
-        <button id="clearCache" class="btn">Clear data</button>
-      </div>
-      <div class="hint">
-        Headers (any order): <code>SUPPLIER, TYPE, DESCRIPTION, PARTNUMBER, PRICE, NOTES</code>. Last loaded CSV (including shared) is cached for offline use.
-      </div>
-      <div id="copyArea" class="copycell small" title="Tap and hold to copy"></div>
+      ... your existing card content stays here unchanged ...
     </div>
     <table id="tbl">
-      <thead>
-        <tr>
-          <th id="thSUPPLIER" class="sortable">SUPPLIER <span class="arrow"></span></th>
-          <th id="thDESCRIPTION" class="sortable">DESCRIPTION <span class="arrow"></span></th>
-          <th id="thPARTNUMBER" class="sortable">PARTNUMBER <span class="arrow"></span></th>
-          <th id="thPRICE" class="sortable">PRICE <span class="arrow"></span></th>
-          <th id="thNOTES" class="sortable">NOTES <span class="arrow"></span></th>
-        </tr>
-      </thead>
-      <tbody></tbody>
+      ... your existing table stays here unchanged ...
     </table>
-  </main>
+  </div>
+
+  <!-- Quote page (new, starts empty) -->
+  <div id="quotePage" style="display:none;">
+    <div class="card">
+      <h2 style="margin-top:0; font-size:16px;">Quote items</h2>
+      <p class="small">Parts you add from the Parts tab will appear here.</p>
+      <table style="width:100%; border-collapse:collapse; margin-top:8px;" id="quoteTable">
+        <thead>
+          <tr>
+            <th>Supplier</th>
+            <th>Description</th>
+            <th>Part #</th>
+            <th>Qty</th>
+            <th>Line total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- we’ll fill this with JS later -->
+        </tbody>
+      </table>
+      <p class="small" id="quoteSummary" style="margin-top:8px;">Total: $0.00</p>
+    </div>
+  </div>
+</main>
+
 <footer>
   <div class="pill">
     <input id="supplierFilter" placeholder="Filter supplier (optional)">
