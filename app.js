@@ -121,6 +121,7 @@ const formatted = now.toLocaleString('en-AU', {
 });
   document.getElementById('lastLoaded').textContent = formatted;
   localStorage.setItem('lastLoaded', formatted);
+  localStorage.setItem('lastLoadedTs', String(now.getTime()));
   const count = state.rows.length;
   toast(`Loaded shared CSV (${count} items)`, true);
 })
