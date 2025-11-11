@@ -1,4 +1,4 @@
-/* Fire Parts Lookup v5.2.1 — remove confirm, two copy modes, qty first */
+/* Fire Parts Lookup v5.2.1 — cached CSV, two copy modes, qty first, remove confirm */
 
 const state = { rows: [], fuse: null, selected: null, quote: [] };
 let sortState = { key: 'SUPPLIER', dir: 1 };
@@ -46,6 +46,8 @@ const els = {
   copyQuoteRaw: document.getElementById('copyQuoteRaw')
 };
 
+/* ---------- Tabs ---------- */
+
 function showPartsPage() {
   els.partsPage.style.display = 'block';
   els.quotePage.style.display = 'none';
@@ -68,6 +70,8 @@ els.tabParts.addEventListener('click', showPartsPage);
 els.tabQuote.addEventListener('click', showQuotePage);
 showPartsPage();
 
+/* ---------- Access control ---------- */
+
 function ensureAccess() {
   const ok = localStorage.getItem('hasAccess');
   if (ok === 'yes') {
@@ -87,7 +91,19 @@ function ensureAccess() {
   return false;
 }
 
-// CSV upload
+/* ---------- Load cached CSV on startup ---------- */
+
+const cachedCsv = localStorage.getItem('parts_csv');
+if (cachedCsv) {
+  try {
+    parseCSV(cachedCsv);
+  } catch (e) {
+    console.error('Error parsing cached CSV:', e);
+  }
+}
+
+/* ---------- CSV upload & shared load ---------- */
+
 els.csv.addEventListener('change', e => {
   const f = e.target.files[0];
   if (!f) return;
@@ -100,11 +116,13 @@ els.csv.addEventListener('change', e => {
   r.readAsText(f);
 });
 
-// Load shared
 els.loadShared.addEventListener('click', () => {
   if (!ensureAccess()) return;
   fetch('Parts.csv')
-    .then(r => r.text())
+    .then(r => {
+      if (!r.ok) throw new Error('Network error');
+      return r.text();
+    })
     .then(t => {
       localStorage.setItem('parts_csv', t);
       parseCSV(t);
@@ -114,13 +132,15 @@ els.loadShared.addEventListener('click', () => {
 });
 
 els.clearCache.addEventListener('click', () => {
-  localStorage.clear();
+  localStorage.removeItem('parts_csv');
   state.rows = [];
   state.quote = [];
   render();
   renderQuote();
-  toast('Cleared cache.', true);
+  toast('Cleared cached parts.', true);
 });
+
+/* ---------- Quote actions ---------- */
 
 if (els.addToQuote) {
   els.addToQuote.addEventListener('click', () => {
@@ -140,7 +160,7 @@ if (els.addToQuote) {
   });
 }
 
-// Copy quote WITH heading + total
+// Copy quote WITH total (no heading line)
 if (els.copyQuote) {
   els.copyQuote.addEventListener('click', () => {
     if (!state.quote.length) {
@@ -148,7 +168,7 @@ if (els.copyQuote) {
     }
 
     let total = 0;
-    const lines = ['Fire parts quote', ''];
+    const lines = [];
 
     state.quote.forEach((i) => {
       const qty = i.qty || 1;
@@ -168,7 +188,7 @@ if (els.copyQuote) {
   });
 }
 
-// Copy quote RAW (no heading, no total)
+// Copy RAW items only (no heading, no total)
 if (els.copyQuoteRaw) {
   els.copyQuoteRaw.addEventListener('click', () => {
     if (!state.quote.length) {
@@ -211,8 +231,15 @@ function fallbackCopy(text, successMsg) {
   document.body.removeChild(ta);
 }
 
+/* ---------- CSV parsing ---------- */
+
 function parseCSV(txt) {
   const res = Papa.parse(txt, { header: true, skipEmptyLines: true });
+  if (!res || !res.data) {
+    state.rows = [];
+    render();
+    return;
+  }
   state.rows = res.data.map(r => ({
     SUPPLIER: r.SUPPLIER || '',
     TYPE: r.TYPE || '',
@@ -234,6 +261,8 @@ function fmtPrice(n) {
   return '$' + (n || 0).toFixed(2);
 }
 
+/* ---------- Parts list render ---------- */
+
 els.q.addEventListener('input', render);
 
 function render() {
@@ -254,16 +283,21 @@ function render() {
       <td class="notes">${r.NOTES}</td>`;
     tr.addEventListener('click', () => {
       state.selected = r;
-      els.copyArea.textContent = `${r.SUPPLIER} — ${r.DESCRIPTION} — ${r.PARTNUMBER} — ${fmtPrice(r.PRICE)} each`;
+      els.copyArea.textContent =
+        `${r.SUPPLIER} — ${r.DESCRIPTION} — ${r.PARTNUMBER} — ${fmtPrice(r.PRICE)} each`;
     });
     body.appendChild(tr);
   });
   els.count.textContent = rows.length;
 }
 
+/* ---------- Quote render ---------- */
+
 function renderQuote() {
   const tbl = document.getElementById('quoteTable');
   const sum = document.getElementById('quoteSummary');
+  if (!tbl || !sum) return;
+
   const body = tbl.querySelector('tbody');
   body.innerHTML = '';
   let total = 0;
