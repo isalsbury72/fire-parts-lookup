@@ -79,6 +79,19 @@ if (savedLastLoaded) {
   if (el) el.textContent = savedLastLoaded;
 }
 
+const ts = Number(localStorage.getItem('lastLoadedTs'));
+if (!isNaN(ts)) {
+  const ageMs = Date.now() - ts;
+  const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+  if (ageMs > sevenDaysMs) {
+    const el = document.getElementById('lastLoaded');
+    if (el && el.textContent && !el.textContent.includes('(stale)')) {
+      el.textContent = el.textContent + ' (stale)';
+    }
+    toast('Data older than 7 days – tap "Load shared file" to refresh.', false);
+  }
+}
+
 // CSV upload from device
 els.csv.addEventListener('change', (e) => {
   const file = e.target.files[0];
