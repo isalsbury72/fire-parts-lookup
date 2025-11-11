@@ -1,4 +1,4 @@
-/* Fire Parts Lookup v5.2.1 — email quote header + plain delivery line, clear quote returns to parts */
+/* Fire Parts Lookup v5.2.1 — email quote cleanup: remove (supplier price list), trim 2025 suffix */
 
 const state = { rows: [], selected: null, quote: [] };
 const ACCESS_CODE = 'FP2025';
@@ -175,14 +175,17 @@ if (els.copyQuoteRaw) {
   });
 }
 
-/* Copy full quote for email — custom format */
+/* Copy full quote for email — cleaned up version */
 if (els.copyQuoteEmail) {
   els.copyQuoteEmail.addEventListener('click', () => {
     if (!state.quote.length) return toast('No items to copy.', false);
 
     const job = els.jobNumber ? els.jobNumber.value.trim() : '';
     const delivery = els.deliveryAddress ? els.deliveryAddress.value.trim() : '';
-    const firstSupplier = state.quote[0]?.SUPPLIER || 'SUPPLIER';
+    let firstSupplier = state.quote[0]?.SUPPLIER || 'SUPPLIER';
+
+    // Remove "2025" suffix if present
+    firstSupplier = firstSupplier.replace(/\s*2025\s*$/i, '').trim();
 
     const lines = [];
 
@@ -195,20 +198,17 @@ if (els.copyQuoteEmail) {
 
     lines.push(''); // blank line
 
-    // Items - same style as "Copy items only"
+    // Items - remove (SUPPLIER price list)
     state.quote.forEach(i => {
       const qty = i.qty || 1;
-      lines.push(
-        `${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each (${i.SUPPLIER} price list)`
-      );
+      const supplierName = (i.SUPPLIER || '').replace(/\s*2025\s*$/i, '').trim();
+      lines.push(`${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each`);
     });
 
     lines.push(''); // blank
 
-    // Delivery line: address only, no "Delivery:"
-    if (delivery) {
-      lines.push(delivery);
-    }
+    // Delivery line: just the address
+    if (delivery) lines.push(delivery);
 
     copyText(lines.join('\n'), 'Full quote copied.');
   });
@@ -317,7 +317,7 @@ function renderQuote() {
 
   sum.textContent = 'Total: ' + fmtPrice(total);
 
-  // Clear Quote button logic
+  // Clear Quote button
   let btnClear = document.getElementById('clearQuoteBtn');
   if (state.quote.length && !btnClear) {
     btnClear = document.createElement('button');
