@@ -231,10 +231,6 @@ if (els.copyQuoteEmail) {
 
     const lines = [];
 
-    // For each supplier group, add block:
-    // Please forward a PO to SUPPLIER for job JOB
-    // <items>
-    // <delivery>
     groups.forEach(group => {
       const supName = group.cleanName || 'SUPPLIER';
 
@@ -244,7 +240,7 @@ if (els.copyQuoteEmail) {
         lines.push(`Please forward a PO to ${supName} for this job`);
       }
 
-      lines.push(''); // blank line
+      lines.push('');
 
       group.items.forEach(i => {
         const qty = i.qty || 1;
@@ -253,13 +249,13 @@ if (els.copyQuoteEmail) {
         );
       });
 
-      lines.push(''); // blank
+      lines.push('');
 
       if (delivery) {
         lines.push(delivery);
       }
 
-      lines.push(''); // extra blank between suppliers
+      lines.push('');
     });
 
     const text = lines.join('\n').trimEnd();
