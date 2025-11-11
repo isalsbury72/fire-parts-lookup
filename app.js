@@ -1,4 +1,4 @@
-/* Fire Parts Lookup v5.2.1 — now with remove confirmation + nicer copy text */
+/* Fire Parts Lookup v5.2.1 — remove confirm, two copy modes, qty first */
 
 const state = { rows: [], fuse: null, selected: null, quote: [] };
 let sortState = { key: 'SUPPLIER', dir: 1 };
@@ -42,7 +42,8 @@ const els = {
   tabParts: document.getElementById('tabParts'),
   tabQuote: document.getElementById('tabQuote'),
   addToQuote: document.getElementById('addToQuote'),
-  copyQuote: document.getElementById('copyQuote')
+  copyQuote: document.getElementById('copyQuote'),
+  copyQuoteRaw: document.getElementById('copyQuoteRaw')
 };
 
 function showPartsPage() {
@@ -139,6 +140,7 @@ if (els.addToQuote) {
   });
 }
 
+// Copy quote WITH heading + total
 if (els.copyQuote) {
   els.copyQuote.addEventListener('click', () => {
     if (!state.quote.length) {
@@ -153,26 +155,47 @@ if (els.copyQuote) {
       const lineTotal = i.PRICE * qty;
       total += lineTotal;
 
-      // Format: "5 x DESCRIPTION — PARTNUMBER — $xx.xx each"
-      lines.push(`${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each`);
+      // 5 x DESCRIPTION — PARTNUMBER — $xx.xx each (priced from SUPPLIER)
+      lines.push(
+        `${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each (priced from ${i.SUPPLIER})`
+      );
     });
 
     lines.push('', 'Total: ' + fmtPrice(total));
 
     const text = lines.join('\n');
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(() => {
-        toast('Quote copied.', true);
-      }).catch(() => {
-        fallbackCopy(text);
-      });
-    } else {
-      fallbackCopy(text);
-    }
+    copyText(text, 'Quote copied.');
   });
 }
 
-function fallbackCopy(text) {
+// Copy quote RAW (no heading, no total)
+if (els.copyQuoteRaw) {
+  els.copyQuoteRaw.addEventListener('click', () => {
+    if (!state.quote.length) {
+      return toast('No items to copy.', false);
+    }
+
+    const lines = state.quote.map(i => {
+      const qty = i.qty || 1;
+      return `${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each (priced from ${i.SUPPLIER})`;
+    });
+
+    const text = lines.join('\n');
+    copyText(text, 'Quote items copied.');
+  });
+}
+
+function copyText(text, successMsg) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text)
+      .then(() => toast(successMsg, true))
+      .catch(() => fallbackCopy(text, successMsg));
+  } else {
+    fallbackCopy(text, successMsg);
+  }
+}
+
+function fallbackCopy(text, successMsg) {
   const ta = document.createElement('textarea');
   ta.value = text;
   ta.style.position = 'fixed';
@@ -181,9 +204,9 @@ function fallbackCopy(text) {
   ta.select();
   try {
     document.execCommand('copy');
-    toast('Quote copied.', true);
+    toast(successMsg, true);
   } catch (e) {
-    toast('Could not copy quote.', false);
+    toast('Could not copy.', false);
   }
   document.body.removeChild(ta);
 }
@@ -244,24 +267,28 @@ function renderQuote() {
   const body = tbl.querySelector('tbody');
   body.innerHTML = '';
   let total = 0;
+
   state.quote.forEach((item, i) => {
     const qty = item.qty || 1;
     const line = item.PRICE * qty;
     total += line;
+
     const tr = document.createElement('tr');
     tr.innerHTML = `
+      <td><input type="number" min="1" value="${qty}" style="width:60px"></td>
       <td>${item.SUPPLIER}</td>
       <td>${item.DESCRIPTION}</td>
       <td>${item.PARTNUMBER}</td>
-      <td><input type="number" min="1" value="${qty}" style="width:60px"></td>
       <td>${fmtPrice(line)}</td>
       <td><button data-i="${i}" style="border:none;background:#fee2e2;color:#b91c1c;border-radius:6px;padding:2px 6px;cursor:pointer;">✖</button></td>
     `;
+
     tr.querySelector('input').addEventListener('change', e => {
       const v = parseInt(e.target.value, 10) || 1;
       item.qty = v;
       renderQuote();
     });
+
     tr.querySelector('button').addEventListener('click', e => {
       const idx = parseInt(e.target.dataset.i, 10);
       if (isNaN(idx)) return;
@@ -270,7 +297,9 @@ function renderQuote() {
       state.quote.splice(idx, 1);
       renderQuote();
     });
+
     body.appendChild(tr);
   });
+
   sum.textContent = 'Total: ' + fmtPrice(total);
 }
