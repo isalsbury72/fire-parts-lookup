@@ -1,4 +1,4 @@
-/* Fire Parts Lookup v5.2.1 — grouped email quotes, supplier name cleanup, parts copy button, add-to-quote enable on select */
+/* Fire Parts Lookup v5.2.1 — grouped email quotes, supplier name cleanup, spacing fix, renamed email copy button */
 
 const state = { rows: [], selected: null, quote: [] };
 const ACCESS_CODE = 'FP2025';
@@ -23,7 +23,7 @@ function toast(msg, ok = false) {
   setTimeout(() => t.remove(), 2600);
 }
 
-/* ---------- Tabs & elements ---------- */
+/* ---------- Tabs ---------- */
 
 const els = {
   q: document.getElementById('q'),
@@ -68,7 +68,7 @@ els.tabParts.addEventListener('click', showPartsPage);
 els.tabQuote.addEventListener('click', showQuotePage);
 showPartsPage();
 
-/* ---------- Helper functions ---------- */
+/* ---------- Helpers ---------- */
 
 function ensureAccess() {
   const ok = localStorage.getItem('hasAccess');
@@ -109,46 +109,34 @@ function parseCSV(txt) {
   render();
 }
 
-function fmtPrice(n) {
-  return '$' + (n || 0).toFixed(2);
-}
-
-// Trim "2025" off end of supplier names, if present
+function fmtPrice(n) { return '$' + (n || 0).toFixed(2); }
 function cleanSupplierName(name) {
   return (name || 'SUPPLIER').replace(/\s*2025\s*$/i, '').trim() || 'SUPPLIER';
 }
 
 function updateAddToQuoteState() {
-  if (!els.addToQuote) return;
+  const b = els.addToQuote;
+  if (!b) return;
   if (state.selected) {
-    els.addToQuote.disabled = false;
-    els.addToQuote.style.opacity = '1';
-    els.addToQuote.style.cursor = 'pointer';
-    els.addToQuote.style.borderColor = '#22c55e';
-    els.addToQuote.style.background = '#ecfdf5';
-    els.addToQuote.style.color = '#166534';
+    b.disabled = false;
+    Object.assign(b.style, {
+      opacity: '1', cursor: 'pointer',
+      borderColor: '#22c55e', background: '#ecfdf5', color: '#166534'
+    });
   } else {
-    els.addToQuote.disabled = true;
-    els.addToQuote.style.opacity = '0.5';
-    els.addToQuote.style.cursor = 'not-allowed';
-    els.addToQuote.style.borderColor = '#d1d5db';
-    els.addToQuote.style.background = '#f3f4f6';
-    els.addToQuote.style.color = '#9ca3af';
+    b.disabled = true;
+    Object.assign(b.style, {
+      opacity: '0.5', cursor: 'not-allowed',
+      borderColor: '#d1d5db', background: '#f3f4f6', color: '#9ca3af'
+    });
   }
 }
 
-/* ---------- Load cached CSV on start ---------- */
-
+/* ---------- Load cached ---------- */
 const cachedCsv = localStorage.getItem('parts_csv');
-if (cachedCsv) {
-  try {
-    parseCSV(cachedCsv);
-  } catch (e) {
-    console.error('Error parsing cached CSV:', e);
-  }
-}
+if (cachedCsv) parseCSV(cachedCsv);
 
-/* ---------- CSV load controls ---------- */
+/* ---------- CSV load buttons ---------- */
 
 els.csv.addEventListener('change', e => {
   const f = e.target.files[0];
@@ -185,126 +173,93 @@ els.clearCache.addEventListener('click', () => {
   toast('Cache cleared.', true);
 });
 
-/* ---------- Quote buttons ---------- */
+/* ---------- Quote controls ---------- */
 
-if (els.addToQuote) {
-  els.addToQuote.addEventListener('click', () => {
-    if (!state.selected) return; // should be disabled anyway
-    state.quote.push({
-      SUPPLIER: state.selected.SUPPLIER,
-      DESCRIPTION: state.selected.DESCRIPTION,
-      PARTNUMBER: state.selected.PARTNUMBER,
-      PRICE: state.selected.PRICE,
-      qty: 1
-    });
-    renderQuote();
-    showQuotePage();
+els.addToQuote.addEventListener('click', () => {
+  if (!state.selected) return;
+  state.quote.push({
+    SUPPLIER: state.selected.SUPPLIER,
+    DESCRIPTION: state.selected.DESCRIPTION,
+    PARTNUMBER: state.selected.PARTNUMBER,
+    PRICE: state.selected.PRICE,
+    qty: 1
   });
-}
+  renderQuote();
+  showQuotePage();
+});
 
-/* Copy quote (with total, no heading) */
-if (els.copyQuote) {
-  els.copyQuote.addEventListener('click', () => {
-    if (!state.quote.length) return toast('No items to copy.', false);
-    let total = 0;
-    const lines = [];
-    state.quote.forEach(i => {
+els.copyQuote.addEventListener('click', () => {
+  if (!state.quote.length) return toast('No items to copy.', false);
+  let total = 0;
+  const lines = state.quote.map(i => {
+    const qty = i.qty || 1;
+    total += i.PRICE * qty;
+    return `${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each (${i.SUPPLIER} price)`;
+  });
+  lines.push('', 'Total: ' + fmtPrice(total));
+  copyText(lines.join('\n'), 'Quote copied.');
+});
+
+els.copyQuoteRaw.addEventListener('click', () => {
+  if (!state.quote.length) return toast('No items to copy.', false);
+  const lines = state.quote.map(i => {
+    const qty = i.qty || 1;
+    return `${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each (${i.SUPPLIER} price)`;
+  });
+  copyText(lines.join('\n'), 'Items copied.');
+});
+
+/* ---------- Copy for Email PO ---------- */
+els.copyQuoteEmail.addEventListener('click', () => {
+  if (!state.quote.length) return toast('No items to copy.', false);
+
+  const job = els.jobNumber?.value.trim() || '';
+  const delivery = els.deliveryAddress?.value.trim() || '';
+
+  // Group items by supplier
+  const groups = new Map();
+  state.quote.forEach(item => {
+    const clean = cleanSupplierName(item.SUPPLIER);
+    if (!groups.has(clean)) groups.set(clean, []);
+    groups.get(clean).push(item);
+  });
+
+  const lines = [];
+  groups.forEach((items, supplier) => {
+    const supName = supplier || 'SUPPLIER';
+    lines.push(job
+      ? `Please forward a PO to ${supName} for job ${job}`
+      : `Please forward a PO to ${supName} for this job`
+    );
+    lines.push('');
+    items.forEach(i => {
       const qty = i.qty || 1;
-      total += i.PRICE * qty;
-      lines.push(
-        `${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each (${i.SUPPLIER} price)`
-      );
+      lines.push(`${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each`);
     });
-    lines.push('', 'Total: ' + fmtPrice(total));
-    copyText(lines.join('\n'), 'Quote copied.');
+    if (delivery) {
+      lines.push('');
+      lines.push(delivery);
+    }
+    lines.push(''); // <== adds blank space between supplier groups
   });
-}
 
-/* Copy quote (raw, no total) */
-if (els.copyQuoteRaw) {
-  els.copyQuoteRaw.addEventListener('click', () => {
-    if (!state.quote.length) return toast('No items to copy.', false);
-    const lines = state.quote.map(i => {
-      const qty = i.qty || 1;
-      return `${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each (${i.SUPPLIER} price)`;
-    });
-    copyText(lines.join('\n'), 'Items copied.');
-  });
-}
+  copyText(lines.join('\n').trimEnd(), 'Email PO copied.');
+});
 
-/* Copy full quote for email — grouped by supplier, cleaned names, no price text at end */
-if (els.copyQuoteEmail) {
-  els.copyQuoteEmail.addEventListener('click', () => {
-    if (!state.quote.length) return toast('No items to copy.', false);
+/* ---------- Copy yellow line ---------- */
+els.copyPartLine.addEventListener('click', () => {
+  const txt = els.copyArea?.textContent.trim() || '';
+  if (!txt) return toast('No part selected.', false);
+  copyText(txt, 'Part line copied.');
+});
 
-    const job = els.jobNumber ? els.jobNumber.value.trim() : '';
-    const delivery = els.deliveryAddress ? els.deliveryAddress.value.trim() : '';
-
-    // Group items by cleaned supplier name
-    const groups = new Map(); // key: clean supplier name, value: { cleanName, items }
-    state.quote.forEach(item => {
-      const clean = cleanSupplierName(item.SUPPLIER);
-      if (!groups.has(clean)) {
-        groups.set(clean, { cleanName: clean, items: [] });
-      }
-      groups.get(clean).items.push(item);
-    });
-
-    const lines = [];
-
-    groups.forEach(group => {
-      const supName = group.cleanName || 'SUPPLIER';
-
-      if (job) {
-        lines.push(`Please forward a PO to ${supName} for job ${job}`);
-      } else {
-        lines.push(`Please forward a PO to ${supName} for this job`);
-      }
-
-      lines.push(''); // blank line
-
-      group.items.forEach(i => {
-        const qty = i.qty || 1;
-        lines.push(
-          `${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each`
-        );
-      });
-
-      lines.push(''); // blank line
-
-      if (delivery) {
-        lines.push(delivery);
-      }
-
-      lines.push(''); // extra blank between suppliers
-    });
-
-    const text = lines.join('\n').trimEnd();
-    copyText(text, 'Full quote copied.');
-  });
-}
-
-/* ---------- Parts copy button (yellow bar) ---------- */
-
-if (els.copyPartLine) {
-  els.copyPartLine.addEventListener('click', () => {
-    const txt = (els.copyArea && els.copyArea.textContent.trim()) || '';
-    if (!txt) return toast('No part selected to copy.', false);
-    copyText(txt, 'Part line copied.');
-  });
-}
-
-/* ---------- Rendering: Parts ---------- */
-
+/* ---------- Render parts ---------- */
 els.q.addEventListener('input', render);
-
 function render() {
   const q = els.q.value.trim().toLowerCase();
   const body = els.tbl;
   body.innerHTML = '';
-  const rows = state.rows.filter(r =>
-    !q || Object.values(r).join(' ').toLowerCase().includes(q)
-  );
+  const rows = state.rows.filter(r => !q || Object.values(r).join(' ').toLowerCase().includes(q));
   rows.forEach(r => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
@@ -325,13 +280,10 @@ function render() {
   els.count.textContent = rows.length;
 }
 
-/* ---------- Rendering: Quote ---------- */
-
+/* ---------- Render quote ---------- */
 function renderQuote() {
-  const tbl = document.getElementById('quoteTable');
+  const body = document.querySelector('#quoteTable tbody');
   const sum = document.getElementById('quoteSummary');
-  if (!tbl || !sum) return;
-  const body = tbl.querySelector('tbody');
   body.innerHTML = '';
   let total = 0;
 
@@ -346,24 +298,20 @@ function renderQuote() {
       <td>${i.DESCRIPTION}</td>
       <td>${i.PARTNUMBER}</td>
       <td>${fmtPrice(lineTotal)}</td>
-      <td><button data-i="${idx}" style="border:none;background:#fee2e2;color:#b91c1c;border-radius:6px;padding:2px 6px;cursor:pointer;">✖</button></td>
-    `;
+      <td><button data-i="${idx}" style="border:none;background:#fee2e2;color:#b91c1c;border-radius:6px;padding:2px 6px;cursor:pointer;">✖</button></td>`;
     tr.querySelector('input').addEventListener('change', e => {
-      const v = parseInt(e.target.value, 10) || 1;
-      i.qty = v;
+      i.qty = parseInt(e.target.value, 10) || 1;
       renderQuote();
     });
     tr.querySelector('button').addEventListener('click', e => {
       const idx2 = parseInt(e.target.dataset.i, 10);
-      if (isNaN(idx2)) return;
-      if (confirm('Remove this item from the quote?')) {
+      if (confirm('Remove this item?')) {
         state.quote.splice(idx2, 1);
         renderQuote();
       }
     });
     body.appendChild(tr);
   });
-
   sum.textContent = 'Total: ' + fmtPrice(total);
 
   // Clear Quote button
@@ -373,16 +321,11 @@ function renderQuote() {
     btnClear.id = 'clearQuoteBtn';
     btnClear.textContent = 'Clear Quote';
     Object.assign(btnClear.style, {
-      marginLeft: '10px',
-      padding: '4px 8px',
-      fontSize: '12px',
-      borderRadius: '6px',
-      border: '1px solid #d1d5db',
-      background: '#f3f4f6',
-      cursor: 'pointer'
+      marginLeft: '10px', padding: '4px 8px', fontSize: '12px',
+      borderRadius: '6px', border: '1px solid #d1d5db', background: '#f3f4f6', cursor: 'pointer'
     });
     btnClear.addEventListener('click', () => {
-      if (confirm('Clear all items from the quote?')) {
+      if (confirm('Clear all items?')) {
         state.quote = [];
         renderQuote();
         toast('Quote cleared.', true);
@@ -390,11 +333,7 @@ function renderQuote() {
       }
     });
     sum.parentElement.insertBefore(btnClear, sum.nextSibling);
-  } else if (!state.quote.length && btnClear) {
-    btnClear.remove();
-  }
+  } else if (!state.quote.length && btnClear) btnClear.remove();
 }
-
-/* ---------- Initialise button state ---------- */
 
 updateAddToQuoteState();
