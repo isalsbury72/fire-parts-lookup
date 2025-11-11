@@ -1,4 +1,4 @@
-/* Fire Parts Lookup v5.2.1 — shared CSV, highlight, sorting, access code, tabs, quote list */
+/* Fire Parts Lookup v5.2.1 — shared CSV, highlight, sorting, access code, tabs, quote list with qty */
 
 const state = { rows: [], fuse: null, selected: null, quote: [] };
 let sortState = { key: 'SUPPLIER', dir: 1 }; // 1 = asc, -1 = desc
@@ -225,6 +225,7 @@ Object.entries(els.th).forEach(([key, thEl]) => {
   });
 });
 
+// Add-to-quote button
 if (els.addToQuote) {
   els.addToQuote.addEventListener('click', () => {
     if (!state.selected) {
@@ -442,8 +443,8 @@ function renderQuote() {
   tbody.innerHTML = '';
   let total = 0;
 
-  state.quote.forEach(item => {
-    const qty = item.qty || 1;
+  state.quote.forEach((item, idx) => {
+    const qty = item.qty && item.qty > 0 ? item.qty : 1;
     const unit = (typeof item.PRICE === 'number' ? item.PRICE : 0);
     const lineTotal = unit * qty;
     total += lineTotal;
@@ -453,9 +454,18 @@ function renderQuote() {
       <td>${escapeHTML(item.SUPPLIER || '')}</td>
       <td>${escapeHTML(item.DESCRIPTION || '')}</td>
       <td>${escapeHTML(item.PARTNUMBER || '')}</td>
-      <td>${qty}</td>
+      <td><input type="number" min="1" value="${qty}" data-idx="${idx}" style="width:60px;"></td>
       <td>${fmtPrice(lineTotal)}</td>
     `;
+    const input = tr.querySelector('input[type="number"]');
+    if (input) {
+      input.addEventListener('change', (e) => {
+        let v = parseInt(e.target.value, 10);
+        if (!v || v < 1) v = 1;
+        state.quote[idx].qty = v;
+        renderQuote();
+      });
+    }
     tbody.appendChild(tr);
   });
 
