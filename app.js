@@ -1,7 +1,7 @@
   /* Fire Parts Lookup v5.2.1 — shared CSV, highlight, sorting */
 const state = { rows: [], fuse: null };
 let sortState = { key: 'SUPPLIER', dir: 1 }; // 1 = asc, -1 = desc
-function ensureAccess() {)
+
 // One-time access code for loading shared data
 const ACCESS_CODE = 'FP2025'; // change this if you like
 
