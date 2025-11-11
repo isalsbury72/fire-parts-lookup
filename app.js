@@ -1,8 +1,6 @@
-/* Fire Parts Lookup v5.2.1 — cached CSV, two copy modes, qty first, remove confirm */
+/* Fire Parts Lookup v5.2.1 — Clear Quote only when items exist, supplier price list label */
 
-const state = { rows: [], fuse: null, selected: null, quote: [] };
-let sortState = { key: 'SUPPLIER', dir: 1 };
-
+const state = { rows: [], selected: null, quote: [] };
 const ACCESS_CODE = 'FP2025';
 
 function toast(msg, ok = false) {
@@ -25,15 +23,13 @@ function toast(msg, ok = false) {
   setTimeout(() => t.remove(), 2600);
 }
 
-toast('Loaded v5.2.1', true);
+/* ---------- Tabs ---------- */
 
 const els = {
   q: document.getElementById('q'),
   csv: document.getElementById('csv'),
   tbl: document.getElementById('tbl').querySelector('tbody'),
   count: document.getElementById('count'),
-  supplierFilter: document.getElementById('supplierFilter'),
-  typeFilter: document.getElementById('typeFilter'),
   copyArea: document.getElementById('copyArea'),
   clearCache: document.getElementById('clearCache'),
   loadShared: document.getElementById('loadShared'),
@@ -45,8 +41,6 @@ const els = {
   copyQuote: document.getElementById('copyQuote'),
   copyQuoteRaw: document.getElementById('copyQuoteRaw')
 };
-
-/* ---------- Tabs ---------- */
 
 function showPartsPage() {
   els.partsPage.style.display = 'block';
@@ -70,28 +64,22 @@ els.tabParts.addEventListener('click', showPartsPage);
 els.tabQuote.addEventListener('click', showQuotePage);
 showPartsPage();
 
-/* ---------- Access control ---------- */
+/* ---------- Access ---------- */
 
 function ensureAccess() {
   const ok = localStorage.getItem('hasAccess');
-  if (ok === 'yes') {
-    const b = document.getElementById('authBanner');
-    if (b) b.style.display = 'inline-block';
-    return true;
-  }
-  const code = prompt('Enter access code to load shared data:');
+  if (ok === 'yes') return true;
+  const code = prompt('Enter access code:');
   if (code === ACCESS_CODE) {
     localStorage.setItem('hasAccess', 'yes');
     toast('Access granted.', true);
-    const b = document.getElementById('authBanner');
-    if (b) b.style.display = 'inline-block';
     return true;
   }
   toast('Access denied.', false);
   return false;
 }
 
-/* ---------- Load cached CSV on startup ---------- */
+/* ---------- Load cached CSV ---------- */
 
 const cachedCsv = localStorage.getItem('parts_csv');
 if (cachedCsv) {
@@ -102,7 +90,7 @@ if (cachedCsv) {
   }
 }
 
-/* ---------- CSV upload & shared load ---------- */
+/* ---------- CSV load ---------- */
 
 els.csv.addEventListener('change', e => {
   const f = e.target.files[0];
@@ -119,10 +107,7 @@ els.csv.addEventListener('change', e => {
 els.loadShared.addEventListener('click', () => {
   if (!ensureAccess()) return;
   fetch('Parts.csv')
-    .then(r => {
-      if (!r.ok) throw new Error('Network error');
-      return r.text();
-    })
+    .then(r => r.text())
     .then(t => {
       localStorage.setItem('parts_csv', t);
       parseCSV(t);
@@ -137,17 +122,14 @@ els.clearCache.addEventListener('click', () => {
   state.quote = [];
   render();
   renderQuote();
-  toast('Cleared cached parts.', true);
+  toast('Cache cleared.', true);
 });
 
-/* ---------- Quote actions ---------- */
+/* ---------- Quote Buttons ---------- */
 
 if (els.addToQuote) {
   els.addToQuote.addEventListener('click', () => {
-    if (!state.selected) {
-      toast('Select a part first.', false);
-      return;
-    }
+    if (!state.selected) return toast('Select a part first.', false);
     state.quote.push({
       SUPPLIER: state.selected.SUPPLIER,
       DESCRIPTION: state.selected.DESCRIPTION,
@@ -160,108 +142,69 @@ if (els.addToQuote) {
   });
 }
 
-// Copy quote WITH total (no heading line)
+/* Copy quote (with total, no heading) */
 if (els.copyQuote) {
   els.copyQuote.addEventListener('click', () => {
-    if (!state.quote.length) {
-      return toast('No items to copy.', false);
-    }
-
+    if (!state.quote.length) return toast('No items to copy.', false);
     let total = 0;
     const lines = [];
-
-    state.quote.forEach((i) => {
+    state.quote.forEach(i => {
       const qty = i.qty || 1;
-      const lineTotal = i.PRICE * qty;
-      total += lineTotal;
-
-      // 5 x DESCRIPTION — PARTNUMBER — $xx.xx each (priced from SUPPLIER)
+      total += i.PRICE * qty;
       lines.push(
-        `${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each (priced from ${i.SUPPLIER})`
+        `${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each (${i.SUPPLIER} price list)`
       );
     });
-
     lines.push('', 'Total: ' + fmtPrice(total));
-
-    const text = lines.join('\n');
-    copyText(text, 'Quote copied.');
+    copyText(lines.join('\n'), 'Quote copied.');
   });
 }
 
-// Copy RAW items only (no heading, no total)
+/* Copy quote (raw, no total) */
 if (els.copyQuoteRaw) {
   els.copyQuoteRaw.addEventListener('click', () => {
-    if (!state.quote.length) {
-      return toast('No items to copy.', false);
-    }
-
+    if (!state.quote.length) return toast('No items to copy.', false);
     const lines = state.quote.map(i => {
       const qty = i.qty || 1;
-      return `${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each (priced from ${i.SUPPLIER})`;
+      return `${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each (${i.SUPPLIER} price list)`;
     });
-
-    const text = lines.join('\n');
-    copyText(text, 'Quote items copied.');
+    copyText(lines.join('\n'), 'Items copied.');
   });
 }
 
-function copyText(text, successMsg) {
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text)
-      .then(() => toast(successMsg, true))
-      .catch(() => fallbackCopy(text, successMsg));
-  } else {
-    fallbackCopy(text, successMsg);
-  }
-}
+/* ---------- Helpers ---------- */
 
-function fallbackCopy(text, successMsg) {
-  const ta = document.createElement('textarea');
-  ta.value = text;
-  ta.style.position = 'fixed';
-  ta.style.left = '-9999px';
-  document.body.appendChild(ta);
-  ta.select();
-  try {
-    document.execCommand('copy');
-    toast(successMsg, true);
-  } catch (e) {
-    toast('Could not copy.', false);
-  }
-  document.body.removeChild(ta);
+function copyText(txt, msg) {
+  navigator.clipboard?.writeText(txt).then(() => toast(msg, true))
+    .catch(() => {
+      const ta = document.createElement('textarea');
+      ta.value = txt;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      toast(msg, true);
+    });
 }
-
-/* ---------- CSV parsing ---------- */
 
 function parseCSV(txt) {
   const res = Papa.parse(txt, { header: true, skipEmptyLines: true });
-  if (!res || !res.data) {
-    state.rows = [];
-    render();
-    return;
-  }
   state.rows = res.data.map(r => ({
     SUPPLIER: r.SUPPLIER || '',
     TYPE: r.TYPE || '',
     DESCRIPTION: r.DESCRIPTION || '',
     PARTNUMBER: r.PARTNUMBER || '',
-    PRICE: parsePrice(r.PRICE),
+    PRICE: parseFloat((r.PRICE || '').toString().replace(/[^0-9.]/g, '')) || 0,
     NOTES: r.NOTES || ''
   }));
   render();
-}
-
-function parsePrice(v) {
-  const s = v ? v.toString().replace(/[^0-9.]/g, '') : '';
-  const n = parseFloat(s);
-  return isNaN(n) ? 0 : n;
 }
 
 function fmtPrice(n) {
   return '$' + (n || 0).toFixed(2);
 }
 
-/* ---------- Parts list render ---------- */
+/* ---------- Rendering ---------- */
 
 els.q.addEventListener('input', render);
 
@@ -291,49 +234,71 @@ function render() {
   els.count.textContent = rows.length;
 }
 
-/* ---------- Quote render ---------- */
+/* ---------- Quote Rendering ---------- */
 
 function renderQuote() {
   const tbl = document.getElementById('quoteTable');
   const sum = document.getElementById('quoteSummary');
   if (!tbl || !sum) return;
-
   const body = tbl.querySelector('tbody');
   body.innerHTML = '';
   let total = 0;
 
-  state.quote.forEach((item, i) => {
-    const qty = item.qty || 1;
-    const line = item.PRICE * qty;
-    total += line;
-
+  state.quote.forEach((i, idx) => {
+    const qty = i.qty || 1;
+    const lineTotal = i.PRICE * qty;
+    total += lineTotal;
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td><input type="number" min="1" value="${qty}" style="width:60px"></td>
-      <td>${item.SUPPLIER}</td>
-      <td>${item.DESCRIPTION}</td>
-      <td>${item.PARTNUMBER}</td>
-      <td>${fmtPrice(line)}</td>
-      <td><button data-i="${i}" style="border:none;background:#fee2e2;color:#b91c1c;border-radius:6px;padding:2px 6px;cursor:pointer;">✖</button></td>
+      <td>${i.SUPPLIER}</td>
+      <td>${i.DESCRIPTION}</td>
+      <td>${i.PARTNUMBER}</td>
+      <td>${fmtPrice(lineTotal)}</td>
+      <td><button data-i="${idx}" style="border:none;background:#fee2e2;color:#b91c1c;border-radius:6px;padding:2px 6px;cursor:pointer;">✖</button></td>
     `;
-
     tr.querySelector('input').addEventListener('change', e => {
       const v = parseInt(e.target.value, 10) || 1;
-      item.qty = v;
+      i.qty = v;
       renderQuote();
     });
-
     tr.querySelector('button').addEventListener('click', e => {
-      const idx = parseInt(e.target.dataset.i, 10);
-      if (isNaN(idx)) return;
-      const confirmRemove = confirm('Remove this item from the quote?');
-      if (!confirmRemove) return;
-      state.quote.splice(idx, 1);
-      renderQuote();
+      const idx2 = parseInt(e.target.dataset.i, 10);
+      if (isNaN(idx2)) return;
+      if (confirm('Remove this item from the quote?')) {
+        state.quote.splice(idx2, 1);
+        renderQuote();
+      }
     });
-
     body.appendChild(tr);
   });
 
   sum.textContent = 'Total: ' + fmtPrice(total);
+
+  // Clear Quote button logic
+  let btnClear = document.getElementById('clearQuoteBtn');
+  if (state.quote.length && !btnClear) {
+    btnClear = document.createElement('button');
+    btnClear.id = 'clearQuoteBtn';
+    btnClear.textContent = 'Clear Quote';
+    Object.assign(btnClear.style, {
+      marginLeft: '10px',
+      padding: '4px 8px',
+      fontSize: '12px',
+      borderRadius: '6px',
+      border: '1px solid #d1d5db',
+      background: '#f3f4f6',
+      cursor: 'pointer'
+    });
+    btnClear.addEventListener('click', () => {
+      if (confirm('Clear all items from the quote?')) {
+        state.quote = [];
+        renderQuote();
+        toast('Quote cleared.', true);
+      }
+    });
+    sum.parentElement.insertBefore(btnClear, sum.nextSibling);
+  } else if (!state.quote.length && btnClear) {
+    btnClear.remove();
+  }
 }
