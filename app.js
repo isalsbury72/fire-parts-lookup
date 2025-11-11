@@ -117,9 +117,10 @@ const formatted = now.toLocaleString('en-AU', {
   hour: '2-digit',
   minute: '2-digit'
 });
-document.getElementById('lastLoaded').textContent = formatted;
-localStorage.setItem('lastLoaded', formatted);
-  toast('Loaded shared CSV', true);
+  document.getElementById('lastLoaded').textContent = formatted;
+  localStorage.setItem('lastLoaded', formatted);
+  const count = state.rows.length;
+  toast(`Loaded shared CSV (${count} items)`, true);
 })
     .catch(err => {
       console.error(err);
