@@ -143,11 +143,12 @@
   
   </div>
 
-  <!-- Quote page (empty for now) -->
+    <!-- Quote page -->
   <div id="quotePage" style="display:none;">
     <div class="card">
       <h2 style="margin-top:0; font-size:16px;">Quote items</h2>
       <p class="small">Parts you add from the Parts tab will appear here.</p>
+
       <table style="width:100%; border-collapse:collapse; margin-top:8px;" id="quoteTable">
         <thead>
           <tr>
@@ -159,10 +160,17 @@
           </tr>
         </thead>
         <tbody>
-          <!-- we’ll fill this with JS later -->
+          <!-- filled by app.js -->
         </tbody>
       </table>
+
       <p class="small" id="quoteSummary" style="margin-top:8px;">Total: $0.00</p>
+
+      <div style="margin-top:8px; display:flex; justify-content:flex-end;">
+        <button id="copyQuote" style="padding:6px 10px; font-size:13px; border-radius:999px; border:1px solid #4b5563; background:#f9fafb; color:#111827;">
+          Copy quote
+        </button>
+      </div>
     </div>
   </div>
 </main>
