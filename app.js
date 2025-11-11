@@ -1,4 +1,4 @@
-/* Fire Parts Lookup v5.2.1 — Clear Quote only when items exist, supplier price list label, return to Parts page */
+/* Fire Parts Lookup v5.2.1 — quote metadata (job, delivery), email copy, clear quote returns to parts */
 
 const state = { rows: [], selected: null, quote: [] };
 const ACCESS_CODE = 'FP2025';
@@ -23,7 +23,7 @@ function toast(msg, ok = false) {
   setTimeout(() => t.remove(), 2600);
 }
 
-/* ---------- Tabs ---------- */
+/* ---------- Tabs & elements ---------- */
 
 const els = {
   q: document.getElementById('q'),
@@ -39,7 +39,10 @@ const els = {
   tabQuote: document.getElementById('tabQuote'),
   addToQuote: document.getElementById('addToQuote'),
   copyQuote: document.getElementById('copyQuote'),
-  copyQuoteRaw: document.getElementById('copyQuoteRaw')
+  copyQuoteRaw: document.getElementById('copyQuoteRaw'),
+  copyQuoteEmail: document.getElementById('copyQuoteEmail'),
+  jobNumber: document.getElementById('jobNumber'),
+  deliveryAddress: document.getElementById('deliveryAddress')
 };
 
 function showPartsPage() {
@@ -172,6 +175,34 @@ if (els.copyQuoteRaw) {
   });
 }
 
+/* Copy full quote for email (includes job + delivery + total) */
+if (els.copyQuoteEmail) {
+  els.copyQuoteEmail.addEventListener('click', () => {
+    if (!state.quote.length) return toast('No items to copy.', false);
+
+    const job = els.jobNumber ? els.jobNumber.value.trim() : '';
+    const delivery = els.deliveryAddress ? els.deliveryAddress.value.trim() : '';
+
+    const lines = [];
+    if (job) lines.push(`Job number: ${job}`);
+    if (delivery) lines.push(`Delivery: ${delivery}`);
+    if (job || delivery) lines.push('');
+
+    let total = 0;
+    state.quote.forEach(i => {
+      const qty = i.qty || 1;
+      total += i.PRICE * qty;
+      lines.push(
+        `${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each (${i.SUPPLIER} price list)`
+      );
+    });
+
+    lines.push('', 'Total: ' + fmtPrice(total));
+
+    copyText(lines.join('\n'), 'Full quote copied.');
+  });
+}
+
 /* ---------- Helpers ---------- */
 
 function copyText(txt, msg) {
@@ -295,7 +326,6 @@ function renderQuote() {
         state.quote = [];
         renderQuote();
         toast('Quote cleared.', true);
-        // go back to parts page once cleared
         showPartsPage();
       }
     });
