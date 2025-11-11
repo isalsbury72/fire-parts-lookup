@@ -1,4 +1,4 @@
-/* Fire Parts Lookup v5.2.1 — Clear Quote only when items exist, supplier price list label */
+/* Fire Parts Lookup v5.2.1 — Clear Quote only when items exist, supplier price list label, return to Parts page */
 
 const state = { rows: [], selected: null, quote: [] };
 const ACCESS_CODE = 'FP2025';
@@ -204,7 +204,7 @@ function fmtPrice(n) {
   return '$' + (n || 0).toFixed(2);
 }
 
-/* ---------- Rendering ---------- */
+/* ---------- Rendering: Parts ---------- */
 
 els.q.addEventListener('input', render);
 
@@ -234,7 +234,7 @@ function render() {
   els.count.textContent = rows.length;
 }
 
-/* ---------- Quote Rendering ---------- */
+/* ---------- Rendering: Quote ---------- */
 
 function renderQuote() {
   const tbl = document.getElementById('quoteTable');
@@ -295,6 +295,8 @@ function renderQuote() {
         state.quote = [];
         renderQuote();
         toast('Quote cleared.', true);
+        // go back to parts page once cleared
+        showPartsPage();
       }
     });
     sum.parentElement.insertBefore(btnClear, sum.nextSibling);
