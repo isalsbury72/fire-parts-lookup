@@ -8,13 +8,6 @@ const ACCESS_CODE = 'FP2025'; // change this if you like
 function ensureAccess() {
   const ok = localStorage.getItem('hasAccess');
   if (ok === 'yes') {
-    document.getElementById('authBanner').style.display = 'block';
-    return true;
-  }
-
-function ensureAccess() {
-  const ok = localStorage.getItem('hasAccess');
-  if (ok === 'yes') {
     document.getElementById('authBanner').style.display = 'inline-block';
     return true;
   }
