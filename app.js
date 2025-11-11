@@ -175,29 +175,42 @@ if (els.copyQuoteRaw) {
   });
 }
 
-/* Copy full quote for email (includes job + delivery + total) */
+/* Copy full quote for email in custom format */
 if (els.copyQuoteEmail) {
   els.copyQuoteEmail.addEventListener('click', () => {
     if (!state.quote.length) return toast('No items to copy.', false);
 
     const job = els.jobNumber ? els.jobNumber.value.trim() : '';
     const delivery = els.deliveryAddress ? els.deliveryAddress.value.trim() : '';
+    const firstSupplier = state.quote[0]?.SUPPLIER || 'SUPPLIER';
 
     const lines = [];
-    if (job) lines.push(`Job number: ${job}`);
-    if (delivery) lines.push(`Delivery: ${delivery}`);
-    if (job || delivery) lines.push('');
 
-    let total = 0;
+    // Header line
+    if (job) {
+      lines.push(`Please forward a PO to ${firstSupplier} for job ${job}`);
+    } else {
+      lines.push(`Please forward a PO to ${firstSupplier}`);
+    }
+
+    lines.push(''); // blank line
+
+    // Items - same as "copy items only"
     state.quote.forEach(i => {
       const qty = i.qty || 1;
-      total += i.PRICE * qty;
       lines.push(
         `${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each (${i.SUPPLIER} price list)`
       );
     });
 
-    lines.push('', 'Total: ' + fmtPrice(total));
+    lines.push(''); // blank line
+
+    // Delivery
+    if (delivery) {
+      lines.push(`Delivery: ${delivery}`);
+    } else {
+      lines.push('Delivery: (not specified)');
+    }
 
     copyText(lines.join('\n'), 'Full quote copied.');
   });
