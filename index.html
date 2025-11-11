@@ -68,17 +68,43 @@
 </div>
 
   <main>
-  <!-- Parts page (existing content) -->
+  <!-- Parts page -->
   <div id="partsPage">
     <div class="card">
-      ... your existing card content stays here unchanged ...
+      <label for="q" class="small">Search parts</label>
+      <input id="q" placeholder="Search by description, part #, supplier">
+
+      <div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">
+        <button id="loadShared">Load shared file</button>
+
+        <label class="btn" style="display:inline-flex; align-items:center; gap:4px; cursor:pointer;">
+          <span>Load CSV</span>
+          <input id="csv" type="file" accept=".csv" style="display:none;">
+        </label>
+
+        <button id="clearCache" style="margin-left:auto;">Clear data</button>
+      </div>
+
+      <div id="copyArea" class="copy" style="margin-top:8px;"></div>
     </div>
+
     <table id="tbl">
-      ... your existing table stays here unchanged ...
+      <thead>
+        <tr>
+          <th id="thSUPPLIER">Supplier <span class="arrow"></span></th>
+          <th id="thDESCRIPTION">Description <span class="arrow"></span></th>
+          <th id="thPARTNUMBER">Part # <span class="arrow"></span></th>
+          <th id="thPRICE">Price <span class="arrow"></span></th>
+          <th id="thNOTES">Notes <span class="arrow"></span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- filled by app.js -->
+      </tbody>
     </table>
   </div>
 
-  <!-- Quote page (new, starts empty) -->
+  <!-- Quote page (empty for now) -->
   <div id="quotePage" style="display:none;">
     <div class="card">
       <h2 style="margin-top:0; font-size:16px;">Quote items</h2>
