@@ -1,4 +1,4 @@
-/* Fire Parts Lookup v5.2.1 — now with remove quote item */
+/* Fire Parts Lookup v5.2.1 — now with remove confirmation + nicer copy text */
 
 const state = { rows: [], fuse: null, selected: null, quote: [] };
 let sortState = { key: 'SUPPLIER', dir: 1 };
@@ -141,18 +141,51 @@ if (els.addToQuote) {
 
 if (els.copyQuote) {
   els.copyQuote.addEventListener('click', () => {
-    if (!state.quote.length) return toast('No items to copy.', false);
+    if (!state.quote.length) {
+      return toast('No items to copy.', false);
+    }
+
     let total = 0;
     const lines = ['Fire parts quote', ''];
-    state.quote.forEach((i, idx) => {
+
+    state.quote.forEach((i) => {
       const qty = i.qty || 1;
       const lineTotal = i.PRICE * qty;
       total += lineTotal;
-      lines.push(`${idx + 1}) ${i.SUPPLIER} — ${i.DESCRIPTION} — ${i.PARTNUMBER} — Qty ${qty} — ${fmtPrice(lineTotal)}`);
+
+      // Format: "5 x DESCRIPTION — PARTNUMBER — $xx.xx each"
+      lines.push(`${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each`);
     });
+
     lines.push('', 'Total: ' + fmtPrice(total));
-    navigator.clipboard.writeText(lines.join('\n')).then(() => toast('Quote copied.', true));
+
+    const text = lines.join('\n');
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => {
+        toast('Quote copied.', true);
+      }).catch(() => {
+        fallbackCopy(text);
+      });
+    } else {
+      fallbackCopy(text);
+    }
   });
+}
+
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.left = '-9999px';
+  document.body.appendChild(ta);
+  ta.select();
+  try {
+    document.execCommand('copy');
+    toast('Quote copied.', true);
+  } catch (e) {
+    toast('Could not copy quote.', false);
+  }
+  document.body.removeChild(ta);
 }
 
 function parseCSV(txt) {
@@ -225,12 +258,15 @@ function renderQuote() {
       <td><button data-i="${i}" style="border:none;background:#fee2e2;color:#b91c1c;border-radius:6px;padding:2px 6px;cursor:pointer;">✖</button></td>
     `;
     tr.querySelector('input').addEventListener('change', e => {
-      const v = parseInt(e.target.value) || 1;
+      const v = parseInt(e.target.value, 10) || 1;
       item.qty = v;
       renderQuote();
     });
     tr.querySelector('button').addEventListener('click', e => {
-      const idx = parseInt(e.target.dataset.i);
+      const idx = parseInt(e.target.dataset.i, 10);
+      if (isNaN(idx)) return;
+      const confirmRemove = confirm('Remove this item from the quote?');
+      if (!confirmRemove) return;
       state.quote.splice(idx, 1);
       renderQuote();
     });
