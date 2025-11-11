@@ -1,4 +1,4 @@
-/* Fire Parts Lookup v5.2.1 — grouped email quotes, supplier name cleanup, parts copy button */
+/* Fire Parts Lookup v5.2.1 — grouped email quotes, supplier name cleanup, parts copy button, add-to-quote enable on select */
 
 const state = { rows: [], selected: null, quote: [] };
 const ACCESS_CODE = 'FP2025';
@@ -15,7 +15,7 @@ function toast(msg, ok = false) {
     borderRadius: '8px',
     background: '#fff',
     border: `1px solid ${ok ? '#10b981' : '#f59e0b'}`,
-    boxShadow: '0 6px 20px rgba(0,0,0,0.12)',
+    boxShadow: '0 1px 6px rgba(0,0,0,0.15)',
     zIndex: '9999',
     fontSize: '14px'
   });
@@ -68,7 +68,7 @@ els.tabParts.addEventListener('click', showPartsPage);
 els.tabQuote.addEventListener('click', showQuotePage);
 showPartsPage();
 
-/* ---------- Helpers ---------- */
+/* ---------- Helper functions ---------- */
 
 function ensureAccess() {
   const ok = localStorage.getItem('hasAccess');
@@ -118,7 +118,26 @@ function cleanSupplierName(name) {
   return (name || 'SUPPLIER').replace(/\s*2025\s*$/i, '').trim() || 'SUPPLIER';
 }
 
-/* ---------- Load cached CSV ---------- */
+function updateAddToQuoteState() {
+  if (!els.addToQuote) return;
+  if (state.selected) {
+    els.addToQuote.disabled = false;
+    els.addToQuote.style.opacity = '1';
+    els.addToQuote.style.cursor = 'pointer';
+    els.addToQuote.style.borderColor = '#22c55e';
+    els.addToQuote.style.background = '#ecfdf5';
+    els.addToQuote.style.color = '#166534';
+  } else {
+    els.addToQuote.disabled = true;
+    els.addToQuote.style.opacity = '0.5';
+    els.addToQuote.style.cursor = 'not-allowed';
+    els.addToQuote.style.borderColor = '#d1d5db';
+    els.addToQuote.style.background = '#f3f4f6';
+    els.addToQuote.style.color = '#9ca3af';
+  }
+}
+
+/* ---------- Load cached CSV on start ---------- */
 
 const cachedCsv = localStorage.getItem('parts_csv');
 if (cachedCsv) {
@@ -129,7 +148,7 @@ if (cachedCsv) {
   }
 }
 
-/* ---------- CSV load ---------- */
+/* ---------- CSV load controls ---------- */
 
 els.csv.addEventListener('change', e => {
   const f = e.target.files[0];
@@ -159,8 +178,10 @@ els.clearCache.addEventListener('click', () => {
   localStorage.removeItem('parts_csv');
   state.rows = [];
   state.quote = [];
+  state.selected = null;
   render();
   renderQuote();
+  updateAddToQuoteState();
   toast('Cache cleared.', true);
 });
 
@@ -168,7 +189,7 @@ els.clearCache.addEventListener('click', () => {
 
 if (els.addToQuote) {
   els.addToQuote.addEventListener('click', () => {
-    if (!state.selected) return toast('Select a part first.', false);
+    if (!state.selected) return; // should be disabled anyway
     state.quote.push({
       SUPPLIER: state.selected.SUPPLIER,
       DESCRIPTION: state.selected.DESCRIPTION,
@@ -191,7 +212,7 @@ if (els.copyQuote) {
       const qty = i.qty || 1;
       total += i.PRICE * qty;
       lines.push(
-        `${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each (${i.SUPPLIER} price list)`
+        `${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each (${i.SUPPLIER} price)`
       );
     });
     lines.push('', 'Total: ' + fmtPrice(total));
@@ -205,13 +226,13 @@ if (els.copyQuoteRaw) {
     if (!state.quote.length) return toast('No items to copy.', false);
     const lines = state.quote.map(i => {
       const qty = i.qty || 1;
-      return `${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each (${i.SUPPLIER} price list)`;
+      return `${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each (${i.SUPPLIER} price)`;
     });
     copyText(lines.join('\n'), 'Items copied.');
   });
 }
 
-/* Copy full quote for email — grouped by supplier, cleaned names, no price-list tag */
+/* Copy full quote for email — grouped by supplier, cleaned names, no price text at end */
 if (els.copyQuoteEmail) {
   els.copyQuoteEmail.addEventListener('click', () => {
     if (!state.quote.length) return toast('No items to copy.', false);
@@ -240,7 +261,7 @@ if (els.copyQuoteEmail) {
         lines.push(`Please forward a PO to ${supName} for this job`);
       }
 
-      lines.push('');
+      lines.push(''); // blank line
 
       group.items.forEach(i => {
         const qty = i.qty || 1;
@@ -249,13 +270,13 @@ if (els.copyQuoteEmail) {
         );
       });
 
-      lines.push('');
+      lines.push(''); // blank line
 
       if (delivery) {
         lines.push(delivery);
       }
 
-      lines.push('');
+      lines.push(''); // extra blank between suppliers
     });
 
     const text = lines.join('\n').trimEnd();
@@ -297,6 +318,7 @@ function render() {
       state.selected = r;
       els.copyArea.textContent =
         `${r.SUPPLIER} — ${r.DESCRIPTION} — ${r.PARTNUMBER} — ${fmtPrice(r.PRICE)} each`;
+      updateAddToQuoteState();
     });
     body.appendChild(tr);
   });
@@ -372,3 +394,7 @@ function renderQuote() {
     btnClear.remove();
   }
 }
+
+/* ---------- Initialise button state ---------- */
+
+updateAddToQuoteState();
