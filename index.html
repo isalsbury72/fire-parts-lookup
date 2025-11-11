@@ -1,69 +1,190 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8">
   <title>Fire Parts Lookup v5.2.1</title>
-  <meta name="theme-color" content="#3b82f6" />
-  <link rel="manifest" href="manifest.webmanifest">
-  <link rel="icon" href="icons/icon-192.png">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
 
-</head>  
-  
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#3b82f6">
+  <link rel="icon" href="icon-192.png">
+
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; background:#fafafa; color:#111; }
-    header { position: sticky; top:0; background:#3b82f6; color:#fff; padding:12px 16px; display:flex; align-items:center; gap:12px; z-index:10; }
-    header img { width:28px; height:28px; border-radius:6px; }
-    h1 { font-size:18px; margin:0; }
-    .ver { margin-left:auto; background:#fff; color:#1d4ed8; font-weight:600; padding:2px 8px; border-radius:999px; font-size:12px; }
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      margin: 0;
+      background: #fafafa;
+      color: #111;
+    }
+    header {
+      position: sticky;
+      top: 0;
+      background: #3b82f6;
+      color: #fff;
+      padding: 10px 16px;
+      display: flex;
+      align-items: centre;
+      gap: 12px;
+      z-index: 10;
+    }
+    header img {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+    }
+    h1 {
+      font-size: 18px;
+      margin: 0;
+    }
+    .ver {
+      margin-left: auto;
+      background: #fff;
+      color: #1d4ed8;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      display: inline-flex;
+      align-items: centre;
+      gap: 6px;
+    }
+    .auth-pill {
+      background: #22c55e;
+      colour: #064e3b;
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 11px;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      display: inline-block;
+      animation: authFadeIn 0.3s ease-out;
+    }
 
-    main { padding: 12px 16px 80px; }
-    .card { background:#fff; border:1px solid #eee; border-radius:12px; padding:12px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
-    .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    main {
+      padding: 12px 16px 80px;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    .card {
+      background: #fff;
+      border: 1px solid #eee;
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+      margin-bottom: 12px;
+    }
+    .row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: centre;
+    }
 
-    input[type="search"] { flex:1; padding:10px 12px; border-radius:8px; border:1px solid #ddd; font-size:16px; }
-    input[type="file"] { display:none; }
+    /* Prominent search box */
+    input[type="search"] {
+      flex: 1;
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 2px solid #3b82f6;
+      background: #eff6ff;
+      font-size: 16px;
+      outline: none;
+    }
+    input[type="search"]:focus {
+      box-shadow: 0 0 0 2px rgba(59,130,246,0.25);
+    }
 
-    .btn { display:inline-flex; align-items:center; gap:4px; padding:8px 10px; border-radius:8px; border:1px solid #ddd; background:#fff; cursor:pointer; font-size:13px; }
-    .hint { font-size:12px; color:#555; margin-top:6px; }
-
-    table { width:100%; border-collapse:collapse; margin-top:12px; }
-    th, td { text-align:left; padding:8px 6px; border-bottom:1px solid:#eee; font-size:13px; vertical-align: top; }
-    th { position: sticky; top: 64px; background:#fafafa; z-index:5; }
-
-    .badge { font-size:12px; background:#f3f4f6; padding:3px 7px; border-radius:999px; border:1px solid #e5e7eb; }
-
-    /* old copy cell style (not used now but left here just in case) */
-    .copycell { user-select: all; background:#fffbe6; border:1px dashed #facc15; border-radius:8px; padding:8px; margin-top:8px; font-size:13px; min-height: 18px; }
-
-    /* yellow copy bar under the search card */
-    .copy {
-      background: #fff8e1;           /* light yellow */
-      border: 1px solid #f0c14b;     /* soft gold border */
+    input[type="file"] {
+      display: none;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: centre;
+      gap: 4px;
+      padding: 8px 10px;
       border-radius: 8px;
-      padding: 6px 10px;
-      min-height: 22px;
+      border: 1px solid #ddd;
+      background: #fff;
+      cursor: pointer;
       font-size: 13px;
+      white-space: nowrap;
+    }
+    .btn-secondary {
+      background: #f9fafb;
+    }
+    .hint {
+      font-size: 12px;
+      colour: #555;
+      margin-top: 6px;
+    }
+    .muted {
+      colour: #6b7280;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid #d1d5db;
+      background: #fff;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+    th, td {
+      text-align: left;
+      padding: 8px 6px;
+      border-bottom: 1px solid #eee;
+      font-size: 13px;
+      vertical-align: top;
+    }
+    th {
+      position: sticky;
+      top: 64px;
+      background: #fafafa;
+      z-index: 5;
+    }
+    .badge {
+      font-size: 12px;
+      background: #f3f4f6;
+      padding: 3px 7px;
+      border-radius: 999px;
+      border: 1px solid #e5e7eb;
+    }
+    .copycell {
+      user-select: all;
+      background: #fffbe6;
+      border: 1px dashed #facc15;
+      border-radius: 8px;
+      padding: 8px;
       margin-top: 8px;
-      color: #333;
+      font-size: 13px;
+      min-height: 18px;
     }
-    .copy:empty::before {
-      content: "Click a part to copy details here";
-      color: #999;
+    td.notes {
+      colour: #6b7280;
+      font-size: 12px;
+      max-width: 420px;
+      white-space: normal;
+    }
+    @media (max-width: 600px) {
+      td.notes { max-width: 180px; }
     }
 
-    td.notes { color:#6b7280; font-size:12px; max-width: 420px; white-space: normal; }
-    @media (max-width: 600px) { td.notes { max-width: 180px; } }
-
-    footer { position: fixed; bottom:0; left:0; right:0; background:#fff; border-top:1px solid:#eee; padding:8px 12px; display:flex; gap:8px; align-items:center; }
-    .pill { flex:1; display:flex; gap:8px; }
-    .pill input { flex:1; padding:8px 10px; border-radius:999px; border:1px solid #ddd; font-size:13px; }
-    .small { font-size:12px; color:#6b7280; }
-
-    mark.hl { background:#fff176; padding:0 1px; border-radius:2px; }
-
-    th.sortable { cursor:pointer; user-select:none; }
-    th.sortable .arrow { opacity:0.7; margin-left:4px; font-size:11px; }
+    .small {
+      font-size: 12px;
+      colour: #6b7280;
+    }
 
     @keyframes authFadeIn {
       from {
@@ -76,159 +197,154 @@
       }
     }
   </style>
-
+</head>
 <body>
   <header>
-    <img src="icons/icon-192.png" alt="icon">
-    <h1>Fire Parts Lookup</h1>
-
+    <img src="icon-192.png" alt="Fire Parts">
+    <div>
+      <h1>Fire Parts Lookup</h1>
+      <div class="small">Offline-friendly parts and quote helper</div>
+    </div>
     <div class="ver">
-  v5.2.1
-  <span id="authBanner" style="display:none; background:#1b5e20; color:white; padding:2px 6px; border-radius:999px; font-size:11px; margin-left:6px;">
-    🔒 Authorised
-  </span>
-</div>
+      v5.2.1
+      <span id="authBanner" class="auth-pill" style="display:inline-block;">Authorised users only</span>
+    </div>
   </header>
-  <div style="display:flex; gap:8px; padding:8px 16px 0;">
-  <button id="tabParts" style="flex:1; padding:6px 8px; border-radius:999px; border:1px solid #3b82f6; background:#3b82f6; color:white; font-size:13px;">
-    Parts
-  </button>
-  <button id="tabQuote" style="flex:1; padding:6px 8px; border-radius:999px; border:1px solid #e5e7eb; background:#ffffff; color:#111; font-size:13px;">
-    Quote
-  </button>
-</div>
 
   <main>
-  <!-- Parts page -->
-  <div id="partsPage">
-    <div class="card">
-      <label for="q" class="small">Search parts</label>
-      <input id="q" placeholder="Search by description, part #, supplier">
+    <!-- Tabs -->
+    <div class="tabs">
+      <button id="tabParts" class="tab-btn">Parts</button>
+      <button id="tabQuote" class="tab-btn">Quote</button>
+    </div>
 
-      <div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">
-        <button id="loadShared">Load shared file</button>
+    <!-- Parts page -->
+    <div id="partsPage">
+      <div class="card">
+        <h2 style="margin-top:0; font-size:16px;">Parts lookup</h2>
 
-        <label class="btn" style="display:inline-flex; align-items:center; gap:4px; cursor:pointer;">
-          <span>Load CSV</span>
-          <input id="csv" type="file" accept=".csv" style="display:none;">
-        </label>
-
-        <button id="clearCache" style="margin-left:auto;">Clear data</button>
-      </div>
-
-        <div id="copyArea" class="copy" style="margin-top:8px;"></div>
-
-  <div style="margin-top:8px; display:flex; justify-content:flex-end;">
-    <button id="addToQuote" style="padding:6px 10px; font-size:13px; border-radius:999px; border:1px solid #10b981; background:#ecfdf5; color:#065f46;">
-      Add to quote
-    </button>
-  </div>
-</div>
-
-    <table id="tbl">
-  <thead>
-    <tr>
-      <th id="thSUPPLIER">Supplier <span class="arrow"></span></th>
-      <th id="thTYPE">Type <span class="arrow"></span></th>
-      <th id="thDESCRIPTION">Description <span class="arrow"></span></th>
-      <th id="thPARTNUMBER">Part # <span class="arrow"></span></th>
-      <th id="thPRICE">Price <span class="arrow"></span></th>
-      <th id="thNOTES">Notes <span class="arrow"></span></th>
-    </tr>
-  </thead>
-  <tbody>
-    <!-- filled by app.js -->
-  </tbody>
-</table>
-  
-  </div>
-
-       <!-- Quote page -->
-  <div id="quotePage" style="display:none;">
-    <div class="card">
-      <h2 style="margin-top:0; font-size:16px;">Quote items</h2>
-      <p class="small">Parts you add from the Parts tab will appear here.</p>
-
-      <table style="width:100%; border-collapse:collapse; margin-top:8px;" id="quoteTable">
-        <thead>
-          <tr>
-            <th>Qty</th>
-            <th>Supplier</th>
-            <th>Description</th>
-            <th>Part #</th>
-            <th>Line total</th>
-            <th></th> <!-- remove button column -->
-          </tr>
-        </thead>
-        <tbody>
-          <!-- filled by app.js -->
-        </tbody>
-      </table>
-
-      <p class="small" id="quoteSummary" style="margin-top:8px;">Total: $0.00</p>
-
-      <!-- Job + delivery -->
-      <div style="margin-top:8px; display:flex; flex-direction:column; gap:8px;">
-        <div style="display:flex; flex-wrap:wrap; gap:8px;">
-          <div style="flex:1; min-width:160px;">
-            <label class="small" for="jobNumber">Job number</label>
-            <input id="jobNumber"
-                   type="text"
-                   placeholder="Enter job number"
-                   style="width:100%; padding:6px 8px; border-radius:6px; border:1px solid #d1d5db; font-size:13px;">
-          </div>
-          <div style="flex:1; min-width:220px;">
-            <label class="small" for="deliveryAddress">Delivery address</label>
-            <select id="deliveryAddress"
-                    style="width:100%; padding:6px 8px; border-radius:6px; border:1px solid #d1d5db; font-size:13px;">
-              <option value="">Select delivery address</option>
-              <option>Delivery to Chubb 2 Lewis St Torrington QLD 4350</option>
-              <option>Delivery to Chubb C/O Ian Salsbury 103 Diamantina Circle Karalee QLD 4306</option>
-              <option>Delivery to Bryan Josai 43 Alexander St Wooroolin, Qld 4608</option>
-              <option>Delivery to Mark McCabe 8 Bushman St Plainland 4341</option>
-            </select>
-          </div>
+        <div class="row" style="margin-bottom:8px;">
+          <input id="q" type="search" placeholder="Search supplier, type, description or part number…">
         </div>
 
-        <!-- Buttons row -->
-        <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
-          <button id="copyQuote"
-                  style="padding:6px 10px; font-size:13px; border-radius:999px; border:1px solid #4b5563; background:#f9fafb; color:#111827;">
-            Copy quote (with total)
-          </button>
-          <button id="copyQuoteRaw"
-                  style="padding:6px 10px; font-size:13px; border-radius:999px; border:1px solid #9ca3af; background:#ffffff; color:#374151;">
-            Copy items only
-          </button>
-          <button id="copyQuoteEmail"
-                  style="padding:6px 10px; font-size:13px; border-radius:999px; border:1px solid #2563eb; background:#eff6ff; color:#1d4ed8;">
-            Copy full quote for email
+        <div class="row" style="margin-bottom:4px;">
+          <label for="csv" class="btn">
+            Load local CSV
+          </label>
+          <input id="csv" type="file" accept=".csv">
+          <button id="loadShared" class="btn btn-secondary">Load shared file</button>
+          <button id="clearCache" class="btn btn-secondary">Clear data</button>
+        </div>
+
+        <div class="hint">
+          Showing <span id="count">0</span> items.
+        </div>
+
+        <div class="copycell" id="copyArea"></div>
+        <button id="copyPartLine"
+                style="margin-top:6px; padding:6px 10px; font-size:12px; border-radius:999px; border:1px solid #d1d5db; background:#ffffff; cursor:pointer;">
+          Copy line
+        </button>
+
+        <table id="tbl">
+          <thead>
+            <tr>
+              <th>Supplier</th>
+              <th>Type</th>
+              <th>Description</th>
+              <th>Part #</th>
+              <th>Price</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- filled by app.js -->
+          </tbody>
+        </table>
+
+        <div style="margin-top:10px; text-align:right;">
+          <button id="addToQuote"
+                  style="padding:6px 10px; font-size:13px; border-radius:999px; border:1px solid #22c55e; background:#ecfdf5; colour:#166534; cursor:pointer;">
+            Add selected part to quote
           </button>
         </div>
       </div>
     </div>
-  </div>
 
-  
-</main>
+    <!-- Quote page -->
+    <div id="quotePage" style="display:none;">
+      <div class="card">
+        <h2 style="margin-top:0; font-size:16px;">Quote items</h2>
+        <p class="small">Parts you add from the Parts tab will appear here.</p>
 
-<footer>
-  <div class="pill">
-    <input id="supplierFilter" placeholder="Filter supplier (optional)">
-    <input id="typeFilter" placeholder="Filter type (optional)">
-  </div>
-  <div class="small">
-    Items: <span id="count">0</span><br>
-    Last loaded: <span id="lastLoaded">never</span>
-  </div>
-</footer>
+        <table style="width:100%; border-collapse:collapse; margin-top:8px;" id="quoteTable">
+          <thead>
+            <tr>
+              <th>Qty</th>
+              <th>Supplier</th>
+              <th>Description</th>
+              <th>Part #</th>
+              <th>Line total</th>
+              <th></th> <!-- remove button column -->
+            </tr>
+          </thead>
+          <tbody>
+            <!-- filled by app.js -->
+          </tbody>
+        </table>
 
-  <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0"></script>
+        <p class="small" id="quoteSummary" style="margin-top:8px;">Total: $0.00</p>
+
+        <!-- Job + delivery -->
+        <div style="margin-top:8px; display:flex; flex-direction:column; gap:8px;">
+          <div style="display:flex; flex-wrap:wrap; gap:8px;">
+            <div style="flex:1; min-width:160px;">
+              <label class="small" for="jobNumber">Job number</label>
+              <input id="jobNumber"
+                     type="text"
+                     placeholder="Enter job number"
+                     style="width:100%; padding:6px 8px; border-radius:6px; border:1px solid #d1d5db; font-size:13px;">
+            </div>
+            <div style="flex:1; min-width:220px;">
+              <label class="small" for="deliveryAddress">Delivery address</label>
+              <select id="deliveryAddress"
+                      style="width:100%; padding:6px 8px; border-radius:6px; border:1px solid #d1d5db; font-size:13px;">
+                <option value="">Select delivery address</option>
+                <option>Delivery to Chubb 2 Lewis St Torrington QLD 4350</option>
+                <option>Delivery to Chubb C/O Ian Salsbury 103 Diamantina Circle Karalee QLD 4306</option>
+                <option>Delivery to Bryan Josai 43 Alexander St Wooroolin, Qld 4608</option>
+                <option>Delivery to Mark McCabe 8 Bushman St Plainland 4341</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Buttons row -->
+          <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
+            <button id="copyQuote"
+                    style="padding:6px 10px; font-size:13px; border-radius:999px; border:1px solid #4b5563; background:#f9fafb; colour:#111827;">
+              Copy quote (with total)
+            </button>
+            <button id="copyQuoteRaw"
+                    style="padding:6px 10px; font-size:13px; border-radius:999px; border:1px solid #9ca3af; background:#ffffff; colour:#374151;">
+              Copy items only
+            </button>
+            <button id="copyQuoteEmail"
+                    style="padding:6px 10px; font-size:13px; border-radius:999px; border:1px solid #2563eb; background:#eff6ff; colour:#1d4ed8;">
+              Copy full quote for email
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Papa Parse for CSV -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <!-- Main app logic -->
   <script src="app.js"></script>
   <script>
-    if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
-      window.addEventListener('load', () => navigator.serviceWorker.register('service-worker.js'));
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
     }
   </script>
 </body>
