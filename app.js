@@ -7,7 +7,10 @@ const ACCESS_CODE = 'FP2025'; // change this if you like
 
 function ensureAccess() {
   const ok = localStorage.getItem('hasAccess');
-  if (ok === 'yes') return true;
+  if (ok === 'yes') {
+    document.getElementById('authBanner').style.display = 'block';
+    return true;
+  }
 
   const entered = prompt('Enter access code to load shared data:');
   if (!entered) {
@@ -21,6 +24,7 @@ function ensureAccess() {
 
   localStorage.setItem('hasAccess', 'yes');
   toast('Access granted on this device.', true);
+  document.getElementById('authBanner').style.display = 'block';
   return true;
 }
 
