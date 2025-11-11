@@ -7,45 +7,76 @@
   <meta name="theme-color" content="#3b82f6" />
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.png">
+
+</head>  
+  
   <style>
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; background:#fafafa; color:#111; }
     header { position: sticky; top:0; background:#3b82f6; color:#fff; padding:12px 16px; display:flex; align-items:center; gap:12px; z-index:10; }
     header img { width:28px; height:28px; border-radius:6px; }
     h1 { font-size:18px; margin:0; }
     .ver { margin-left:auto; background:#fff; color:#1d4ed8; font-weight:600; padding:2px 8px; border-radius:999px; font-size:12px; }
+
     main { padding: 12px 16px 80px; }
     .card { background:#fff; border:1px solid #eee; border-radius:12px; padding:12px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
     .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+
     input[type="search"] { flex:1; padding:10px 12px; border-radius:8px; border:1px solid #ddd; font-size:16px; }
     input[type="file"] { display:none; }
+
     .btn { display:inline-flex; align-items:center; gap:4px; padding:8px 10px; border-radius:8px; border:1px solid #ddd; background:#fff; cursor:pointer; font-size:13px; }
     .hint { font-size:12px; color:#555; margin-top:6px; }
+
     table { width:100%; border-collapse:collapse; margin-top:12px; }
     th, td { text-align:left; padding:8px 6px; border-bottom:1px solid:#eee; font-size:13px; vertical-align: top; }
     th { position: sticky; top: 64px; background:#fafafa; z-index:5; }
+
     .badge { font-size:12px; background:#f3f4f6; padding:3px 7px; border-radius:999px; border:1px solid #e5e7eb; }
+
+    /* old copy cell style (not used now but left here just in case) */
     .copycell { user-select: all; background:#fffbe6; border:1px dashed #facc15; border-radius:8px; padding:8px; margin-top:8px; font-size:13px; min-height: 18px; }
+
+    /* yellow copy bar under the search card */
+    .copy {
+      background: #fff8e1;           /* light yellow */
+      border: 1px solid #f0c14b;     /* soft gold border */
+      border-radius: 8px;
+      padding: 6px 10px;
+      min-height: 22px;
+      font-size: 13px;
+      margin-top: 8px;
+      color: #333;
+    }
+    .copy:empty::before {
+      content: "Click a part to copy details here";
+      color: #999;
+    }
+
     td.notes { color:#6b7280; font-size:12px; max-width: 420px; white-space: normal; }
     @media (max-width: 600px) { td.notes { max-width: 180px; } }
-    footer { position: fixed; bottom:0; left:0; right:0; background:#fff; border-top:1px solid #eee; padding:8px 12px; display:flex; gap:8px; align-items:center; }
+
+    footer { position: fixed; bottom:0; left:0; right:0; background:#fff; border-top:1px solid:#eee; padding:8px 12px; display:flex; gap:8px; align-items:center; }
     .pill { flex:1; display:flex; gap:8px; }
     .pill input { flex:1; padding:8px 10px; border-radius:999px; border:1px solid #ddd; font-size:13px; }
     .small { font-size:12px; color:#6b7280; }
+
     mark.hl { background:#fff176; padding:0 1px; border-radius:2px; }
+
     th.sortable { cursor:pointer; user-select:none; }
     th.sortable .arrow { opacity:0.7; margin-left:4px; font-size:11px; }
+
     @keyframes authFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-2px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+      from {
+        opacity: 0;
+        transform: translateY(-2px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
   </style>
-</head>
+
 <body>
   <header>
     <img src="icons/icon-192.png" alt="icon">
