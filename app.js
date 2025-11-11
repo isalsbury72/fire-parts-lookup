@@ -40,6 +40,7 @@ const els = {
   loadShared: document.getElementById('loadShared'),
   th: {
     SUPPLIER: document.getElementById('thSUPPLIER'),
+    TYPE: document.getElementById('thTYPE'),
     DESCRIPTION: document.getElementById('thDESCRIPTION'),
     PARTNUMBER: document.getElementById('thPARTNUMBER'),
     PRICE: document.getElementById('thPRICE'),
@@ -382,13 +383,14 @@ function render() {
   els.tbl.innerHTML = '';
   rows.forEach(r => {
     const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${highlight(r.SUPPLIER, qTokens)}</td>
-      <td>${highlight(r.DESCRIPTION, qTokens)}</td>
-      <td><span class="badge">${highlight(r.PARTNUMBER, qTokens)}</span></td>
-      <td>${fmtPrice(r.PRICE)}</td>
-      <td class="notes">${highlight(r.NOTES || '', qTokens)}</td>
-    `;
+  tr.innerHTML = `
+    <td>${highlight(r.SUPPLIER, qTokens)}</td>
+    <td>${highlight(r.TYPE || '', qTokens)}</td>
+    <td>${highlight(r.DESCRIPTION, qTokens)}</td>
+    <td><span class="badge">${highlight(r.PARTNUMBER, qTokens)}</span></td>
+    <td>${fmtPrice(r.PRICE)}</td>
+    <td class="notes">${highlight(r.NOTES || '', qTokens)}</td>
+  `;
     tr.addEventListener('click', () => {
       const priceText = fmtPrice(r.PRICE) ? `${fmtPrice(r.PRICE)} each` : '';
       els.copyArea.textContent = `${r.SUPPLIER} — ${r.DESCRIPTION} — ${r.PARTNUMBER} — ${priceText}`.trim();
