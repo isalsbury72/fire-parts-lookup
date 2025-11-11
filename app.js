@@ -1,7 +1,7 @@
   /* Fire Parts Lookup v5.2.1 — shared CSV, highlight, sorting */
 const state = { rows: [], fuse: null };
 let sortState = { key: 'SUPPLIER', dir: 1 }; // 1 = asc, -1 = desc
-
+function ensureAccess() {)
 // One-time access code for loading shared data
 const ACCESS_CODE = 'FP2025'; // change this if you like
 
@@ -9,6 +9,13 @@ function ensureAccess() {
   const ok = localStorage.getItem('hasAccess');
   if (ok === 'yes') {
     document.getElementById('authBanner').style.display = 'block';
+    return true;
+  }
+
+function ensureAccess() {
+  const ok = localStorage.getItem('hasAccess');
+  if (ok === 'yes') {
+    document.getElementById('authBanner').style.display = 'inline-block';
     return true;
   }
 
@@ -24,9 +31,10 @@ function ensureAccess() {
 
   localStorage.setItem('hasAccess', 'yes');
   toast('Access granted on this device.', true);
-  document.getElementById('authBanner').style.display = 'block';
+  document.getElementById('authBanner').style.display = 'inline-block';
   return true;
 }
+
 
 function toast(msg, ok=false){
   const t = document.createElement('div');
