@@ -1,4 +1,4 @@
-/* Fire Parts Lookup v5.2.1 — shared CSV, highlight, sorting, access code, tabs, quote list with qty */
+/* Fire Parts Lookup v5.2.1 — shared CSV, highlight, sorting, access code, tabs, quote list with qty + copy */
 
 const state = { rows: [], fuse: null, selected: null, quote: [] };
 let sortState = { key: 'SUPPLIER', dir: 1 }; // 1 = asc, -1 = desc
@@ -50,7 +50,8 @@ const els = {
   quotePage: document.getElementById('quotePage'),
   tabParts: document.getElementById('tabParts'),
   tabQuote: document.getElementById('tabQuote'),
-  addToQuote: document.getElementById('addToQuote')
+  addToQuote: document.getElementById('addToQuote'),
+  copyQuote: document.getElementById('copyQuote')
 };
 
 // Tab switching
@@ -245,6 +246,62 @@ if (els.addToQuote) {
     renderQuote();
     showQuotePage();
   });
+}
+
+// Copy quote button
+if (els.copyQuote) {
+  els.copyQuote.addEventListener('click', () => {
+    if (!state.quote.length) {
+      toast('No items in quote to copy.', false);
+      return;
+    }
+
+    let total = 0;
+    const lines = [];
+    lines.push('Fire parts quote');
+    lines.push('');
+
+    state.quote.forEach((item, idx) => {
+      const qty = item.qty && item.qty > 0 ? item.qty : 1;
+      const unit = (typeof item.PRICE === 'number' ? item.PRICE : 0);
+      const lineTotal = unit * qty;
+      total += lineTotal;
+
+      const line = `${idx + 1}) ${item.SUPPLIER} — ${item.DESCRIPTION} — ${item.PARTNUMBER} — Qty ${qty} — ${fmtPrice(lineTotal)}`;
+      lines.push(line);
+    });
+
+    lines.push('');
+    lines.push('Total: ' + fmtPrice(total));
+
+    const text = lines.join('\n');
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => {
+        toast('Quote copied to clipboard.', true);
+      }).catch(() => {
+        fallbackCopy(text);
+      });
+    } else {
+      fallbackCopy(text);
+    }
+  });
+}
+
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.left = '-9999px';
+  document.body.appendChild(ta);
+  ta.select();
+  try {
+    document.execCommand('copy');
+    toast('Quote copied to clipboard.', true);
+  } catch (e) {
+    toast('Could not copy quote.', false);
+  }
+  document.body.removeChild(ta);
 }
 
 function parseCSV(text) {
