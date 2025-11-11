@@ -1,4 +1,4 @@
-/* Fire Parts Lookup v5.2.1 — email quote cleanup: remove (supplier price list), trim 2025 suffix */
+/* Fire Parts Lookup v5.2.1 — grouped email quotes, supplier name cleanup, parts copy button */
 
 const state = { rows: [], selected: null, quote: [] };
 const ACCESS_CODE = 'FP2025';
@@ -31,6 +31,7 @@ const els = {
   tbl: document.getElementById('tbl').querySelector('tbody'),
   count: document.getElementById('count'),
   copyArea: document.getElementById('copyArea'),
+  copyPartLine: document.getElementById('copyPartLine'),
   clearCache: document.getElementById('clearCache'),
   loadShared: document.getElementById('loadShared'),
   partsPage: document.getElementById('partsPage'),
@@ -67,7 +68,7 @@ els.tabParts.addEventListener('click', showPartsPage);
 els.tabQuote.addEventListener('click', showQuotePage);
 showPartsPage();
 
-/* ---------- Access ---------- */
+/* ---------- Helpers ---------- */
 
 function ensureAccess() {
   const ok = localStorage.getItem('hasAccess');
@@ -80,6 +81,41 @@ function ensureAccess() {
   }
   toast('Access denied.', false);
   return false;
+}
+
+function copyText(txt, msg) {
+  navigator.clipboard?.writeText(txt).then(() => toast(msg, true))
+    .catch(() => {
+      const ta = document.createElement('textarea');
+      ta.value = txt;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      toast(msg, true);
+    });
+}
+
+function parseCSV(txt) {
+  const res = Papa.parse(txt, { header: true, skipEmptyLines: true });
+  state.rows = res.data.map(r => ({
+    SUPPLIER: r.SUPPLIER || '',
+    TYPE: r.TYPE || '',
+    DESCRIPTION: r.DESCRIPTION || '',
+    PARTNUMBER: r.PARTNUMBER || '',
+    PRICE: parseFloat((r.PRICE || '').toString().replace(/[^0-9.]/g, '')) || 0,
+    NOTES: r.NOTES || ''
+  }));
+  render();
+}
+
+function fmtPrice(n) {
+  return '$' + (n || 0).toFixed(2);
+}
+
+// Trim "2025" off end of supplier names, if present
+function cleanSupplierName(name) {
+  return (name || 'SUPPLIER').replace(/\s*2025\s*$/i, '').trim() || 'SUPPLIER';
 }
 
 /* ---------- Load cached CSV ---------- */
@@ -175,75 +211,70 @@ if (els.copyQuoteRaw) {
   });
 }
 
-/* Copy full quote for email — cleaned up version */
+/* Copy full quote for email — grouped by supplier, cleaned names, no price-list tag */
 if (els.copyQuoteEmail) {
   els.copyQuoteEmail.addEventListener('click', () => {
     if (!state.quote.length) return toast('No items to copy.', false);
 
     const job = els.jobNumber ? els.jobNumber.value.trim() : '';
     const delivery = els.deliveryAddress ? els.deliveryAddress.value.trim() : '';
-    let firstSupplier = state.quote[0]?.SUPPLIER || 'SUPPLIER';
 
-    // Remove "2025" suffix if present
-    firstSupplier = firstSupplier.replace(/\s*2025\s*$/i, '').trim();
+    // Group items by cleaned supplier name
+    const groups = new Map(); // key: clean supplier name, value: { cleanName, items }
+    state.quote.forEach(item => {
+      const clean = cleanSupplierName(item.SUPPLIER);
+      if (!groups.has(clean)) {
+        groups.set(clean, { cleanName: clean, items: [] });
+      }
+      groups.get(clean).items.push(item);
+    });
 
     const lines = [];
 
-    // Header line
-    if (job) {
-      lines.push(`Please forward a PO to ${firstSupplier} for job ${job}`);
-    } else {
-      lines.push(`Please forward a PO to ${firstSupplier} for this job`);
-    }
+    // For each supplier group, add block:
+    // Please forward a PO to SUPPLIER for job JOB
+    // <items>
+    // <delivery>
+    groups.forEach(group => {
+      const supName = group.cleanName || 'SUPPLIER';
 
-    lines.push(''); // blank line
+      if (job) {
+        lines.push(`Please forward a PO to ${supName} for job ${job}`);
+      } else {
+        lines.push(`Please forward a PO to ${supName} for this job`);
+      }
 
-    // Items - remove (SUPPLIER price list)
-    state.quote.forEach(i => {
-      const qty = i.qty || 1;
-      const supplierName = (i.SUPPLIER || '').replace(/\s*2025\s*$/i, '').trim();
-      lines.push(`${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each`);
+      lines.push(''); // blank line
+
+      group.items.forEach(i => {
+        const qty = i.qty || 1;
+        lines.push(
+          `${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each`
+        );
+      });
+
+      lines.push(''); // blank
+
+      if (delivery) {
+        lines.push(delivery);
+      }
+
+      lines.push(''); // extra blank between suppliers
     });
 
-    lines.push(''); // blank
-
-    // Delivery line: just the address
-    if (delivery) lines.push(delivery);
-
-    copyText(lines.join('\n'), 'Full quote copied.');
+    const text = lines.join('\n').trimEnd();
+    copyText(text, 'Full quote copied.');
   });
 }
 
-/* ---------- Helpers ---------- */
+/* ---------- Parts copy button (yellow bar) ---------- */
 
-function copyText(txt, msg) {
-  navigator.clipboard?.writeText(txt).then(() => toast(msg, true))
-    .catch(() => {
-      const ta = document.createElement('textarea');
-      ta.value = txt;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-      toast(msg, true);
-    });
-}
-
-function parseCSV(txt) {
-  const res = Papa.parse(txt, { header: true, skipEmptyLines: true });
-  state.rows = res.data.map(r => ({
-    SUPPLIER: r.SUPPLIER || '',
-    TYPE: r.TYPE || '',
-    DESCRIPTION: r.DESCRIPTION || '',
-    PARTNUMBER: r.PARTNUMBER || '',
-    PRICE: parseFloat((r.PRICE || '').toString().replace(/[^0-9.]/g, '')) || 0,
-    NOTES: r.NOTES || ''
-  }));
-  render();
-}
-
-function fmtPrice(n) {
-  return '$' + (n || 0).toFixed(2);
+if (els.copyPartLine) {
+  els.copyPartLine.addEventListener('click', () => {
+    const txt = (els.copyArea && els.copyArea.textContent.trim()) || '';
+    if (!txt) return toast('No part selected to copy.', false);
+    copyText(txt, 'Part line copied.');
+  });
 }
 
 /* ---------- Rendering: Parts ---------- */
