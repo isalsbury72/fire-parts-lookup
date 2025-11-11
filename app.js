@@ -8,7 +8,11 @@ const ACCESS_CODE = 'FP2025'; // change this if you like
 function ensureAccess() {
   const ok = localStorage.getItem('hasAccess');
   if (ok === 'yes') {
-    document.getElementById('authBanner').style.display = 'inline-block';
+    const badge = document.getElementById('authBanner');
+    if (badge) {
+      badge.style.display = 'inline-block';
+      badge.style.animation = 'authFadeIn 0.4s ease-out';
+    }
     return true;
   }
 
@@ -24,7 +28,11 @@ function ensureAccess() {
 
   localStorage.setItem('hasAccess', 'yes');
   toast('Access granted on this device.', true);
-  document.getElementById('authBanner').style.display = 'inline-block';
+  const badge = document.getElementById('authBanner');
+  if (badge) {
+    badge.style.display = 'inline-block';
+    badge.style.animation = 'authFadeIn 0.4s ease-out';
+  }
   return true;
 }
 
