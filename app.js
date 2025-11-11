@@ -1,6 +1,6 @@
-/* Fire Parts Lookup v5.2.1 — shared CSV, highlight, sorting, access code, tabs */
+/* Fire Parts Lookup v5.2.1 — shared CSV, highlight, sorting, access code, tabs, quote list */
 
-const state = { rows: [], fuse: null };
+const state = { rows: [], fuse: null, selected: null, quote: [] };
 let sortState = { key: 'SUPPLIER', dir: 1 }; // 1 = asc, -1 = desc
 
 // One-time access code for loading shared data
@@ -49,7 +49,8 @@ const els = {
   partsPage: document.getElementById('partsPage'),
   quotePage: document.getElementById('quotePage'),
   tabParts: document.getElementById('tabParts'),
-  tabQuote: document.getElementById('tabQuote')
+  tabQuote: document.getElementById('tabQuote'),
+  addToQuote: document.getElementById('addToQuote')
 };
 
 // Tab switching
@@ -205,7 +206,10 @@ els.clearCache.addEventListener('click', () => {
   localStorage.removeItem('parts_csv');
   state.rows = [];
   state.fuse = null;
+  state.selected = null;
+  state.quote = [];
   render();
+  renderQuote();
   toast('Cleared cached data.', true);
 });
 
@@ -220,6 +224,27 @@ Object.entries(els.th).forEach(([key, thEl]) => {
     render();
   });
 });
+
+if (els.addToQuote) {
+  els.addToQuote.addEventListener('click', () => {
+    if (!state.selected) {
+      toast('Select a part in the list first.', false);
+      return;
+    }
+
+    // Add selected part to quote with qty 1
+    state.quote.push({
+      SUPPLIER: state.selected.SUPPLIER,
+      DESCRIPTION: state.selected.DESCRIPTION,
+      PARTNUMBER: state.selected.PARTNUMBER,
+      PRICE: state.selected.PRICE,
+      qty: 1
+    });
+
+    renderQuote();
+    showQuotePage();
+  });
+}
 
 function parseCSV(text) {
   const res = Papa.parse(text, {
@@ -272,6 +297,7 @@ function parseCSV(text) {
   });
 
   render();
+  renderQuote();
 }
 
 function parsePrice(val) {
@@ -282,8 +308,8 @@ function parsePrice(val) {
 }
 
 function fmtPrice(n) {
-  if (n === '' || n == null || isNaN(n)) return '';
-  return '$' + n.toFixed(2);
+  if (n === '' || n == null || isNaN(n)) return '$0.00';
+  return '$' + Number(n).toFixed(2);
 }
 
 function escapeHTML(s) {
@@ -383,15 +409,16 @@ function render() {
   els.tbl.innerHTML = '';
   rows.forEach(r => {
     const tr = document.createElement('tr');
-  tr.innerHTML = `
-    <td>${highlight(r.SUPPLIER, qTokens)}</td>
-    <td>${highlight(r.TYPE || '', qTokens)}</td>
-    <td>${highlight(r.DESCRIPTION, qTokens)}</td>
-    <td><span class="badge">${highlight(r.PARTNUMBER, qTokens)}</span></td>
-    <td>${fmtPrice(r.PRICE)}</td>
-    <td class="notes">${highlight(r.NOTES || '', qTokens)}</td>
-  `;
+    tr.innerHTML = `
+      <td>${highlight(r.SUPPLIER, qTokens)}</td>
+      <td>${highlight(r.TYPE || '', qTokens)}</td>
+      <td>${highlight(r.DESCRIPTION, qTokens)}</td>
+      <td><span class="badge">${highlight(r.PARTNUMBER, qTokens)}</span></td>
+      <td>${fmtPrice(r.PRICE)}</td>
+      <td class="notes">${highlight(r.NOTES || '', qTokens)}</td>
+    `;
     tr.addEventListener('click', () => {
+      state.selected = r;  // remember selected part
       const priceText = fmtPrice(r.PRICE) ? `${fmtPrice(r.PRICE)} each` : '';
       els.copyArea.textContent = `${r.SUPPLIER} — ${r.DESCRIPTION} — ${r.PARTNUMBER} — ${priceText}`.trim();
       const range = document.createRange();
@@ -403,4 +430,36 @@ function render() {
     els.tbl.appendChild(tr);
   });
   els.count.textContent = rows.length.toString();
+}
+
+function renderQuote() {
+  const tbl = document.getElementById('quoteTable');
+  const summaryEl = document.getElementById('quoteSummary');
+  if (!tbl) return;
+  const tbody = tbl.querySelector('tbody');
+  if (!tbody) return;
+
+  tbody.innerHTML = '';
+  let total = 0;
+
+  state.quote.forEach(item => {
+    const qty = item.qty || 1;
+    const unit = (typeof item.PRICE === 'number' ? item.PRICE : 0);
+    const lineTotal = unit * qty;
+    total += lineTotal;
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${escapeHTML(item.SUPPLIER || '')}</td>
+      <td>${escapeHTML(item.DESCRIPTION || '')}</td>
+      <td>${escapeHTML(item.PARTNUMBER || '')}</td>
+      <td>${qty}</td>
+      <td>${fmtPrice(lineTotal)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  if (summaryEl) {
+    summaryEl.textContent = 'Total: ' + fmtPrice(total);
+  }
 }
