@@ -143,7 +143,7 @@
   
   </div>
 
-      <!-- Quote page -->
+       <!-- Quote page -->
   <div id="quotePage" style="display:none;">
     <div class="card">
       <h2 style="margin-top:0; font-size:16px;">Quote items</h2>
@@ -167,16 +167,48 @@
 
       <p class="small" id="quoteSummary" style="margin-top:8px;">Total: $0.00</p>
 
-      <div style="margin-top:8px; display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap;">
-        <button id="copyQuote" style="padding:6px 10px; font-size:13px; border-radius:999px; border:1px solid #4b5563; background:#f9fafb; color:#111827;">
-          Copy quote (with total)
-        </button>
-        <button id="copyQuoteRaw" style="padding:6px 10px; font-size:13px; border-radius:999px; border:1px solid #9ca3af; background:#ffffff; color:#374151;">
-          Copy items only
-        </button>
+      <!-- Job + delivery -->
+      <div style="margin-top:8px; display:flex; flex-direction:column; gap:8px;">
+        <div style="display:flex; flex-wrap:wrap; gap:8px;">
+          <div style="flex:1; min-width:160px;">
+            <label class="small" for="jobNumber">Job number</label>
+            <input id="jobNumber"
+                   type="text"
+                   placeholder="Enter job number"
+                   style="width:100%; padding:6px 8px; border-radius:6px; border:1px solid #d1d5db; font-size:13px;">
+          </div>
+          <div style="flex:1; min-width:220px;">
+            <label class="small" for="deliveryAddress">Delivery address</label>
+            <select id="deliveryAddress"
+                    style="width:100%; padding:6px 8px; border-radius:6px; border:1px solid #d1d5db; font-size:13px;">
+              <option value="">Select delivery address</option>
+              <option>Delivery to Chubb 2 Lewis St Torrington QLD 4350</option>
+              <option>Delivery to Chubb C/O Ian Salsbury 103 Diamantina Circle Karalee QLD 4306</option>
+              <option>Delivery to Bryan Josai 43 Alexander St Wooroolin, Qld 4608</option>
+              <option>Delivery to Mark McCabe 8 Bushman St Plainland 4341</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Buttons row -->
+        <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
+          <button id="copyQuote"
+                  style="padding:6px 10px; font-size:13px; border-radius:999px; border:1px solid #4b5563; background:#f9fafb; color:#111827;">
+            Copy quote (with total)
+          </button>
+          <button id="copyQuoteRaw"
+                  style="padding:6px 10px; font-size:13px; border-radius:999px; border:1px solid #9ca3af; background:#ffffff; color:#374151;">
+            Copy items only
+          </button>
+          <button id="copyQuoteEmail"
+                  style="padding:6px 10px; font-size:13px; border-radius:999px; border:1px solid #2563eb; background:#eff6ff; color:#1d4ed8;">
+            Copy full quote for email
+          </button>
+        </div>
       </div>
     </div>
   </div>
+
   
 </main>
 
