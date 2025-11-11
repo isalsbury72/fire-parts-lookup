@@ -1,4 +1,4 @@
-/* Fire Parts Lookup v5.2.1 — quote metadata (job, delivery), email copy, clear quote returns to parts */
+/* Fire Parts Lookup v5.2.1 — email quote header + plain delivery line, clear quote returns to parts */
 
 const state = { rows: [], selected: null, quote: [] };
 const ACCESS_CODE = 'FP2025';
@@ -114,7 +114,7 @@ els.loadShared.addEventListener('click', () => {
     .then(t => {
       localStorage.setItem('parts_csv', t);
       parseCSV(t);
-      toast('Loaded shared CSV', true);
+      toast('Loaded shared CSV.', true);
     })
     .catch(() => toast('Error loading shared file', false));
 });
@@ -128,7 +128,7 @@ els.clearCache.addEventListener('click', () => {
   toast('Cache cleared.', true);
 });
 
-/* ---------- Quote Buttons ---------- */
+/* ---------- Quote buttons ---------- */
 
 if (els.addToQuote) {
   els.addToQuote.addEventListener('click', () => {
@@ -175,7 +175,7 @@ if (els.copyQuoteRaw) {
   });
 }
 
-/* Copy full quote for email in custom format */
+/* Copy full quote for email — custom format */
 if (els.copyQuoteEmail) {
   els.copyQuoteEmail.addEventListener('click', () => {
     if (!state.quote.length) return toast('No items to copy.', false);
@@ -190,12 +190,12 @@ if (els.copyQuoteEmail) {
     if (job) {
       lines.push(`Please forward a PO to ${firstSupplier} for job ${job}`);
     } else {
-      lines.push(`Please forward a PO to ${firstSupplier}`);
+      lines.push(`Please forward a PO to ${firstSupplier} for this job`);
     }
 
     lines.push(''); // blank line
 
-    // Items - same as "copy items only"
+    // Items - same style as "Copy items only"
     state.quote.forEach(i => {
       const qty = i.qty || 1;
       lines.push(
@@ -203,13 +203,11 @@ if (els.copyQuoteEmail) {
       );
     });
 
-    lines.push(''); // blank line
+    lines.push(''); // blank
 
-    // Delivery
+    // Delivery line: address only, no "Delivery:"
     if (delivery) {
-      lines.push(`Delivery: ${delivery}`);
-    } else {
-      lines.push('Delivery: (not specified)');
+      lines.push(delivery);
     }
 
     copyText(lines.join('\n'), 'Full quote copied.');
