@@ -1,6 +1,7 @@
-/* Fire Parts Lookup v5.2.6
-   - Quote actions: 3-column grid with 6 buttons, Build case included, 6th disabled placeholder
-   - Keeps previous improvements (compact labour inputs, tidy layout, clear returns to Parts)
+/* Fire Parts Lookup v5.2.7
+   - Action buttons now have icons + tiny captions (3-across grid)
+   - Email PO grouping uses supplierKey(): same first word = same supplier (e.g. "AMPAC", "Ampac 2025")
+   - Notes to estimator (Step 1 and Step 3) now shows *exactly* the same text as "Copy items only"
 */
 
 const state = {
@@ -17,6 +18,7 @@ const state = {
     numTechsAfter: ''
   }
 };
+
 const ACCESS_CODE = 'FP2025';
 
 /* ---------- Utils ---------- */
@@ -39,21 +41,34 @@ function toast(msg, ok = false) {
   document.body.appendChild(t);
   setTimeout(() => t.remove(), 2600);
 }
+
 function fmtPrice(n) { return '$' + (n || 0).toFixed(2); }
-function cleanSupplierName(name) {
-  return (name || 'SUPPLIER').replace(/\s*2025\s*$/i, '').trim() || 'SUPPLIER';
+
+/* Use same first word to key suppliers; strip trailing years and punctuation, case-insensitive */
+function supplierKey(name) {
+  if (!name) return 'UNKNOWN';
+  const noYear = name.replace(/\b20\d{2}\b/g, '');          // drop year tokens like 2025
+  const firstToken = (noYear.match(/[A-Za-z]+/) || ['UNKNOWN'])[0];
+  return firstToken.toUpperCase();
 }
 
-/* Build items text for notes */
-function buildLineItemsText() {
-  if (!state.quote.length) return '';
+/* Clean supplier brand for display in headers */
+function displaySupplierName(name) {
+  if (!name) return 'SUPPLIER';
+  const key = supplierKey(name);
+  // Capitalise first letter, rest lower
+  return key.charAt(0) + key.slice(1).toLowerCase();
+}
+
+/* Build the exact same line format used by "Copy items only" */
+function buildItemsOnlyLines() {
   return state.quote.map(i => {
     const qty = i.qty || 1;
-    return `${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each`;
-  }).join('\n');
+    return `${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each (${i.SUPPLIER} price)`;
+  });
 }
 
-/* Labour summary */
+/* Labour summary for Step 3 */
 function buildLabourSummary() {
   const nh = parseFloat(state.buildcase.labourHoursNormal || '0') || 0;
   const nm = parseInt(state.buildcase.numTechsNormal || '0', 10) || 0;
@@ -74,18 +89,6 @@ function buildLabourSummary() {
   if (lines.length) lines.push(`Total labour: ${total} hours`);
   if (state.buildcase.routineVisit === 'yes') lines.push('Can be completed on next routine visit');
   return lines.join('\n');
-}
-
-/* De-duplicate lines (preserve order, keep blank separators) */
-function dedupeLines(text) {
-  const seen = new Set();
-  const out = [];
-  text.split('\n').forEach(line => {
-    const k = line.trim();
-    if (!k) { out.push(line); return; }
-    if (!seen.has(k)) { seen.add(k); out.push(line); }
-  });
-  return out.join('\n').replace(/\n{3,}/g, '\n\n');
 }
 
 /* ---------- Elements ---------- */
@@ -150,108 +153,11 @@ const els = {
   btnCopyNE3: document.getElementById('btnCopyNE3')
 };
 
-/* ---------- Navigation ---------- */
-function showPartsPage() {
-  els.partsPage.style.display = 'block';
-  els.quotePage.style.display = 'none';
-  els.buildcase1Page.style.display = 'none';
-  els.buildcase2Page.style.display = 'none';
-  els.buildcase3Page.style.display = 'none';
-  els.tabParts.style.background = '#3b82f6'; els.tabParts.style.color = '#fff';
-  els.tabQuote.style.background = '#fff'; els.tabQuote.style.color = '#111';
-}
-function showQuotePage() {
-  els.partsPage.style.display = 'none';
-  els.quotePage.style.display = 'block';
-  els.buildcase1Page.style.display = 'none';
-  els.buildcase2Page.style.display = 'none';
-  els.buildcase3Page.style.display = 'none';
-  els.tabQuote.style.background = '#3b82f6'; els.tabQuote.style.color = '#fff';
-  els.tabParts.style.background = '#fff'; els.tabParts.style.color = '#111';
-}
-function showBuild1() {
-  els.partsPage.style.display = 'none';
-  els.quotePage.style.display = 'none';
-  els.buildcase1Page.style.display = 'block';
-  els.buildcase2Page.style.display = 'none';
-  els.buildcase3Page.style.display = 'none';
-  els.tabQuote.style.background = '#3b82f6'; els.tabQuote.style.color = '#fff';
-  els.tabParts.style.background = '#fff'; els.tabParts.style.color = '#111';
-
-  const itemsTxt = buildLineItemsText();
-  els.notesEstimator.value = itemsTxt;
-  state.buildcase.notesEstimator = itemsTxt;
-  els.notesCustomer.value = state.buildcase.notesCustomer || '';
-  els.bc1ItemsCount.textContent = `Items: ${state.quote.length}`;
-}
-function showBuild2() {
-  els.partsPage.style.display = 'none';
-  els.quotePage.style.display = 'none';
-  els.buildcase1Page.style.display = 'none';
-  els.buildcase2Page.style.display = 'block';
-  els.buildcase3Page.style.display = 'none';
-  els.tabQuote.style.background = '#3b82f6'; els.tabQuote.style.color = '#fff';
-  els.tabParts.style.background = '#fff'; els.tabParts.style.color = '#111';
-
-  if (state.buildcase.routineVisit === 'yes') els.routineYes.checked = true;
-  else if (state.buildcase.routineVisit === 'no') els.routineNo.checked = true;
-
-  els.labourHoursNormal.value = state.buildcase.labourHoursNormal || '';
-  els.numTechsNormal.value = state.buildcase.numTechsNormal || '';
-  els.labourHoursAfter.value = state.buildcase.labourHoursAfter || '';
-  els.numTechsAfter.value = state.buildcase.numTechsAfter || '';
-}
-function showBuild3() {
-  els.partsPage.style.display = 'none';
-  els.quotePage.style.display = 'none';
-  els.buildcase1Page.style.display = 'none';
-  els.buildcase2Page.style.display = 'none';
-  els.buildcase3Page.style.display = 'block';
-  els.tabQuote.style.background = '#3b82f6'; els.tabQuote.style.color = '#fff';
-  els.tabParts.style.background = '#fff'; els.tabParts.style.color = '#111';
-
-  const base = dedupeLines(state.buildcase.notesEstimator || '');
-  const labour = buildLabourSummary();
-  els.notesEstimator3.value = labour ? `${base}\n\n${labour}` : base;
-
-  els.notesCustomer3.value = state.buildcase.notesCustomer || '';
-  els.bc3ItemsCount.textContent = `Items: ${state.quote.length}`;
+/* ---------- Parts search/render ---------- */
+function fmtPriceNum(raw) {
+  return parseFloat((raw || '').toString().replace(/[^0-9.]/g, '')) || 0;
 }
 
-/* Tab clicks and buttons */
-els.tabParts.addEventListener('click', showPartsPage);
-els.tabQuote.addEventListener('click', showQuotePage);
-if (els.btnBuildCase) els.btnBuildCase.addEventListener('click', showBuild1);
-if (els.btnBackToQuote) els.btnBackToQuote.addEventListener('click', showQuotePage);
-if (els.btnBackToQuoteFrom3) els.btnBackToQuoteFrom3.addEventListener('click', showQuotePage);
-if (els.btnBackToBuild1) els.btnBackToBuild1.addEventListener('click', showBuild1);
-if (els.btnBackToBuild2) els.btnBackToBuild2.addEventListener('click', showBuild2);
-
-/* Continue buttons */
-if (els.btnToBuild2) els.btnToBuild2.addEventListener('click', () => {
-  state.buildcase.notesCustomer = (els.notesCustomer?.value || '').trim();
-  state.buildcase.notesEstimator = dedupeLines((els.notesEstimator?.value || '').trim());
-  showBuild2();
-});
-if (els.btnToBuild3) els.btnToBuild3.addEventListener('click', () => {
-  state.buildcase.routineVisit = els.routineYes?.checked ? 'yes' : (els.routineNo?.checked ? 'no' : null);
-  state.buildcase.labourHoursNormal = (els.labourHoursNormal?.value || '').trim();
-  state.buildcase.numTechsNormal = (els.numTechsNormal?.value || '').trim();
-  state.buildcase.labourHoursAfter = (els.labourHoursAfter?.value || '').trim();
-  state.buildcase.numTechsAfter = (els.numTechsAfter?.value || '').trim();
-  showBuild3();
-});
-
-/* ---------- Access control ---------- */
-function ensureAccess() {
-  const ok = localStorage.getItem('hasAccess');
-  if (ok === 'yes') return true;
-  const code = prompt('Enter access code:');
-  if (code === ACCESS_CODE) { localStorage.setItem('hasAccess', 'yes'); toast('Access granted.', true); return true; }
-  toast('Access denied.', false); return false;
-}
-
-/* ---------- CSV parse & render ---------- */
 function parseCSV(txt) {
   const res = Papa.parse(txt, { header: true, skipEmptyLines: true });
   state.rows = res.data.map(r => ({
@@ -259,24 +165,12 @@ function parseCSV(txt) {
     TYPE: r.TYPE || '',
     DESCRIPTION: r.DESCRIPTION || '',
     PARTNUMBER: r.PARTNUMBER || '',
-    PRICE: parseFloat((r.PRICE || '').toString().replace(/[^0-9.]/g, '')) || 0,
+    PRICE: fmtPriceNum(r.PRICE),
     NOTES: r.NOTES || ''
   }));
   renderParts();
 }
 
-/* ---------- Parts UI ---------- */
-function updateAddToQuoteState() {
-  const b = els.addToQuote;
-  if (!b) return;
-  if (state.selected) {
-    b.disabled = false;
-    Object.assign(b.style, { opacity:'1', cursor:'pointer', borderColor:'#22c55e', background:'#ecfdf5', color:'#166534' });
-  } else {
-    b.disabled = true;
-    Object.assign(b.style, { opacity:'0.5', cursor:'not-allowed', borderColor:'#d1d5db', background:'#f3f4f6', color:'#9ca3af' });
-  }
-}
 function renderParts() {
   const q = els.q.value.trim().toLowerCase();
   const body = els.tbl; body.innerHTML = '';
@@ -300,6 +194,18 @@ function renderParts() {
   els.count.textContent = rows.length;
 }
 els.q.addEventListener('input', renderParts);
+
+function updateAddToQuoteState() {
+  const b = els.addToQuote;
+  if (!b) return;
+  if (state.selected) {
+    b.disabled = false;
+    Object.assign(b.style, { opacity:'1', cursor:'pointer', borderColor:'#22c55e', background:'#ecfdf5', color:'#166534' });
+  } else {
+    b.disabled = true;
+    Object.assign(b.style, { opacity:'0.5', cursor:'not-allowed', borderColor:'#d1d5db', background:'#f3f4f6', color:'#9ca3af' });
+  }
+}
 
 /* ---------- Quote table ---------- */
 function renderQuote() {
@@ -333,7 +239,7 @@ function renderQuote() {
 
   sum.textContent = 'Total: ' + fmtPrice(total);
 
-  // Enable/disable Clear button in grid
+  // Enable/disable Clear button
   if (els.btnClearQuote) {
     if (state.quote.length) {
       els.btnClearQuote.disabled = false;
@@ -347,7 +253,7 @@ function renderQuote() {
   }
 }
 
-/* ---------- CSV on start ---------- */
+/* ---------- Start-up cache ---------- */
 const cachedCsv = localStorage.getItem('parts_csv');
 if (cachedCsv) { try { parseCSV(cachedCsv); } catch {} }
 
@@ -363,6 +269,15 @@ els.csv.addEventListener('change', e => {
   };
   r.readAsText(f);
 });
+
+function ensureAccess() {
+  const ok = localStorage.getItem('hasAccess');
+  if (ok === 'yes') return true;
+  const code = prompt('Enter access code:');
+  if (code === ACCESS_CODE) { localStorage.setItem('hasAccess', 'yes'); toast('Access granted.', true); return true; }
+  toast('Access denied.', false); return false;
+}
+
 els.loadShared.addEventListener('click', () => {
   if (!ensureAccess()) return;
   fetch('Parts.csv')
@@ -370,6 +285,7 @@ els.loadShared.addEventListener('click', () => {
     .then(t => { localStorage.setItem('parts_csv', t); parseCSV(t); toast('Loaded shared CSV.', true); })
     .catch(() => toast('Error loading shared file', false));
 });
+
 els.clearCache.addEventListener('click', () => {
   localStorage.removeItem('parts_csv');
   state.rows = []; state.quote = []; state.selected = null;
@@ -377,7 +293,7 @@ els.clearCache.addEventListener('click', () => {
   toast('Cache cleared.', true);
 });
 
-/* ---------- Quote actions ---------- */
+/* ---------- Actions ---------- */
 els.addToQuote.addEventListener('click', () => {
   if (!state.selected) return;
   state.quote.push({
@@ -391,7 +307,7 @@ els.addToQuote.addEventListener('click', () => {
   showQuotePage();
 });
 
-/* Manual line */
+/* Manual line helpers */
 function setManualBtnEnabled(enabled) {
   const b = els.manualAddBtn;
   b.disabled = !enabled;
@@ -440,45 +356,121 @@ els.copyQuote.addEventListener('click', () => {
 /* Copy items only */
 els.copyQuoteRaw.addEventListener('click', () => {
   if (!state.quote.length) return toast('No items to copy.', false);
-  const lines = state.quote.map(i => {
-    const qty = i.qty || 1;
-    return `${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each (${i.SUPPLIER} price)`;
-  });
+  const lines = buildItemsOnlyLines();
   copyText(lines.join('\n'), 'Items copied.');
 });
 
-/* Copy for Email PO — grouped by supplier */
+/* Copy for Email PO — group by first-word supplier */
 els.copyQuoteEmail.addEventListener('click', () => {
   if (!state.quote.length) return toast('No items to copy.', false);
   const job = els.jobNumber?.value.trim() || '';
   const delivery = els.deliveryAddress?.value.trim() || '';
 
-  const groups = new Map();
+  const groups = new Map();     // key: supplierKey -> { display, items[] }
   state.quote.forEach(item => {
-    const clean = cleanSupplierName(item.SUPPLIER);
-    if (!groups.has(clean)) groups.set(clean, []);
-    groups.get(clean).push(item);
+    const key = supplierKey(item.SUPPLIER);
+    if (!groups.has(key)) groups.set(key, { display: displaySupplierName(item.SUPPLIER), items: [] });
+    groups.get(key).items.push(item);
   });
 
   const lines = [];
-  groups.forEach((items, supplier) => {
-    const supName = supplier || 'SUPPLIER';
+  groups.forEach(({display, items}) => {
+    const supName = display || 'Supplier';
     lines.push(job ? `Please forward a PO to ${supName} for job ${job}` : `Please forward a PO to ${supName} for this job`);
     lines.push('');
     items.forEach(i => {
       const qty = i.qty || 1;
+      // Email lines do NOT include "(Supplier price)" suffix by design
       lines.push(`${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each`);
     });
     if (delivery) { lines.push(''); lines.push(delivery); }
     lines.push('');
   });
+
   copyText(lines.join('\n').trimEnd(), 'Email PO copied.');
 });
 
-/* Build case (in action grid) */
-if (els.btnBuildCase) els.btnBuildCase.addEventListener('click', showBuild1);
+/* Build case */
+function buildCaseStep1Fill() {
+  // Exactly match "Copy items only" content
+  const lines = buildItemsOnlyLines();
+  const itemsTxt = lines.join('\n');
+  els.notesEstimator.value = itemsTxt;
+  state.buildcase.notesEstimator = itemsTxt;
+  els.bc1ItemsCount.textContent = `Items: ${state.quote.length}`;
+}
+function showBuild1() {
+  els.partsPage.style.display = 'none';
+  els.quotePage.style.display = 'none';
+  els.buildcase1Page.style.display = 'block';
+  els.buildcase2Page.style.display = 'none';
+  els.buildcase3Page.style.display = 'none';
+  els.tabQuote.style.background = '#3b82f6'; els.tabQuote.style.color = '#fff';
+  els.tabParts.style.background = '#fff'; els.tabParts.style.color = '#111';
 
-/* Clear quote (in action grid) */
+  buildCaseStep1Fill();
+  els.notesCustomer.value = state.buildcase.notesCustomer || '';
+}
+function showBuild2() {
+  els.partsPage.style.display = 'none';
+  els.quotePage.style.display = 'none';
+  els.buildcase1Page.style.display = 'none';
+  els.buildcase2Page.style.display = 'block';
+  els.buildcase3Page.style.display = 'none';
+  els.tabQuote.style.background = '#3b82f6'; els.tabQuote.style.color = '#fff';
+  els.tabParts.style.background = '#fff'; els.tabParts.style.color = '#111';
+
+  if (state.buildcase.routineVisit === 'yes') els.routineYes.checked = true;
+  else if (state.buildcase.routineVisit === 'no') els.routineNo.checked = true;
+
+  els.labourHoursNormal.value = state.buildcase.labourHoursNormal || '';
+  els.numTechsNormal.value = state.buildcase.numTechsNormal || '';
+  els.labourHoursAfter.value = state.buildcase.labourHoursAfter || '';
+  els.numTechsAfter.value = state.buildcase.numTechsAfter || '';
+}
+function showBuild3() {
+  els.partsPage.style.display = 'none';
+  els.quotePage.style.display = 'none';
+  els.buildcase1Page.style.display = 'none';
+  els.buildcase2Page.style.display = 'none';
+  els.buildcase3Page.style.display = 'block';
+  els.tabQuote.style.background = '#3b82f6'; els.tabQuote.style.color = '#fff';
+  els.tabParts.style.background = '#fff'; els.tabParts.style.color = '#111';
+
+  // Always recompute from current quote (same as items-only)
+  const base = buildItemsOnlyLines().join('\n');
+  const labour = buildLabourSummary();
+  els.notesEstimator3.value = labour ? `${base}\n\n${labour}` : base;
+
+  els.notesCustomer3.value = state.buildcase.notesCustomer || '';
+  els.bc3ItemsCount.textContent = `Items: ${state.quote.length}`;
+}
+
+/* Navigation bindings */
+els.tabParts.addEventListener('click', showPartsPage);
+els.tabQuote.addEventListener('click', showQuotePage);
+if (els.btnBuildCase) els.btnBuildCase.addEventListener('click', showBuild1);
+if (els.btnBackToQuote) els.btnBackToQuote.addEventListener('click', showQuotePage);
+if (els.btnBackToQuoteFrom3) els.btnBackToQuoteFrom3.addEventListener('click', showQuotePage);
+if (els.btnBackToBuild1) els.btnBackToBuild1.addEventListener('click', showBuild1);
+if (els.btnBackToBuild2) els.btnBackToBuild2.addEventListener('click', showBuild2);
+
+if (els.btnToBuild2) els.btnToBuild2.addEventListener('click', () => {
+  state.buildcase.notesCustomer = (els.notesCustomer?.value || '').trim();
+  // Keep the estimator text exactly as shown (already set in showBuild1)
+  state.buildcase.notesEstimator = (els.notesEstimator?.value || '').trim();
+  showBuild2();
+});
+if (els.btnToBuild3) els.btnToBuild3.addEventListener('click', () => {
+  state.buildcase.routineVisit = els.routineYes?.checked ? 'yes' : (els.routineNo?.checked ? 'no' : null);
+  state.buildcase.labourHoursNormal = (els.labourHoursNormal?.value || '').trim();
+  state.buildcase.numTechsNormal = (els.numTechsNormal?.value || '').trim();
+  state.buildcase.labourHoursAfter = (els.labourHoursAfter?.value || '').trim();
+  state.buildcase.numTechsAfter = (els.numTechsAfter?.value || '').trim();
+  showBuild3();
+});
+
+/* Clear quote (stays in grid) */
 els.btnClearQuote.addEventListener('click', () => {
   if (!state.quote.length) return;
   if (confirm('Clear all items?')) {
@@ -499,6 +491,25 @@ function copyText(txt, msg) {
 }
 
 /* ---------- Start ---------- */
+function showPartsPage() {
+  els.partsPage.style.display = 'block';
+  els.quotePage.style.display = 'none';
+  els.buildcase1Page.style.display = 'none';
+  els.buildcase2Page.style.display = 'none';
+  els.buildcase3Page.style.display = 'none';
+  els.tabParts.style.background = '#3b82f6'; els.tabParts.style.color = '#fff';
+  els.tabQuote.style.background = '#fff'; els.tabQuote.style.color = '#111';
+}
+function showQuotePage() {
+  els.partsPage.style.display = 'none';
+  els.quotePage.style.display = 'block';
+  els.buildcase1Page.style.display = 'none';
+  els.buildcase2Page.style.display = 'none';
+  els.buildcase3Page.style.display = 'none';
+  els.tabQuote.style.background = '#3b82f6'; els.tabQuote.style.color = '#fff';
+  els.tabParts.style.background = '#fff'; els.tabParts.style.color = '#111';
+}
+
 function start() {
   const cachedCsv = localStorage.getItem('parts_csv');
   if (cachedCsv) { try { parseCSV(cachedCsv); } catch {} }
