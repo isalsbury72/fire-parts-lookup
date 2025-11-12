@@ -1,7 +1,7 @@
-/* Fire Parts Lookup v5.2.7
-   - Action buttons now have icons + tiny captions (3-across grid)
-   - Email PO grouping uses supplierKey(): same first word = same supplier (e.g. "AMPAC", "Ampac 2025")
-   - Notes to estimator (Step 1 and Step 3) now shows *exactly* the same text as "Copy items only"
+/* Fire Parts Lookup v5.2.8
+   - Step 3: adds "Not intended to be completed on routine visit" when routine is blank or No
+   - Step 2: tiny labour inputs use very faint placeholders
+   - Keeps previous supplier grouping + notes behaviour
 */
 
 const state = {
@@ -11,7 +11,7 @@ const state = {
   buildcase: {
     notesCustomer: '',
     notesEstimator: '',
-    routineVisit: null,     // 'yes' | 'no'
+    routineVisit: null,     // 'yes' | 'no' | null
     labourHoursNormal: '',
     numTechsNormal: '',
     labourHoursAfter: '',
@@ -44,19 +44,15 @@ function toast(msg, ok = false) {
 
 function fmtPrice(n) { return '$' + (n || 0).toFixed(2); }
 
-/* Use same first word to key suppliers; strip trailing years and punctuation, case-insensitive */
 function supplierKey(name) {
   if (!name) return 'UNKNOWN';
   const noYear = name.replace(/\b20\d{2}\b/g, '');          // drop year tokens like 2025
   const firstToken = (noYear.match(/[A-Za-z]+/) || ['UNKNOWN'])[0];
   return firstToken.toUpperCase();
 }
-
-/* Clean supplier brand for display in headers */
 function displaySupplierName(name) {
-  if (!name) return 'SUPPLIER';
+  if (!name) return 'Supplier';
   const key = supplierKey(name);
-  // Capitalise first letter, rest lower
   return key.charAt(0) + key.slice(1).toLowerCase();
 }
 
@@ -68,7 +64,7 @@ function buildItemsOnlyLines() {
   });
 }
 
-/* Labour summary for Step 3 */
+/* Labour summary (adds negative statement when blank/No) */
 function buildLabourSummary() {
   const nh = parseFloat(state.buildcase.labourHoursNormal || '0') || 0;
   const nm = parseInt(state.buildcase.numTechsNormal || '0', 10) || 0;
@@ -87,7 +83,14 @@ function buildLabourSummary() {
     total += ah * am;
   }
   if (lines.length) lines.push(`Total labour: ${total} hours`);
-  if (state.buildcase.routineVisit === 'yes') lines.push('Can be completed on next routine visit');
+
+  if (state.buildcase.routineVisit === 'yes') {
+    lines.push('Can be completed on next routine visit');
+  } else {
+    // when null or 'no'
+    lines.push('Not intended to be completed on routine visit');
+  }
+
   return lines.join('\n');
 }
 
@@ -239,7 +242,6 @@ function renderQuote() {
 
   sum.textContent = 'Total: ' + fmtPrice(total);
 
-  // Enable/disable Clear button
   if (els.btnClearQuote) {
     if (state.quote.length) {
       els.btnClearQuote.disabled = false;
@@ -380,7 +382,6 @@ els.copyQuoteEmail.addEventListener('click', () => {
     lines.push('');
     items.forEach(i => {
       const qty = i.qty || 1;
-      // Email lines do NOT include "(Supplier price)" suffix by design
       lines.push(`${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each`);
     });
     if (delivery) { lines.push(''); lines.push(delivery); }
@@ -392,7 +393,6 @@ els.copyQuoteEmail.addEventListener('click', () => {
 
 /* Build case */
 function buildCaseStep1Fill() {
-  // Exactly match "Copy items only" content
   const lines = buildItemsOnlyLines();
   const itemsTxt = lines.join('\n');
   els.notesEstimator.value = itemsTxt;
@@ -437,7 +437,6 @@ function showBuild3() {
   els.tabQuote.style.background = '#3b82f6'; els.tabQuote.style.color = '#fff';
   els.tabParts.style.background = '#fff'; els.tabParts.style.color = '#111';
 
-  // Always recompute from current quote (same as items-only)
   const base = buildItemsOnlyLines().join('\n');
   const labour = buildLabourSummary();
   els.notesEstimator3.value = labour ? `${base}\n\n${labour}` : base;
@@ -447,50 +446,6 @@ function showBuild3() {
 }
 
 /* Navigation bindings */
-els.tabParts.addEventListener('click', showPartsPage);
-els.tabQuote.addEventListener('click', showQuotePage);
-if (els.btnBuildCase) els.btnBuildCase.addEventListener('click', showBuild1);
-if (els.btnBackToQuote) els.btnBackToQuote.addEventListener('click', showQuotePage);
-if (els.btnBackToQuoteFrom3) els.btnBackToQuoteFrom3.addEventListener('click', showQuotePage);
-if (els.btnBackToBuild1) els.btnBackToBuild1.addEventListener('click', showBuild1);
-if (els.btnBackToBuild2) els.btnBackToBuild2.addEventListener('click', showBuild2);
-
-if (els.btnToBuild2) els.btnToBuild2.addEventListener('click', () => {
-  state.buildcase.notesCustomer = (els.notesCustomer?.value || '').trim();
-  // Keep the estimator text exactly as shown (already set in showBuild1)
-  state.buildcase.notesEstimator = (els.notesEstimator?.value || '').trim();
-  showBuild2();
-});
-if (els.btnToBuild3) els.btnToBuild3.addEventListener('click', () => {
-  state.buildcase.routineVisit = els.routineYes?.checked ? 'yes' : (els.routineNo?.checked ? 'no' : null);
-  state.buildcase.labourHoursNormal = (els.labourHoursNormal?.value || '').trim();
-  state.buildcase.numTechsNormal = (els.numTechsNormal?.value || '').trim();
-  state.buildcase.labourHoursAfter = (els.labourHoursAfter?.value || '').trim();
-  state.buildcase.numTechsAfter = (els.numTechsAfter?.value || '').trim();
-  showBuild3();
-});
-
-/* Clear quote (stays in grid) */
-els.btnClearQuote.addEventListener('click', () => {
-  if (!state.quote.length) return;
-  if (confirm('Clear all items?')) {
-    state.quote = [];
-    renderQuote();
-    toast('Quote cleared.', true);
-    showPartsPage();
-  }
-});
-
-/* Clipboard helper */
-function copyText(txt, msg) {
-  navigator.clipboard?.writeText(txt).then(() => toast(msg, true)).catch(() => {
-    const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta);
-    ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
-    toast(msg, true);
-  });
-}
-
-/* ---------- Start ---------- */
 function showPartsPage() {
   els.partsPage.style.display = 'block';
   els.quotePage.style.display = 'none';
@@ -510,6 +465,49 @@ function showQuotePage() {
   els.tabParts.style.background = '#fff'; els.tabParts.style.color = '#111';
 }
 
+els.tabParts.addEventListener('click', showPartsPage);
+els.tabQuote.addEventListener('click', showQuotePage);
+if (els.btnBuildCase) els.btnBuildCase.addEventListener('click', showBuild1);
+if (els.btnBackToQuote) els.btnBackToQuote.addEventListener('click', showQuotePage);
+if (els.btnBackToQuoteFrom3) els.btnBackToQuoteFrom3.addEventListener('click', showQuotePage);
+if (els.btnBackToBuild1) els.btnBackToBuild1.addEventListener('click', showBuild1);
+if (els.btnBackToBuild2) els.btnBackToBuild2.addEventListener('click', showBuild2);
+
+if (els.btnToBuild2) els.btnToBuild2.addEventListener('click', () => {
+  state.buildcase.notesCustomer = (els.notesCustomer?.value || '').trim();
+  state.buildcase.notesEstimator = (els.notesEstimator?.value || '').trim();
+  showBuild2();
+});
+if (els.btnToBuild3) els.btnToBuild3.addEventListener('click', () => {
+  state.buildcase.routineVisit = els.routineYes?.checked ? 'yes' : (els.routineNo?.checked ? 'no' : null);
+  state.buildcase.labourHoursNormal = (els.labourHoursNormal?.value || '').trim();
+  state.buildcase.numTechsNormal = (els.numTechsNormal?.value || '').trim();
+  state.buildcase.labourHoursAfter = (els.labourHoursAfter?.value || '').trim();
+  state.buildcase.numTechsAfter = (els.numTechsAfter?.value || '').trim();
+  showBuild3();
+});
+
+/* Clear quote */
+els.btnClearQuote.addEventListener('click', () => {
+  if (!state.quote.length) return;
+  if (confirm('Clear all items?')) {
+    state.quote = [];
+    renderQuote();
+    toast('Quote cleared.', true);
+    showPartsPage();
+  }
+});
+
+/* Clipboard helper */
+function copyText(txt, msg) {
+  navigator.clipboard?.writeText(txt).then(() => toast(msg, true)).catch(() => {
+    const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+    toast(msg, true);
+  });
+}
+
+/* ---------- Init ---------- */
 function start() {
   const cachedCsv = localStorage.getItem('parts_csv');
   if (cachedCsv) { try { parseCSV(cachedCsv); } catch {} }
