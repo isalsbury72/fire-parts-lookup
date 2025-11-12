@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Fire Parts Lookup v5.2.1</title>
+  <title>Fire Parts Lookup v5.2.2</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
 
   <link rel="manifest" href="manifest.json">
@@ -150,14 +150,14 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Manual item mini-form */
+    /* Mini grid + textareas for build case */
     .mini-grid {
       display: grid;
       grid-template-columns: repeat(5, minmax(120px, 1fr));
       gap: 8px;
     }
     @media (max-width: 900px) { .mini-grid { grid-template-columns: 1fr 1fr; } }
-    .mini-grid input, .mini-grid textarea, .bc-input {
+    .mini-grid input, .bc-input {
       width: 100%;
       padding: 6px 8px;
       border-radius: 6px;
@@ -174,6 +174,17 @@
       resize: vertical;
       background: #fff;
     }
+    .step-title {
+      font-weight: 700;
+      font-size: 16px;
+      margin: 0;
+      color: #111;
+    }
+    .muted { color: #6b7280; font-size: 12px; }
+    .pill {
+      display:inline-flex; align-items:center; gap:6px; padding:4px 8px;
+      border-radius:999px; border:1px solid #e5e7eb; background:#f9fafb; font-size:12px;
+    }
   </style>
 </head>
 <body>
@@ -184,7 +195,7 @@
       <div class="small">Offline-friendly parts and quote helper</div>
     </div>
     <div class="ver">
-      v5.2.1
+      v5.2.2
       <span id="authBanner" class="auth-pill" style="display:inline-block;">Authorised users only</span>
     </div>
   </header>
@@ -337,11 +348,11 @@
       </div>
     </div>
 
-    <!-- Build Case page -->
+    <!-- Build Case: Step 1 -->
     <div id="buildcase1Page" style="display:none;">
       <div class="card">
-        <h2 style="margin-top:0; font-size:16px;">Build case</h2>
-        <p class="small">Enter case notes below. These are not sent anywhere yet.</p>
+        <p class="step-title">Build case — Step 1</p>
+        <p class="muted">Notes collection. “Notes to estimator” is auto-filled with current quote line items.</p>
 
         <div class="card" style="margin-top:8px;">
           <label class="small" for="notesCustomer">Notes to customer</label>
@@ -349,14 +360,89 @@
         </div>
 
         <div class="card" style="margin-top:8px;">
-          <label class="small" for="notesEstimator">Notes to estimator</label>
-          <textarea id="notesEstimator" class="bc-textarea" placeholder="Enter notes to estimator..."></textarea>
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+            <label class="small" for="notesEstimator">Notes to estimator</label>
+            <span id="bc1ItemsCount" class="pill">Items: 0</span>
+          </div>
+          <textarea id="notesEstimator" class="bc-textarea" placeholder="Auto-filled with quote line items..."></textarea>
         </div>
 
-        <div style="margin-top:10px; display:flex; gap:8px; justify-content:flex-end;">
-          <button id="btnBackToQuote" class="btn" style="border-color:#3b82f6; color:#1d4ed8;">
-            Back to Quote
-          </button>
+        <div style="margin-top:10px; display:flex; gap:8px; justify-content:space-between; flex-wrap:wrap;">
+          <button id="btnBackToQuote" class="btn" style="border-color:#3b82f6; color:#1d4ed8;">Back to Quote</button>
+          <button id="btnToBuild2" class="btn" style="border-color:#16a34a; color:#166534; background:#ecfdf5;">Continue to Step 2</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Build Case: Step 2 -->
+    <div id="buildcase2Page" style="display:none;">
+      <div class="card">
+        <p class="step-title">Build case — Step 2</p>
+        <p class="muted">Scheduling and resource details.</p>
+
+        <div class="card" style="margin-top:8px;">
+          <div style="display:flex; gap:16px; flex-wrap:wrap;">
+            <div class="pill">
+              <span>On next routine visit?</span>
+              <label style="display:inline-flex; align-items:center; gap:4px; margin-left:8px;">
+                <input type="radio" name="routineVisit" id="routineYes" value="yes"> Yes
+              </label>
+              <label style="display:inline-flex; align-items:center; gap:4px; margin-left:8px;">
+                <input type="radio" name="routineVisit" id="routineNo" value="no"> No
+              </label>
+            </div>
+          </div>
+
+          <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;">
+            <div>
+              <label class="small" for="labourHours">Labour hours</label><br>
+              <input id="labourHours" class="bc-input" type="number" min="0" step="0.5" placeholder="e.g. 2">
+            </div>
+            <div>
+              <label class="small" for="numTechs">Number of techs</label><br>
+              <input id="numTechs" class="bc-input" type="number" min="1" step="1" placeholder="e.g. 1">
+            </div>
+            <div class="pill" style="align-items:center;">
+              <span>Time type</span>
+              <label style="display:inline-flex; align-items:center; gap:4px; margin-left:8px;">
+                <input type="radio" name="timeType" id="timeNormal" value="normal"> Normal time
+              </label>
+              <label style="display:inline-flex; align-items:center; gap:4px; margin-left:8px;">
+                <input type="radio" name="timeType" id="timeAfter" value="afterhours"> After hours
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:10px; display:flex; gap:8px; justify-content:space-between; flex-wrap:wrap;">
+          <button id="btnBackToBuild1" class="btn" style="border-color:#6b7280; color:#374151;">Back to Step 1</button>
+          <button id="btnToBuild3" class="btn" style="border-color:#16a34a; color:#166534; background:#ecfdf5;">Continue to Step 3</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Build Case: Step 3 -->
+    <div id="buildcase3Page" style="display:none;">
+      <div class="card">
+        <p class="step-title">Build case — Step 3</p>
+        <p class="muted">Final review. Notes to estimator include the line items again.</p>
+
+        <div class="card" style="margin-top:8px;">
+          <label class="small" for="notesCustomer3">Notes to customer</label>
+          <textarea id="notesCustomer3" class="bc-textarea" placeholder="Customer notes..." ></textarea>
+        </div>
+
+        <div class="card" style="margin-top:8px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+            <label class="small" for="notesEstimator3">Notes to estimator</label>
+            <span id="bc3ItemsCount" class="pill">Items: 0</span>
+          </div>
+          <textarea id="notesEstimator3" class="bc-textarea" placeholder="Estimator notes..."></textarea>
+        </div>
+
+        <div style="margin-top:10px; display:flex; gap:8px; justify-content:space-between; flex-wrap:wrap;">
+          <button id="btnBackToBuild2" class="btn" style="border-color:#6b7280; color:#374151;">Back to Step 2</button>
+          <button id="btnBackToQuoteFrom3" class="btn" style="border-color:#3b82f6; color:#1d4ed8;">Back to Quote</button>
         </div>
       </div>
     </div>
