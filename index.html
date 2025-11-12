@@ -27,11 +27,7 @@
       gap: 12px;
       z-index: 10;
     }
-    header img {
-      width: 28px;
-      height: 28px;
-      border-radius: 6px;
-    }
+    header img { width: 28px; height: 28px; border-radius: 6px; }
     h1 { font-size: 18px; margin: 0; }
     .ver {
       margin-left: auto;
@@ -160,15 +156,23 @@
       grid-template-columns: repeat(5, minmax(120px, 1fr));
       gap: 8px;
     }
-    @media (max-width: 900px) {
-      .mini-grid { grid-template-columns: 1fr 1fr; }
-    }
-    .mini-grid input {
+    @media (max-width: 900px) { .mini-grid { grid-template-columns: 1fr 1fr; } }
+    .mini-grid input, .mini-grid textarea, .bc-input {
       width: 100%;
       padding: 6px 8px;
       border-radius: 6px;
       border: 1px solid #d1d5db;
       font-size: 13px;
+    }
+    .bc-textarea {
+      width: 100%;
+      min-height: 120px;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid #d1d5db;
+      font-size: 13px;
+      resize: vertical;
+      background: #fff;
     }
   </style>
 </head>
@@ -305,20 +309,54 @@
             </div>
           </div>
 
-          <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
-            <button id="copyQuote"
-                    style="padding:6px 10px; font-size:13px; border-radius:999px; border:1px solid #4b5563; background:#f9fafb; color:#111827;">
-              Copy quote (with total)
-            </button>
-            <button id="copyQuoteRaw"
-                    style="padding:6px 10px; font-size:13px; border-radius:999px; border:1px solid #9ca3af; background:#ffffff; color:#374151;">
-              Copy items only
-            </button>
-            <button id="copyQuoteEmail"
-                    style="padding:6px 10px; font-size:13px; border-radius:999px; border:1px solid #2563eb; background:#eff6ff; color:#1d4ed8;">
-              Copy for Email PO
-            </button>
+          <!-- Actions row: Build case left, copy/email right -->
+          <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:space-between; align-items:center;">
+            <div>
+              <button id="btnBuildCase"
+                      class="btn"
+                      style="border-color:#334155; background:#ffffff; color:#0f172a;">
+                Build case
+              </button>
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
+              <button id="copyQuote"
+                      style="padding:6px 10px; font-size:13px; border-radius:999px; border:1px solid #4b5563; background:#f9fafb; color:#111827;">
+                Copy quote (with total)
+              </button>
+              <button id="copyQuoteRaw"
+                      style="padding:6px 10px; font-size:13px; border-radius:999px; border:1px solid #9ca3af; background:#ffffff; color:#374151;">
+                Copy items only
+              </button>
+              <button id="copyQuoteEmail"
+                      style="padding:6px 10px; font-size:13px; border-radius:999px; border:1px solid #2563eb; background:#eff6ff; color:#1d4ed8;">
+                Copy for Email PO
+              </button>
+            </div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Build Case page -->
+    <div id="buildcase1Page" style="display:none;">
+      <div class="card">
+        <h2 style="margin-top:0; font-size:16px;">Build case</h2>
+        <p class="small">Enter case notes below. These are not sent anywhere yet.</p>
+
+        <div class="card" style="margin-top:8px;">
+          <label class="small" for="notesCustomer">Notes to customer</label>
+          <textarea id="notesCustomer" class="bc-textarea" placeholder="Enter notes to customer..."></textarea>
+        </div>
+
+        <div class="card" style="margin-top:8px;">
+          <label class="small" for="notesEstimator">Notes to estimator</label>
+          <textarea id="notesEstimator" class="bc-textarea" placeholder="Enter notes to estimator..."></textarea>
+        </div>
+
+        <div style="margin-top:10px; display:flex; gap:8px; justify-content:flex-end;">
+          <button id="btnBackToQuote" class="btn" style="border-color:#3b82f6; color:#1d4ed8;">
+            Back to Quote
+          </button>
         </div>
       </div>
     </div>
