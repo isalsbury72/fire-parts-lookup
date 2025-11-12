@@ -1,4 +1,4 @@
-/* Fire Parts Lookup v5.2.1 — grouped email quotes, supplier name cleanup, spacing fix, renamed email copy button */
+/* Fire Parts Lookup v5.2.1 — manual quote lines, grouped email quotes, supplier cleanup, controls */
 
 const state = { rows: [], selected: null, quote: [] };
 const ACCESS_CODE = 'FP2025';
@@ -23,7 +23,7 @@ function toast(msg, ok = false) {
   setTimeout(() => t.remove(), 2600);
 }
 
-/* ---------- Tabs ---------- */
+/* ---------- Tabs & elements ---------- */
 
 const els = {
   q: document.getElementById('q'),
@@ -43,7 +43,14 @@ const els = {
   copyQuoteRaw: document.getElementById('copyQuoteRaw'),
   copyQuoteEmail: document.getElementById('copyQuoteEmail'),
   jobNumber: document.getElementById('jobNumber'),
-  deliveryAddress: document.getElementById('deliveryAddress')
+  deliveryAddress: document.getElementById('deliveryAddress'),
+  // Manual line inputs
+  manualSupplier: document.getElementById('manualSupplier'),
+  manualDescription: document.getElementById('manualDescription'),
+  manualPart: document.getElementById('manualPart'),
+  manualPrice: document.getElementById('manualPrice'),
+  manualQty: document.getElementById('manualQty'),
+  manualAddBtn: document.getElementById('manualAddBtn')
 };
 
 function showPartsPage() {
@@ -132,11 +139,13 @@ function updateAddToQuoteState() {
   }
 }
 
-/* ---------- Load cached ---------- */
+/* ---------- Load cached CSV ---------- */
 const cachedCsv = localStorage.getItem('parts_csv');
-if (cachedCsv) parseCSV(cachedCsv);
+if (cachedCsv) {
+  try { parseCSV(cachedCsv); } catch {}
+}
 
-/* ---------- CSV load buttons ---------- */
+/* ---------- CSV controls ---------- */
 
 els.csv.addEventListener('change', e => {
   const f = e.target.files[0];
@@ -173,7 +182,7 @@ els.clearCache.addEventListener('click', () => {
   toast('Cache cleared.', true);
 });
 
-/* ---------- Quote controls ---------- */
+/* ---------- Quote: add selected from parts ---------- */
 
 els.addToQuote.addEventListener('click', () => {
   if (!state.selected) return;
@@ -187,6 +196,41 @@ els.addToQuote.addEventListener('click', () => {
   renderQuote();
   showQuotePage();
 });
+
+/* ---------- Quote: manual line ---------- */
+
+if (els.manualAddBtn) {
+  els.manualAddBtn.addEventListener('click', () => {
+    const sup = (els.manualSupplier.value || '').trim();
+    const desc = (els.manualDescription.value || '').trim();
+    const pn = (els.manualPart.value || '').trim();
+    const qty = Math.max(1, parseInt(els.manualQty.value, 10) || 1);
+    const priceEach = parseFloat((els.manualPrice.value || '').toString().replace(/[^0-9.]/g, ''));
+
+    if (!sup || !desc || !pn || !(priceEach >= 0)) {
+      return toast('Please fill Supplier, Description, Part # and Price.', false);
+    }
+
+    state.quote.push({
+      SUPPLIER: sup,
+      DESCRIPTION: desc,
+      PARTNUMBER: pn,
+      PRICE: priceEach || 0,
+      qty
+    });
+
+    // Optional: clear inputs after add
+    // els.manualDescription.value = '';
+    // els.manualPart.value = '';
+    // els.manualPrice.value = '';
+    // els.manualQty.value = '1';
+
+    renderQuote();
+    toast('Manual line added.', true);
+  });
+}
+
+/* ---------- Copy buttons ---------- */
 
 els.copyQuote.addEventListener('click', () => {
   if (!state.quote.length) return toast('No items to copy.', false);
@@ -209,14 +253,15 @@ els.copyQuoteRaw.addEventListener('click', () => {
   copyText(lines.join('\n'), 'Items copied.');
 });
 
-/* ---------- Copy for Email PO ---------- */
+/* ---------- Copy for Email PO (grouped by supplier, clean names) ---------- */
+
 els.copyQuoteEmail.addEventListener('click', () => {
   if (!state.quote.length) return toast('No items to copy.', false);
 
   const job = els.jobNumber?.value.trim() || '';
   const delivery = els.deliveryAddress?.value.trim() || '';
 
-  // Group items by supplier
+  // Group items by cleaned supplier name
   const groups = new Map();
   state.quote.forEach(item => {
     const clean = cleanSupplierName(item.SUPPLIER);
@@ -240,7 +285,7 @@ els.copyQuoteEmail.addEventListener('click', () => {
       lines.push('');
       lines.push(delivery);
     }
-    lines.push(''); // <== adds blank space between supplier groups
+    lines.push(''); // blank line between supplier groups
   });
 
   copyText(lines.join('\n').trimEnd(), 'Email PO copied.');
@@ -253,13 +298,17 @@ els.copyPartLine.addEventListener('click', () => {
   copyText(txt, 'Part line copied.');
 });
 
-/* ---------- Render parts ---------- */
+/* ---------- Rendering: Parts ---------- */
+
 els.q.addEventListener('input', render);
+
 function render() {
   const q = els.q.value.trim().toLowerCase();
   const body = els.tbl;
   body.innerHTML = '';
-  const rows = state.rows.filter(r => !q || Object.values(r).join(' ').toLowerCase().includes(q));
+  const rows = state.rows.filter(r =>
+    !q || Object.values(r).join(' ').toLowerCase().includes(q)
+  );
   rows.forEach(r => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
@@ -280,7 +329,8 @@ function render() {
   els.count.textContent = rows.length;
 }
 
-/* ---------- Render quote ---------- */
+/* ---------- Rendering: Quote ---------- */
+
 function renderQuote() {
   const body = document.querySelector('#quoteTable tbody');
   const sum = document.getElementById('quoteSummary');
@@ -300,7 +350,7 @@ function renderQuote() {
       <td>${fmtPrice(lineTotal)}</td>
       <td><button data-i="${idx}" style="border:none;background:#fee2e2;color:#b91c1c;border-radius:6px;padding:2px 6px;cursor:pointer;">✖</button></td>`;
     tr.querySelector('input').addEventListener('change', e => {
-      i.qty = parseInt(e.target.value, 10) || 1;
+      i.qty = Math.max(1, parseInt(e.target.value, 10) || 1);
       renderQuote();
     });
     tr.querySelector('button').addEventListener('click', e => {
@@ -312,6 +362,7 @@ function renderQuote() {
     });
     body.appendChild(tr);
   });
+
   sum.textContent = 'Total: ' + fmtPrice(total);
 
   // Clear Quote button
@@ -333,7 +384,10 @@ function renderQuote() {
       }
     });
     sum.parentElement.insertBefore(btnClear, sum.nextSibling);
-  } else if (!state.quote.length && btnClear) btnClear.remove();
+  } else if (!state.quote.length && btnClear) {
+    btnClear.remove();
+  }
 }
 
+/* ---------- Init ---------- */
 updateAddToQuoteState();
