@@ -1,4 +1,4 @@
-/* Fire Parts Lookup v5.2.1 — manual quote lines, grouped email quotes, supplier cleanup, controls */
+/* Fire Parts Lookup v5.2.1 — manual quote lines + clear/disable cycle, Build case page, grouped email PO */
 
 const state = { rows: [], selected: null, quote: [] };
 const ACCESS_CODE = 'FP2025';
@@ -23,7 +23,7 @@ function toast(msg, ok = false) {
   setTimeout(() => t.remove(), 2600);
 }
 
-/* ---------- Tabs & elements ---------- */
+/* ---------- Elements ---------- */
 
 const els = {
   q: document.getElementById('q'),
@@ -36,6 +36,7 @@ const els = {
   loadShared: document.getElementById('loadShared'),
   partsPage: document.getElementById('partsPage'),
   quotePage: document.getElementById('quotePage'),
+  buildcase1Page: document.getElementById('buildcase1Page'),
   tabParts: document.getElementById('tabParts'),
   tabQuote: document.getElementById('tabQuote'),
   addToQuote: document.getElementById('addToQuote'),
@@ -50,12 +51,20 @@ const els = {
   manualPart: document.getElementById('manualPart'),
   manualPrice: document.getElementById('manualPrice'),
   manualQty: document.getElementById('manualQty'),
-  manualAddBtn: document.getElementById('manualAddBtn')
+  manualAddBtn: document.getElementById('manualAddBtn'),
+  // Build case
+  btnBuildCase: document.getElementById('btnBuildCase'),
+  btnBackToQuote: document.getElementById('btnBackToQuote'),
+  notesCustomer: document.getElementById('notesCustomer'),
+  notesEstimator: document.getElementById('notesEstimator')
 };
+
+/* ---------- Navigation ---------- */
 
 function showPartsPage() {
   els.partsPage.style.display = 'block';
   els.quotePage.style.display = 'none';
+  els.buildcase1Page.style.display = 'none';
   els.tabParts.style.background = '#3b82f6';
   els.tabParts.style.color = '#fff';
   els.tabQuote.style.background = '#fff';
@@ -65,6 +74,18 @@ function showPartsPage() {
 function showQuotePage() {
   els.partsPage.style.display = 'none';
   els.quotePage.style.display = 'block';
+  els.buildcase1Page.style.display = 'none';
+  els.tabQuote.style.background = '#3b82f6';
+  els.tabQuote.style.color = '#fff';
+  els.tabParts.style.background = '#fff';
+  els.tabParts.style.color = '#111';
+}
+
+function showBuildPage() {
+  els.partsPage.style.display = 'none';
+  els.quotePage.style.display = 'none';
+  els.buildcase1Page.style.display = 'block';
+  // Keep tab styling as Quote selected for context
   els.tabQuote.style.background = '#3b82f6';
   els.tabQuote.style.color = '#fff';
   els.tabParts.style.background = '#fff';
@@ -73,6 +94,8 @@ function showQuotePage() {
 
 els.tabParts.addEventListener('click', showPartsPage);
 els.tabQuote.addEventListener('click', showQuotePage);
+if (els.btnBuildCase) els.btnBuildCase.addEventListener('click', showBuildPage);
+if (els.btnBackToQuote) els.btnBackToQuote.addEventListener('click', showQuotePage);
 showPartsPage();
 
 /* ---------- Helpers ---------- */
@@ -92,15 +115,15 @@ function ensureAccess() {
 
 function copyText(txt, msg) {
   navigator.clipboard?.writeText(txt).then(() => toast(msg, true))
-    .catch(() => {
-      const ta = document.createElement('textarea');
-      ta.value = txt;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-      toast(msg, true);
-    });
+  .catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = txt;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    toast(msg, true);
+  });
 }
 
 function parseCSV(txt) {
@@ -139,11 +162,43 @@ function updateAddToQuoteState() {
   }
 }
 
+/* Manual add button enable/disable based on fields */
+function setManualBtnEnabled(enabled) {
+  if (!els.manualAddBtn) return;
+  els.manualAddBtn.disabled = !enabled;
+  if (enabled) {
+    els.manualAddBtn.style.borderColor = '#22c55e';
+    els.manualAddBtn.style.background = '#ecfdf5';
+    els.manualAddBtn.style.color = '#166534';
+    els.manualAddBtn.style.opacity = '1';
+    els.manualAddBtn.style.cursor = 'pointer';
+  } else {
+    els.manualAddBtn.style.borderColor = '#d1d5db';
+    els.manualAddBtn.style.background = '#f3f4f6';
+    els.manualAddBtn.style.color = '#9ca3af';
+    els.manualAddBtn.style.opacity = '0.6';
+    els.manualAddBtn.style.cursor = 'not-allowed';
+  }
+}
+
+function manualInputsValid() {
+  const sup = (els.manualSupplier.value || '').trim();
+  const desc = (els.manualDescription.value || '').trim();
+  const pn = (els.manualPart.value || '').trim();
+  const priceEach = parseFloat((els.manualPrice.value || '').toString().replace(/[^0-9.]/g, ''));
+  return !!(sup && desc && pn && !isNaN(priceEach));
+}
+
+['manualSupplier','manualDescription','manualPart','manualPrice','manualQty'].forEach(id => {
+  const input = els[id];
+  if (input) input.addEventListener('input', () => {
+    setManualBtnEnabled(manualInputsValid());
+  });
+});
+
 /* ---------- Load cached CSV ---------- */
 const cachedCsv = localStorage.getItem('parts_csv');
-if (cachedCsv) {
-  try { parseCSV(cachedCsv); } catch {}
-}
+if (cachedCsv) { try { parseCSV(cachedCsv); } catch {} }
 
 /* ---------- CSV controls ---------- */
 
@@ -200,6 +255,8 @@ els.addToQuote.addEventListener('click', () => {
 /* ---------- Quote: manual line ---------- */
 
 if (els.manualAddBtn) {
+  setManualBtnEnabled(manualInputsValid()); // initial state
+
   els.manualAddBtn.addEventListener('click', () => {
     const sup = (els.manualSupplier.value || '').trim();
     const desc = (els.manualDescription.value || '').trim();
@@ -207,7 +264,7 @@ if (els.manualAddBtn) {
     const qty = Math.max(1, parseInt(els.manualQty.value, 10) || 1);
     const priceEach = parseFloat((els.manualPrice.value || '').toString().replace(/[^0-9.]/g, ''));
 
-    if (!sup || !desc || !pn || !(priceEach >= 0)) {
+    if (!sup || !desc || !pn || isNaN(priceEach)) {
       return toast('Please fill Supplier, Description, Part # and Price.', false);
     }
 
@@ -219,14 +276,16 @@ if (els.manualAddBtn) {
       qty
     });
 
-    // Optional: clear inputs after add
-    // els.manualDescription.value = '';
-    // els.manualPart.value = '';
-    // els.manualPrice.value = '';
-    // els.manualQty.value = '1';
-
     renderQuote();
     toast('Manual line added.', true);
+
+    // Clear fields and grey-out button until another valid entry is made
+    els.manualSupplier.value = '';
+    els.manualDescription.value = '';
+    els.manualPart.value = '';
+    els.manualPrice.value = '';
+    els.manualQty.value = '1';
+    setManualBtnEnabled(false);
   });
 }
 
@@ -391,3 +450,4 @@ function renderQuote() {
 
 /* ---------- Init ---------- */
 updateAddToQuoteState();
+setManualBtnEnabled(manualInputsValid());
