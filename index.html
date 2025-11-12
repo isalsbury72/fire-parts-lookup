@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Fire Parts Lookup v5.2.2</title>
+  <title>Fire Parts Lookup v5.2.3</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
 
   <link rel="manifest" href="manifest.json">
@@ -150,20 +150,7 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Mini grid + textareas for build case */
-    .mini-grid {
-      display: grid;
-      grid-template-columns: repeat(5, minmax(120px, 1fr));
-      gap: 8px;
-    }
-    @media (max-width: 900px) { .mini-grid { grid-template-columns: 1fr 1fr; } }
-    .mini-grid input, .bc-input {
-      width: 100%;
-      padding: 6px 8px;
-      border-radius: 6px;
-      border: 1px solid #d1d5db;
-      font-size: 13px;
-    }
+    /* Build case */
     .bc-textarea {
       width: 100%;
       min-height: 120px;
@@ -185,6 +172,13 @@
       display:inline-flex; align-items:center; gap:6px; padding:4px 8px;
       border-radius:999px; border:1px solid #e5e7eb; background:#f9fafb; font-size:12px;
     }
+    .bc-input {
+      width: 100%;
+      padding: 6px 8px;
+      border-radius: 6px;
+      border: 1px solid #d1d5db;
+      font-size: 13px;
+    }
   </style>
 </head>
 <body>
@@ -195,7 +189,7 @@
       <div class="small">Offline-friendly parts and quote helper</div>
     </div>
     <div class="ver">
-      v5.2.2
+      v5.2.3
       <span id="authBanner" class="auth-pill" style="display:inline-block;">Authorised users only</span>
     </div>
   </header>
@@ -279,12 +273,12 @@
         <!-- Manual item -->
         <div class="card" style="margin-top:10px;">
           <h3 style="margin:0 0 8px 0; font-size:14px;">Add manual item</h3>
-          <div class="mini-grid">
-            <input id="manualSupplier" type="text" placeholder="Supplier *">
-            <input id="manualDescription" type="text" placeholder="Description *">
-            <input id="manualPart" type="text" placeholder="Part # *">
-            <input id="manualPrice" type="text" placeholder="Price each * e.g. 12.95">
-            <input id="manualQty" type="number" min="1" value="1" placeholder="Qty">
+          <div class="row" style="gap:8px; flex-wrap:wrap;">
+            <input id="manualSupplier" type="text" placeholder="Supplier *" class="bc-input" style="flex:1; min-width:160px;">
+            <input id="manualDescription" type="text" placeholder="Description *" class="bc-input" style="flex:2; min-width:220px;">
+            <input id="manualPart" type="text" placeholder="Part # *" class="bc-input" style="flex:1; min-width:120px;">
+            <input id="manualPrice" type="text" placeholder="Price each * e.g. 12.95" class="bc-input" style="flex:1; min-width:160px;">
+            <input id="manualQty" type="number" min="1" value="1" placeholder="Qty" class="bc-input" style="width:100px;">
           </div>
           <div style="margin-top:8px; display:flex; gap:8px; justify-content:flex-end;">
             <button id="manualAddBtn"
@@ -304,12 +298,11 @@
             <div style="flex:1; min-width:160px;">
               <label class="small" for="jobNumber">Job number</label>
               <input id="jobNumber" type="text" placeholder="Enter job number"
-                     style="width:100%; padding:6px 8px; border-radius:6px; border:1px solid #d1d5db; font-size:13px;">
+                     class="bc-input">
             </div>
             <div style="flex:1; min-width:220px;">
               <label class="small" for="deliveryAddress">Delivery address</label>
-              <select id="deliveryAddress"
-                      style="width:100%; padding:6px 8px; border-radius:6px; border:1px solid #d1d5db; font-size:13px;">
+              <select id="deliveryAddress" class="bc-input">
                 <option value="">Select delivery address</option>
                 <option>Delivery to Chubb 2 Lewis St Torrington QLD 4350</option>
                 <option>Delivery to Chubb C/O Ian Salsbury 103 Diamantina Circle Karalee QLD 4306</option>
@@ -381,35 +374,42 @@
         <p class="muted">Scheduling and resource details.</p>
 
         <div class="card" style="margin-top:8px;">
-          <div style="display:flex; gap:16px; flex-wrap:wrap;">
-            <div class="pill">
-              <span>On next routine visit?</span>
-              <label style="display:inline-flex; align-items:center; gap:4px; margin-left:8px;">
-                <input type="radio" name="routineVisit" id="routineYes" value="yes"> Yes
-              </label>
-              <label style="display:inline-flex; align-items:center; gap:4px; margin-left:8px;">
-                <input type="radio" name="routineVisit" id="routineNo" value="no"> No
-              </label>
+          <div class="pill" style="margin-bottom:10px;">
+            <span>On next routine visit?</span>
+            <label style="display:inline-flex; align-items:center; gap:4px; margin-left:8px;">
+              <input type="radio" name="routineVisit" id="routineYes" value="yes"> Yes
+            </label>
+            <label style="display:inline-flex; align-items:center; gap:4px; margin-left:8px;">
+              <input type="radio" name="routineVisit" id="routineNo" value="no"> No
+            </label>
+          </div>
+
+          <!-- Two separate lines for labour + techs -->
+          <div class="card" style="background:#f9fafb;">
+            <p class="small" style="margin:0 0 6px 0;"><strong>Normal Time</strong></p>
+            <div class="row">
+              <div>
+                <label class="small" for="labourHoursNormal">Labour hours</label><br>
+                <input id="labourHoursNormal" class="bc-input" type="number" min="0" step="0.5" placeholder="e.g. 2">
+              </div>
+              <div>
+                <label class="small" for="numTechsNormal">Number of techs</label><br>
+                <input id="numTechsNormal" class="bc-input" type="number" min="0" step="1" placeholder="e.g. 1">
+              </div>
             </div>
           </div>
 
-          <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;">
-            <div>
-              <label class="small" for="labourHours">Labour hours</label><br>
-              <input id="labourHours" class="bc-input" type="number" min="0" step="0.5" placeholder="e.g. 2">
-            </div>
-            <div>
-              <label class="small" for="numTechs">Number of techs</label><br>
-              <input id="numTechs" class="bc-input" type="number" min="1" step="1" placeholder="e.g. 1">
-            </div>
-            <div class="pill" style="align-items:center;">
-              <span>Time type</span>
-              <label style="display:inline-flex; align-items:center; gap:4px; margin-left:8px;">
-                <input type="radio" name="timeType" id="timeNormal" value="normal"> Normal time
-              </label>
-              <label style="display:inline-flex; align-items:center; gap:4px; margin-left:8px;">
-                <input type="radio" name="timeType" id="timeAfter" value="afterhours"> After hours
-              </label>
+          <div class="card" style="background:#f9fafb; margin-top:8px;">
+            <p class="small" style="margin:0 0 6px 0;"><strong>After Hours</strong></p>
+            <div class="row">
+              <div>
+                <label class="small" for="labourHoursAfter">Labour hours</label><br>
+                <input id="labourHoursAfter" class="bc-input" type="number" min="0" step="0.5" placeholder="e.g. 1.5">
+              </div>
+              <div>
+                <label class="small" for="numTechsAfter">Number of techs</label><br>
+                <input id="numTechsAfter" class="bc-input" type="number" min="0" step="1" placeholder="e.g. 1">
+              </div>
             </div>
           </div>
         </div>
@@ -425,17 +425,23 @@
     <div id="buildcase3Page" style="display:none;">
       <div class="card">
         <p class="step-title">Build case — Step 3</p>
-        <p class="muted">Final review. Notes to estimator include the line items again.</p>
+        <p class="muted">Final review. “Notes to estimator” is carried over exactly from Step 1 (no duplicate items).</p>
 
         <div class="card" style="margin-top:8px;">
-          <label class="small" for="notesCustomer3">Notes to customer</label>
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+            <label class="small" for="notesCustomer3">Notes to customer</label>
+            <button id="btnCopyNC3" class="btn" style="border-color:#3b82f6; color:#1d4ed8;">Copy</button>
+          </div>
           <textarea id="notesCustomer3" class="bc-textarea" placeholder="Customer notes..." ></textarea>
         </div>
 
         <div class="card" style="margin-top:8px;">
           <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-            <label class="small" for="notesEstimator3">Notes to estimator</label>
-            <span id="bc3ItemsCount" class="pill">Items: 0</span>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <label class="small" for="notesEstimator3">Notes to estimator</label>
+              <span id="bc3ItemsCount" class="pill">Items: 0</span>
+            </div>
+            <button id="btnCopyNE3" class="btn" style="border-color:#3b82f6; color:#1d4ed8;">Copy</button>
           </div>
           <textarea id="notesEstimator3" class="bc-textarea" placeholder="Estimator notes..."></textarea>
         </div>
