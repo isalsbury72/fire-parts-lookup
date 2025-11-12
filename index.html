@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Fire Parts Lookup v5.2.4</title>
+  <title>Fire Parts Lookup v5.2.5</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
 
   <link rel="manifest" href="manifest.json">
@@ -10,175 +10,62 @@
   <link rel="icon" href="icon-192.png">
 
   <style>
-    body {
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      margin: 0;
-      background: #fafafa;
-      color: #111;
-    }
-    header {
-      position: sticky;
-      top: 0;
-      background: #3b82f6;
-      color: #fff;
-      padding: 10px 16px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      z-index: 10;
-    }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; background: #fafafa; color: #111; }
+    header { position: sticky; top: 0; background: #3b82f6; color: #fff; padding: 10px 16px; display: flex; align-items: center; gap: 12px; z-index: 10; }
     header img { width: 28px; height: 28px; border-radius: 6px; }
     h1 { font-size: 18px; margin: 0; }
-    .ver {
-      margin-left: auto;
-      background: #fff;
-      color: #1d4ed8;
-      font-weight: 600;
-      padding: 2px 8px;
-      border-radius: 999px;
-      font-size: 12px;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .auth-pill {
-      background: #dcfce7;
-      color: #166534;
-      border-radius: 999px;
-      padding: 2px 8px;
-      font-size: 11px;
-      border: 1px solid #22c55e;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      animation: authFadeIn 0.3s ease-out;
-    }
+    .ver { margin-left: auto; background: #fff; color: #1d4ed8; font-weight: 600; padding: 2px 8px; border-radius: 999px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; }
+    .auth-pill { background: #dcfce7; color: #166534; border-radius: 999px; padding: 2px 8px; font-size: 11px; border: 1px solid #22c55e; display: inline-flex; align-items: center; gap: 4px; animation: authFadeIn 0.3s ease-out; }
 
-    main {
-      padding: 12px 16px 80px;
-      max-width: 960px;
-      margin: 0 auto;
-    }
-    .card {
-      background: #fff;
-      border: 1px solid #eee;
-      border-radius: 12px;
-      padding: 12px;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-      margin-bottom: 12px;
-    }
-    .row {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
+    main { padding: 12px 16px 80px; max-width: 960px; margin: 0 auto; }
+    .card { background:#fff; border:1px solid #eee; border-radius:12px; padding:12px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); margin-bottom:12px; }
+    .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
 
     /* Prominent search box */
-    input[type="search"] {
-      flex: 1;
-      padding: 10px 14px;
-      border-radius: 999px;
-      border: 2px solid #3b82f6;
-      background: #eff6ff;
-      font-size: 16px;
-      outline: none;
-    }
+    input[type="search"] { flex:1; padding:10px 14px; border-radius:999px; border:2px solid #3b82f6; background:#eff6ff; font-size:16px; outline:none; }
     input[type="search"]:focus { box-shadow: 0 0 0 2px rgba(59,130,246,0.25); }
 
-    input[type="file"] { display: none; }
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 8px 10px;
-      border-radius: 8px;
-      border: 1px solid #ddd;
-      background: #fff;
-      cursor: pointer;
-      font-size: 13px;
-      white-space: nowrap;
-    }
-    .btn-secondary { background: #f9fafb; }
-    .hint { font-size: 12px; color: #555; margin-top: 6px; }
+    input[type="file"] { display:none; }
+    .btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:10px 12px; border-radius:10px; border:1px solid #d1d5db; background:#fff; cursor:pointer; font-size:13px; white-space:nowrap; }
+    .btn-secondary { background:#f9fafb; }
+    .btn-primary { border-color:#2563eb; background:#eff6ff; color:#1d4ed8; }
+    .btn-ghost { background:#ffffff; color:#374151; border-color:#9ca3af; }
+    .btn-dark { background:#f9fafb; color:#111827; border-color:#4b5563; }
+    .btn-danger { background:#fff1f2; color:#b91c1c; border-color:#fecdd3; }
+
+    .hint { font-size:12px; color:#555; margin-top:6px; }
 
     /* Tabs */
-    .tabs { display: flex; gap: 6px; margin-bottom: 10px; }
-    .tab-btn {
-      flex: 1;
-      padding: 8px 10px;
-      border-radius: 999px;
-      border: 1px solid #d1d5db;
-      background: #fff;
-      cursor: pointer;
-      font-size: 13px;
-    }
+    .tabs { display:flex; gap:6px; margin-bottom:10px; }
+    .tab-btn { flex:1; padding:8px 10px; border-radius:999px; border:1px solid #d1d5db; background:#fff; cursor:pointer; font-size:13px; }
 
-    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-    th, td {
-      text-align: left;
-      padding: 8px 6px;
-      border-bottom: 1px solid #eee;
-      font-size: 13px;
-      vertical-align: top;
-    }
-    th { position: sticky; top: 64px; background: #fafafa; z-index: 5; }
-    .badge {
-      font-size: 12px;
-      background: #f3f4f6;
-      padding: 3px 7px;
-      border-radius: 999px;
-      border: 1px solid #e5e7eb;
-    }
-    .copycell {
-      user-select: all;
-      background: #fffbe6;
-      border: 1px dashed #facc15;
-      border-radius: 8px;
-      padding: 8px;
-      margin-top: 8px;
-      font-size: 13px;
-      min-height: 18px;
-    }
-    td.notes { color: #6b7280; font-size: 12px; max-width: 420px; white-space: normal; }
+    table { width:100%; border-collapse:collapse; margin-top:12px; }
+    th, td { text-align:left; padding:8px 6px; border-bottom:1px solid:#eee; font-size:13px; vertical-align:top; }
+    th { position: sticky; top: 64px; background:#fafafa; z-index:5; }
+    .badge { font-size:12px; background:#f3f4f6; padding:3px 7px; border-radius:999px; border:1px solid #e5e7eb; }
+    .copycell { user-select: all; background:#fffbe6; border:1px dashed #facc15; border-radius:8px; padding:8px; margin-top:8px; font-size:13px; min-height:18px; }
+    td.notes { color:#6b7280; font-size:12px; max-width:420px; white-space:normal; }
     @media (max-width: 600px) { td.notes { max-width: 180px; } }
 
-    .small { font-size: 12px; color: #6b7280; }
-
-    @keyframes authFadeIn {
-      from { opacity: 0; transform: translateY(-2px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
+    .small { font-size:12px; color:#6b7280; }
 
     /* Build case */
-    .bc-textarea {
-      width: 100%;
-      min-height: 120px;
-      padding: 8px;
-      border-radius: 8px;
-      border: 1px solid #d1d5db;
-      font-size: 13px;
-      resize: vertical;
-      background: #fff;
-    }
-    .step-title {
-      font-weight: 700;
-      font-size: 16px;
-      margin: 0;
-      color: #111;
-    }
-    .muted { color: #6b7280; font-size: 12px; }
-    .pill {
-      display:inline-flex; align-items:center; gap:6px; padding:4px 8px;
-      border-radius:999px; border:1px solid #e5e7eb; background:#f9fafb; font-size:12px;
-    }
-    .bc-input {
-      width: 100%;
-      padding: 6px 8px;
-      border-radius: 6px;
-      border: 1px solid #d1d5db;
-      font-size: 13px;
-    }
+    .bc-textarea { width:100%; min-height:120px; padding:8px; border-radius:8px; border:1px solid #d1d5db; font-size:13px; resize:vertical; background:#fff; }
+    .bc-input { width:100%; padding:6px 8px; border-radius: 8px; border:1px solid #d1d5db; font-size:13px; }
+    .bc-input--tiny { width: 64px; min-width:64px; padding:6px 6px; text-align:center; } /* 4 chars wide */
+    .step-title { font-weight:700; font-size:16px; margin:0; color:#111; }
+    .muted { color:#6b7280; font-size:12px; }
+    .pill { display:inline-flex; align-items:center; gap:6px; padding:4px 8px; border-radius:999px; border:1px solid #e5e7eb; background:#f9fafb; font-size:12px; }
+
+    /* Quote actions grid */
+    .action-grid { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:8px; max-width: 420px; }
+    .action-btn { height:40px; border-radius:10px; display:inline-flex; align-items:center; justify-content:center; padding:0 12px; font-size:13px; border:1px solid #d1d5db; }
+    .action-btn.primary { border-color:#2563eb; background:#eff6ff; color:#1d4ed8; }
+    .action-btn.dark { border-color:#4b5563; background:#f9fafb; color:#111827; }
+    .action-btn.ghost { border-color:#9ca3af; background:#ffffff; color:#374151; }
+    .action-btn.danger { border-color:#fecdd3; background:#fff1f2; color:#b91c1c; }
+
+    @keyframes authFadeIn { from { opacity:0; transform:translateY(-2px); } to { opacity:1; transform:translateY(0); } }
   </style>
 </head>
 <body>
@@ -189,7 +76,7 @@
       <div class="small">Offline-friendly parts and quote helper</div>
     </div>
     <div class="ver">
-      v5.2.4
+      v5.2.5
       <span id="authBanner" class="auth-pill" style="display:inline-block;">Authorised users only</span>
     </div>
   </header>
@@ -221,13 +108,11 @@
 
         <div style="display:flex; align-items:center; gap:8px; margin-top:8px;">
           <div class="copycell" id="copyArea" style="flex:1;"></div>
-          <button id="copyPartLine"
-                  style="padding:6px 10px; font-size:12px; border-radius:999px; border:1px solid #d1d5db; background:#ffffff; cursor:pointer;">
-            Copy line
-          </button>
+          <button id="copyPartLine" class="btn btn-ghost">Copy line</button>
           <button id="addToQuote"
                   disabled
-                  style="padding:6px 10px; font-size:12px; border-radius:999px; border:1px solid #d1d5db; background:#f3f4f6; color:#9ca3af; opacity:0.5; cursor:not-allowed;">
+                  class="btn"
+                  style="background:#f3f4f6; color:#9ca3af; border-color:#d1d5db; opacity:0.5; cursor:not-allowed;">
             Add to quote
           </button>
         </div>
@@ -281,15 +166,9 @@
             <input id="manualQty" type="number" min="1" value="1" placeholder="Qty" class="bc-input" style="width:100px;">
           </div>
           <div style="margin-top:8px; display:flex; gap:8px; justify-content:flex-end;">
-            <button id="manualAddBtn"
-                    class="btn"
-                    style="border-color:#22c55e; background:#ecfdf5; color:#166534;">
-              Add manual line to quote
-            </button>
+            <button id="manualAddBtn" class="btn" style="border-color:#22c55e; background:#ecfdf5; color:#166534;">Add manual line to quote</button>
           </div>
-          <div class="small" style="margin-top:6px; color:#6b7280;">
-            Tip: Price can include a dollar sign, commas, or spaces. We’ll clean it automatically.
-          </div>
+          <div class="small" style="margin-top:6px; color:#6b7280;">Tip: Price can include a dollar sign, commas, or spaces. We’ll clean it automatically.</div>
         </div>
 
         <!-- Job + delivery -->
@@ -297,8 +176,7 @@
           <div style="display:flex; flex-wrap:wrap; gap:8px;">
             <div style="flex:1; min-width:160px;">
               <label class="small" for="jobNumber">Job number</label>
-              <input id="jobNumber" type="text" placeholder="Enter job number"
-                     class="bc-input">
+              <input id="jobNumber" type="text" placeholder="Enter job number" class="bc-input">
             </div>
             <div style="flex:1; min-width:220px;">
               <label class="small" for="deliveryAddress">Delivery address</label>
@@ -313,29 +191,12 @@
             </div>
           </div>
 
-          <!-- Actions row: Build case left, copy/email right -->
-          <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:space-between; align-items:center;">
-            <div>
-              <button id="btnBuildCase"
-                      class="btn"
-                      style="border-color:#334155; background:#ffffff; color:#0f172a;">
-                Build case
-              </button>
-            </div>
-            <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
-              <button id="copyQuote"
-                      style="padding:6px 10px; font-size:13px; border-radius:999px; border:1px solid #4b5563; background:#f9fafb; color:#111827;">
-                Copy quote (with total)
-              </button>
-              <button id="copyQuoteRaw"
-                      style="padding:6px 10px; font-size:13px; border-radius:999px; border:1px solid #9ca3af; background:#ffffff; color:#374151;">
-                Copy items only
-              </button>
-              <button id="copyQuoteEmail"
-                      style="padding:6px 10px; font-size:13px; border-radius:999px; border:1px solid #2563eb; background:#eff6ff; color:#1d4ed8;">
-                Copy for Email PO
-              </button>
-            </div>
+          <!-- Actions: neat 2x2 grid, left-aligned -->
+          <div class="action-grid" style="margin-top:6px;">
+            <button id="copyQuote" class="action-btn dark">Copy quote (with total)</button>
+            <button id="copyQuoteRaw" class="action-btn ghost">Copy items only</button>
+            <button id="copyQuoteEmail" class="action-btn primary">Copy for Email PO</button>
+            <button id="btnClearQuote" class="action-btn danger">Clear Quote</button>
           </div>
         </div>
       </div>
@@ -390,11 +251,11 @@
             <div class="row">
               <div>
                 <label class="small" for="labourHoursNormal">Labour hours</label><br>
-                <input id="labourHoursNormal" class="bc-input" type="number" min="0" step="0.5" placeholder="e.g. 8">
+                <input id="labourHoursNormal" class="bc-input bc-input--tiny" type="number" min="0" step="0.5" placeholder="8">
               </div>
               <div>
                 <label class="small" for="numTechsNormal">Number of techs</label><br>
-                <input id="numTechsNormal" class="bc-input" type="number" min="0" step="1" placeholder="e.g. 2">
+                <input id="numTechsNormal" class="bc-input bc-input--tiny" type="number" min="0" step="1" placeholder="2">
               </div>
             </div>
           </div>
@@ -405,11 +266,11 @@
             <div class="row">
               <div>
                 <label class="small" for="labourHoursAfter">Labour hours</label><br>
-                <input id="labourHoursAfter" class="bc-input" type="number" min="0" step="0.5" placeholder="e.g. 4">
+                <input id="labourHoursAfter" class="bc-input bc-input--tiny" type="number" min="0" step="0.5" placeholder="4">
               </div>
               <div>
                 <label class="small" for="numTechsAfter">Number of techs</label><br>
-                <input id="numTechsAfter" class="bc-input" type="number" min="0" step="1" placeholder="e.g. 1">
+                <input id="numTechsAfter" class="bc-input bc-input--tiny" type="number" min="0" step="1" placeholder="1">
               </div>
             </div>
           </div>
@@ -431,9 +292,9 @@
         <div class="card" style="margin-top:8px;">
           <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
             <label class="small" for="notesCustomer3">Notes to customer</label>
-            <button id="btnCopyNC3" class="btn" style="border-color:#3b82f6; color:#1d4ed8;">Copy</button>
+            <button id="btnCopyNC3" class="btn btn-primary">Copy</button>
           </div>
-          <textarea id="notesCustomer3" class="bc-textarea" placeholder="Customer notes..." ></textarea>
+          <textarea id="notesCustomer3" class="bc-textarea" placeholder="Customer notes..."></textarea>
         </div>
 
         <div class="card" style="margin-top:8px;">
@@ -442,7 +303,7 @@
               <label class="small" for="notesEstimator3">Notes to estimator</label>
               <span id="bc3ItemsCount" class="pill">Items: 0</span>
             </div>
-            <button id="btnCopyNE3" class="btn" style="border-color:#3b82f6; color:#1d4ed8;">Copy</button>
+            <button id="btnCopyNE3" class="btn btn-primary">Copy</button>
           </div>
           <textarea id="notesEstimator3" class="bc-textarea" placeholder="Estimator notes..."></textarea>
         </div>
