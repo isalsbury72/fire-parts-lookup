@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Fire Parts Lookup v5.2.5</title>
+  <title>Fire Parts Lookup v5.2.6</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
 
   <link rel="manifest" href="manifest.json">
@@ -40,7 +40,7 @@
     .tab-btn { flex:1; padding:8px 10px; border-radius:999px; border:1px solid #d1d5db; background:#fff; cursor:pointer; font-size:13px; }
 
     table { width:100%; border-collapse:collapse; margin-top:12px; }
-    th, td { text-align:left; padding:8px 6px; border-bottom:1px solid:#eee; font-size:13px; vertical-align:top; }
+    th, td { text-align:left; padding:8px 6px; border-bottom:1px solid #eee; font-size:13px; vertical-align:top; }
     th { position: sticky; top: 64px; background:#fafafa; z-index:5; }
     .badge { font-size:12px; background:#f3f4f6; padding:3px 7px; border-radius:999px; border:1px solid #e5e7eb; }
     .copycell { user-select: all; background:#fffbe6; border:1px dashed #facc15; border-radius:8px; padding:8px; margin-top:8px; font-size:13px; min-height:18px; }
@@ -52,18 +52,32 @@
     /* Build case */
     .bc-textarea { width:100%; min-height:120px; padding:8px; border-radius:8px; border:1px solid #d1d5db; font-size:13px; resize:vertical; background:#fff; }
     .bc-input { width:100%; padding:6px 8px; border-radius: 8px; border:1px solid #d1d5db; font-size:13px; }
-    .bc-input--tiny { width: 64px; min-width:64px; padding:6px 6px; text-align:center; } /* 4 chars wide */
+    .bc-input--tiny { width: 64px; min-width:64px; padding:6px 6px; text-align:center; }
     .step-title { font-weight:700; font-size:16px; margin:0; color:#111; }
     .muted { color:#6b7280; font-size:12px; }
     .pill { display:inline-flex; align-items:center; gap:6px; padding:4px 8px; border-radius:999px; border:1px solid #e5e7eb; background:#f9fafb; font-size:12px; }
 
     /* Quote actions grid */
-    .action-grid { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:8px; max-width: 420px; }
-    .action-btn { height:40px; border-radius:10px; display:inline-flex; align-items:center; justify-content:center; padding:0 12px; font-size:13px; border:1px solid #d1d5db; }
+    .action-grid {
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap:8px;
+      max-width: 640px; /* wider since 3 across */
+    }
+    .action-btn {
+      height:42px; border-radius:10px;
+      display:inline-flex; align-items:center; justify-content:center;
+      padding:0 12px; font-size:13px; border:1px solid #d1d5db;
+    }
     .action-btn.primary { border-color:#2563eb; background:#eff6ff; color:#1d4ed8; }
     .action-btn.dark { border-color:#4b5563; background:#f9fafb; color:#111827; }
     .action-btn.ghost { border-color:#9ca3af; background:#ffffff; color:#374151; }
     .action-btn.danger { border-color:#fecdd3; background:#fff1f2; color:#b91c1c; }
+    .action-btn.disabled { opacity:.5; cursor:not-allowed; }
+
+    @media (max-width: 640px) {
+      .action-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
 
     @keyframes authFadeIn { from { opacity:0; transform:translateY(-2px); } to { opacity:1; transform:translateY(0); } }
   </style>
@@ -76,7 +90,7 @@
       <div class="small">Offline-friendly parts and quote helper</div>
     </div>
     <div class="ver">
-      v5.2.5
+      v5.2.6
       <span id="authBanner" class="auth-pill" style="display:inline-block;">Authorised users only</span>
     </div>
   </header>
@@ -191,12 +205,15 @@
             </div>
           </div>
 
-          <!-- Actions: neat 2x2 grid, left-aligned -->
+          <!-- Actions: 3×N grid, left-aligned -->
           <div class="action-grid" style="margin-top:6px;">
+            <button id="btnBuildCase" class="action-btn ghost">Build case</button>
             <button id="copyQuote" class="action-btn dark">Copy quote (with total)</button>
             <button id="copyQuoteRaw" class="action-btn ghost">Copy items only</button>
+
             <button id="copyQuoteEmail" class="action-btn primary">Copy for Email PO</button>
             <button id="btnClearQuote" class="action-btn danger">Clear Quote</button>
+            <button class="action-btn" disabled style="opacity:.45; cursor:not-allowed;">Reserved</button>
           </div>
         </div>
       </div>
