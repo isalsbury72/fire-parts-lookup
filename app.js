@@ -1,7 +1,6 @@
-/* Fire Parts Lookup v5.2.5
-   - Step 2: hour inputs made compact (bc-input--tiny)
-   - Quote actions: unified 2×2 grid, consistent styled buttons incl. Clear Quote there
-   - Keeps all previous behaviour (clear returns to Parts)
+/* Fire Parts Lookup v5.2.6
+   - Quote actions: 3-column grid with 6 buttons, Build case included, 6th disabled placeholder
+   - Keeps previous improvements (compact labour inputs, tidy layout, clear returns to Parts)
 */
 
 const state = {
@@ -114,11 +113,11 @@ const els = {
   copyQuoteRaw: document.getElementById('copyQuoteRaw'),
   copyQuoteEmail: document.getElementById('copyQuoteEmail'),
   btnClearQuote: document.getElementById('btnClearQuote'),
+  btnBuildCase: document.getElementById('btnBuildCase'),
   jobNumber: document.getElementById('jobNumber'),
   deliveryAddress: document.getElementById('deliveryAddress'),
   quoteTableBody: document.querySelector('#quoteTable tbody'),
   quoteSummary: document.getElementById('quoteSummary'),
-  btnBuildCase: document.getElementById('btnBuildCase'),
   // Manual line inputs
   manualSupplier: document.getElementById('manualSupplier'),
   manualDescription: document.getElementById('manualDescription'),
@@ -241,24 +240,6 @@ if (els.btnToBuild3) els.btnToBuild3.addEventListener('click', () => {
   state.buildcase.labourHoursAfter = (els.labourHoursAfter?.value || '').trim();
   state.buildcase.numTechsAfter = (els.numTechsAfter?.value || '').trim();
   showBuild3();
-});
-
-/* Step 3 copy buttons */
-if (els.btnCopyNC3) els.btnCopyNC3.addEventListener('click', () => {
-  const txt = (els.notesCustomer3?.value || '').trim();
-  if (!txt) return toast('Nothing to copy.', false);
-  navigator.clipboard.writeText(txt).then(() => toast('Copied.', true)).catch(() => {
-    const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta);
-    ta.select(); document.execCommand('copy'); document.body.removeChild(ta); toast('Copied.', true);
-  });
-});
-if (els.btnCopyNE3) els.btnCopyNE3.addEventListener('click', () => {
-  const txt = (els.notesEstimator3?.value || '').trim();
-  if (!txt) return toast('Nothing to copy.', false);
-  navigator.clipboard.writeText(txt).then(() => toast('Copied.', true)).catch(() => {
-    const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta);
-    ta.select(); document.execCommand('copy'); document.body.removeChild(ta); toast('Copied.', true);
-  });
 });
 
 /* ---------- Access control ---------- */
@@ -494,7 +475,10 @@ els.copyQuoteEmail.addEventListener('click', () => {
   copyText(lines.join('\n').trimEnd(), 'Email PO copied.');
 });
 
-/* Clear quote (now in the 2×2 grid) */
+/* Build case (in action grid) */
+if (els.btnBuildCase) els.btnBuildCase.addEventListener('click', showBuild1);
+
+/* Clear quote (in action grid) */
 els.btnClearQuote.addEventListener('click', () => {
   if (!state.quote.length) return;
   if (confirm('Clear all items?')) {
