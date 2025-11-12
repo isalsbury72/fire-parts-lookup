@@ -1,7 +1,7 @@
-/* Fire Parts Lookup v5.2.9
-   - Quote page: Manual item inputs are hidden until "Enable manual item entry" is ticked. Untick to hide and clear.
-   - Build Case Step 3: Copy buttons now work properly.
-   - Keeps routine-visit messaging and faint placeholders from v5.2.8.
+/* Fire Parts Lookup v5.3.0
+   - Routine visit “Yes” text: “Can be completed on routine visit”
+   - Step 3 copy buttons fixed to copy textarea contents reliably
+   - Manual item toggle shows/hides the fields correctly (and respects state on load)
 */
 
 const state = {
@@ -48,7 +48,7 @@ function fmtPrice(n) { return '$' + (n || 0).toFixed(2); }
 function supplierKey(name) {
   if (!name) return 'UNKNOWN';
   const noYear = name.replace(/\b20\d{2}\b/g, '');
-  const firstToken = (noYear.match(/[A-Za-z]+/] || ['UNKNOWN'])[0];
+  const firstToken = (noYear.match(/[A-Za-z]+/) || ['UNKNOWN'])[0];
   return firstToken.toUpperCase();
 }
 function displaySupplierName(name) {
@@ -57,46 +57,27 @@ function displaySupplierName(name) {
   return key.charAt(0) + key.slice(1).toLowerCase();
 }
 
-/* Items-only format, used for copy and build case estimator notes */
-function buildItemsOnlyLines() {
-  return state.quote.map(i => {
-    const qty = i.qty || 1;
-    return `${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each (${i.SUPPLIER} price)`;
-  });
+/* ---------- CSV parsing ---------- */
+function fmtPriceNum(raw) {
+  return parseFloat((raw || '').toString().replace(/[^0-9.]/g, '')) || 0;
 }
 
-/* Labour summary with routine-visit line */
-function buildLabourSummary() {
-  const nh = parseFloat(state.buildcase.labourHoursNormal || '0') || 0;
-  const nm = parseInt(state.buildcase.numTechsNormal || '0', 10) || 0;
-  const ah = parseFloat(state.buildcase.labourHoursAfter || '0') || 0;
-  const am = parseInt(state.buildcase.numTechsAfter || '0', 10) || 0;
-
-  const lines = [];
-  let total = 0;
-
-  if (nh > 0 && nm > 0) {
-    lines.push(`${nh} hours ${nm} ${nm === 1 ? 'man' : 'men'} NT`);
-    total += nh * nm;
-  }
-  if (ah > 0 && am > 0) {
-    lines.push(`${ah} hours ${am} ${am === 1 ? 'man' : 'men'} AH`);
-    total += ah * am;
-  }
-  if (lines.length) lines.push(`Total labour: ${total} hours`);
-
-  if (state.buildcase.routineVisit === 'yes') {
-    lines.push('Can be completed on next routine visit');
-  } else {
-    lines.push('Not intended to be completed on routine visit');
-  }
-
-  return lines.join('\n');
+function parseCSV(txt) {
+  const res = Papa.parse(txt, { header: true, skipEmptyLines: true });
+  state.rows = res.data.map(r => ({
+    SUPPLIER: r.SUPPLIER || '',
+    TYPE: r.TYPE || '',
+    DESCRIPTION: r.DESCRIPTION || '',
+    PARTNUMBER: r.PARTNUMBER || '',
+    PRICE: fmtPriceNum(r.PRICE),
+    NOTES: r.NOTES || ''
+  }));
+  renderParts();
 }
 
-/* ---------- Elements ---------- */
-// Parts
+/* ---------- Parts page ---------- */
 const els = {
+  // Parts
   q: document.getElementById('q'),
   csv: document.getElementById('csv'),
   tbl: document.getElementById('tbl')?.querySelector('tbody'),
@@ -157,24 +138,6 @@ const els = {
   btnCopyNC3: document.getElementById('btnCopyNC3'),
   btnCopyNE3: document.getElementById('btnCopyNE3')
 };
-
-/* ---------- Parts search/render ---------- */
-function fmtPriceNum(raw) {
-  return parseFloat((raw || '').toString().replace(/[^0-9.]/g, '')) || 0;
-}
-
-function parseCSV(txt) {
-  const res = Papa.parse(txt, { header: true, skipEmptyLines: true });
-  state.rows = res.data.map(r => ({
-    SUPPLIER: r.SUPPLIER || '',
-    TYPE: r.TYPE || '',
-    DESCRIPTION: r.DESCRIPTION || '',
-    PARTNUMBER: r.PARTNUMBER || '',
-    PRICE: fmtPriceNum(r.PRICE),
-    NOTES: r.NOTES || ''
-  }));
-  renderParts();
-}
 
 function renderParts() {
   const q = els.q.value.trim().toLowerCase();
@@ -333,8 +296,29 @@ if (els.manualToggle) {
       els.manualSection.style.display = 'none';
     }
   });
+  // Respect current checkbox state on load
+  if (els.manualToggle.checked) {
+    els.manualSection.style.display = 'block';
+    setManualBtnEnabled(manualInputsValid());
+  } else {
+    els.manualSection.style.display = 'none';
+    setManualBtnEnabled(false);
+  }
 }
-setManualBtnEnabled(false);
+
+/* ---------- Actions ---------- */
+if (els.addToQuote) els.addToQuote.addEventListener('click', () => {
+  if (!state.selected) return;
+  state.quote.push({
+    SUPPLIER: state.selected.SUPPLIER,
+    DESCRIPTION: state.selected.DESCRIPTION,
+    PARTNUMBER: state.selected.PARTNUMBER,
+    PRICE: state.selected.PRICE,
+    qty: 1
+  });
+  renderQuote();
+  showQuotePage();
+});
 
 if (els.manualAddBtn) {
   els.manualAddBtn.addEventListener('click', () => {
@@ -358,20 +342,26 @@ if (els.manualAddBtn) {
   });
 }
 
-/* ---------- Actions ---------- */
-const addToQuoteBtn = els.addToQuote;
-if (addToQuoteBtn) addToQuoteBtn.addEventListener('click', () => {
-  if (!state.selected) return;
-  state.quote.push({
-    SUPPLIER: state.selected.SUPPLIER,
-    DESCRIPTION: state.selected.DESCRIPTION,
-    PARTNUMBER: state.selected.PARTNUMBER,
-    PRICE: state.selected.PRICE,
-    qty: 1
-  });
-  renderQuote();
-  showQuotePage();
-});
+/* ---------- Copy helpers ---------- */
+function copyText(txt, msg) {
+  const toCopy = (txt || '').toString();
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(toCopy).then(() => toast(msg, true)).catch(() => {
+      fallbackCopy(toCopy, msg);
+    });
+  } else {
+    fallbackCopy(toCopy, msg);
+  }
+}
+function fallbackCopy(txt, msg) {
+  const ta = document.createElement('textarea'); ta.value = txt;
+  ta.style.position = 'fixed'; ta.style.top = '-2000px';
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); } catch {}
+  document.body.removeChild(ta);
+  toast(msg, true);
+}
 
 /* Copy quote (with total) */
 if (els.copyQuote) els.copyQuote.addEventListener('click', () => {
@@ -388,11 +378,14 @@ if (els.copyQuote) els.copyQuote.addEventListener('click', () => {
 /* Copy items only */
 if (els.copyQuoteRaw) els.copyQuoteRaw.addEventListener('click', () => {
   if (!state.quote.length) return toast('No items to copy.', false);
-  const lines = buildItemsOnlyLines();
+  const lines = state.quote.map(i => {
+    const qty = i.qty || 1;
+    return `${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each (${i.SUPPLIER} price)`;
+  });
   copyText(lines.join('\n'), 'Items copied.');
 });
 
-/* Copy for Email PO — grouped */
+/* Copy for Email PO — grouped by first token of supplier */
 if (els.copyQuoteEmail) els.copyQuoteEmail.addEventListener('click', () => {
   if (!state.quote.length) return toast('No items to copy.', false);
   const job = els.jobNumber?.value.trim() || '';
@@ -427,6 +420,34 @@ function buildItemsOnlyLines() {
     const qty = i.qty || 1;
     return `${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each (${i.SUPPLIER} price)`;
   });
+}
+
+function buildLabourSummary() {
+  const nh = parseFloat(state.buildcase.labourHoursNormal || '0') || 0;
+  const nm = parseInt(state.buildcase.numTechsNormal || '0', 10) || 0;
+  const ah = parseFloat(state.buildcase.labourHoursAfter || '0') || 0;
+  const am = parseInt(state.buildcase.numTechsAfter || '0', 10) || 0;
+
+  const lines = [];
+  let total = 0;
+
+  if (nh > 0 && nm > 0) {
+    lines.push(`${nh} hours ${nm} ${nm === 1 ? 'man' : 'men'} NT`);
+    total += nh * nm;
+  }
+  if (ah > 0 && am > 0) {
+    lines.push(`${ah} hours ${am} ${am === 1 ? 'man' : 'men'} AH`);
+    total += ah * am;
+  }
+  if (lines.length) lines.push(`Total labour: ${total} hours`);
+
+  if (state.buildcase.routineVisit === 'yes') {
+    lines.push('Can be completed on routine visit');
+  } else {
+    lines.push('Not intended to be completed on routine visit');
+  }
+
+  return lines.join('\n');
 }
 
 function buildCaseStep1Fill() {
@@ -483,7 +504,7 @@ function showBuild3() {
   els.bc3ItemsCount.textContent = `Items: ${state.quote.length}`;
 }
 
-/* Navigation bindings */
+/* Nav */
 els.tabParts.addEventListener('click', showPartsPage);
 els.tabQuote.addEventListener('click', showQuotePage);
 if (els.btnBuildCase) els.btnBuildCase.addEventListener('click', showBuild1);
@@ -524,16 +545,6 @@ if (els.btnClearQuote) els.btnClearQuote.addEventListener('click', () => {
     showPartsPage();
   }
 });
-
-/* Clipboard helper */
-function copyText(txt, msg) {
-  const toCopy = txt || '';
-  navigator.clipboard?.writeText(toCopy).then(() => toast(msg, true)).catch(() => {
-    const ta = document.createElement('textarea'); ta.value = toCopy; document.body.appendChild(ta);
-    ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
-    toast(msg, true);
-  });
-}
 
 /* ---------- Start ---------- */
 function showPartsPage() {
