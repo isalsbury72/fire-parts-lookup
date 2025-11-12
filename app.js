@@ -1,4 +1,9 @@
-/* Fire Parts Lookup v5.2.2 — Build Case steps, carry-over line items, routine visit & labour fields, manual lines, email PO */
+/* Fire Parts Lookup v5.2.3 — build case fixes:
+   - Step 3 estimator notes no longer duplicate items (carry over from Step 1 exactly)
+   - Copy buttons for both fields on Step 3
+   - Step 2 split into Normal Time and After Hours rows (hours + techs each)
+   - Existing features preserved
+*/
 
 const state = {
   rows: [],
@@ -6,16 +11,17 @@ const state = {
   quote: [],
   buildcase: {
     notesCustomer: '',
-    notesEstimator: '',
-    routineVisit: null, // 'yes' | 'no'
-    labourHours: '',
-    numTechs: '',
-    timeType: null // 'normal' | 'afterhours'
+    notesEstimator: '',     // what you type on Step 1 (includes items initially)
+    routineVisit: null,     // 'yes' | 'no'
+    labourHoursNormal: '',
+    numTechsNormal: '',
+    labourHoursAfter: '',
+    numTechsAfter: ''
   }
 };
 const ACCESS_CODE = 'FP2025';
 
-/* ---------- Utils ---------- */
+/* ---------- Utilities ---------- */
 function toast(msg, ok = false) {
   const t = document.createElement('div');
   t.textContent = msg;
@@ -99,10 +105,13 @@ const els = {
   bc3ItemsCount: document.getElementById('bc3ItemsCount'),
   routineYes: document.getElementById('routineYes'),
   routineNo: document.getElementById('routineNo'),
-  labourHours: document.getElementById('labourHours'),
-  numTechs: document.getElementById('numTechs'),
-  timeNormal: document.getElementById('timeNormal'),
-  timeAfter: document.getElementById('timeAfter')
+  labourHoursNormal: document.getElementById('labourHoursNormal'),
+  numTechsNormal: document.getElementById('numTechsNormal'),
+  labourHoursAfter: document.getElementById('labourHoursAfter'),
+  numTechsAfter: document.getElementById('numTechsAfter'),
+  // Step 3 copy buttons
+  btnCopyNC3: document.getElementById('btnCopyNC3'),
+  btnCopyNE3: document.getElementById('btnCopyNE3')
 };
 
 /* ---------- Navigation ---------- */
@@ -139,18 +148,16 @@ function showBuild1() {
   els.tabParts.style.background = '#fff';
   els.tabParts.style.color = '#111';
 
-  // Prefill: notes to estimator with line items, notes to customer from state
+  // Prefill Step 1: estimator notes with current line items (once each time we enter Step 1)
   const itemsTxt = buildLineItemsText();
-  if (els.notesEstimator) {
-    els.notesEstimator.value = itemsTxt;
-    state.buildcase.notesEstimator = itemsTxt;
-  }
-  if (els.bc1ItemsCount) {
-    els.bc1ItemsCount.textContent = `Items: ${state.quote.length}`;
-  }
-  if (els.notesCustomer) {
-    els.notesCustomer.value = state.buildcase.notesCustomer || '';
-  }
+  els.notesEstimator.value = itemsTxt;
+  state.buildcase.notesEstimator = itemsTxt;
+
+  // Restore notes to customer if previously typed
+  els.notesCustomer.value = state.buildcase.notesCustomer || '';
+
+  // Count badge
+  els.bc1ItemsCount.textContent = `Items: ${state.quote.length}`;
 }
 function showBuild2() {
   els.partsPage.style.display = 'none';
@@ -163,15 +170,14 @@ function showBuild2() {
   els.tabParts.style.background = '#fff';
   els.tabParts.style.color = '#111';
 
-  // Restore previous selections if any
+  // Restore previously entered values
   if (state.buildcase.routineVisit === 'yes') els.routineYes.checked = true;
   else if (state.buildcase.routineVisit === 'no') els.routineNo.checked = true;
 
-  els.labourHours.value = state.buildcase.labourHours || '';
-  els.numTechs.value = state.buildcase.numTechs || '';
-
-  if (state.buildcase.timeType === 'normal') els.timeNormal.checked = true;
-  else if (state.buildcase.timeType === 'afterhours') els.timeAfter.checked = true;
+  els.labourHoursNormal.value = state.buildcase.labourHoursNormal || '';
+  els.numTechsNormal.value = state.buildcase.numTechsNormal || '';
+  els.labourHoursAfter.value = state.buildcase.labourHoursAfter || '';
+  els.numTechsAfter.value = state.buildcase.numTechsAfter || '';
 }
 function showBuild3() {
   els.partsPage.style.display = 'none';
@@ -184,18 +190,10 @@ function showBuild3() {
   els.tabParts.style.background = '#fff';
   els.tabParts.style.color = '#111';
 
-  // Prefill from state + include line items again
-  if (els.notesCustomer3) {
-    els.notesCustomer3.value = state.buildcase.notesCustomer || '';
-  }
-  const itemsTxt = buildLineItemsText();
-  if (els.notesEstimator3) {
-    const base = state.buildcase.notesEstimator || '';
-    els.notesEstimator3.value = base ? `${base}\n\n${itemsTxt}` : itemsTxt;
-  }
-  if (els.bc3ItemsCount) {
-    els.bc3ItemsCount.textContent = `Items: ${state.quote.length}`;
-  }
+  // Carry over exactly (no duplication)
+  els.notesCustomer3.value = state.buildcase.notesCustomer || '';
+  els.notesEstimator3.value = state.buildcase.notesEstimator || '';
+  els.bc3ItemsCount.textContent = `Items: ${state.quote.length}`;
 }
 
 /* Tab clicks and buttons */
@@ -215,12 +213,33 @@ if (els.btnToBuild2) els.btnToBuild2.addEventListener('click', () => {
   showBuild2();
 });
 if (els.btnToBuild3) els.btnToBuild3.addEventListener('click', () => {
-  // Save step 2 selections
+  // Save step 2 entries
   state.buildcase.routineVisit = els.routineYes?.checked ? 'yes' : (els.routineNo?.checked ? 'no' : null);
-  state.buildcase.labourHours = (els.labourHours?.value || '').trim();
-  state.buildcase.numTechs = (els.numTechs?.value || '').trim();
-  state.buildcase.timeType = els.timeNormal?.checked ? 'normal' : (els.timeAfter?.checked ? 'afterhours' : null);
+  state.buildcase.labourHoursNormal = (els.labourHoursNormal?.value || '').trim();
+  state.buildcase.numTechsNormal = (els.numTechsNormal?.value || '').trim();
+  state.buildcase.labourHoursAfter = (els.labourHoursAfter?.value || '').trim();
+  state.buildcase.numTechsAfter = (els.numTechsAfter?.value || '').trim();
   showBuild3();
+});
+
+/* Step 3 copy buttons */
+if (els.btnCopyNC3) els.btnCopyNC3.addEventListener('click', () => {
+  const txt = (els.notesCustomer3?.value || '').trim();
+  if (!txt) return toast('Nothing to copy.', false);
+  navigator.clipboard.writeText(txt).then(() => toast('Copied.', true)).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = txt; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+    toast('Copied.', true);
+  });
+});
+if (els.btnCopyNE3) els.btnCopyNE3.addEventListener('click', () => {
+  const txt = (els.notesEstimator3?.value || '').trim();
+  if (!txt) return toast('Nothing to copy.', false);
+  navigator.clipboard.writeText(txt).then(() => toast('Copied.', true)).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = txt; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+    toast('Copied.', true);
+  });
 });
 
 /* ---------- Access control ---------- */
@@ -237,7 +256,7 @@ function ensureAccess() {
   return false;
 }
 
-/* ---------- Clipboard ---------- */
+/* ---------- Clipboard helper ---------- */
 function copyText(txt, msg) {
   navigator.clipboard?.writeText(txt).then(() => toast(msg, true))
   .catch(() => {
@@ -424,8 +443,6 @@ els.addToQuote.addEventListener('click', () => {
   showQuotePage();
 });
 
-if (els.btnBuildCase) els.btnBuildCase.addEventListener('click', showBuild1);
-
 /* Manual line controls */
 function setManualBtnEnabled(enabled) {
   if (!els.manualAddBtn) return;
@@ -511,7 +528,6 @@ els.copyQuoteEmail.addEventListener('click', () => {
   const job = els.jobNumber?.value.trim() || '';
   const delivery = els.deliveryAddress?.value.trim() || '';
 
-  // group by supplier
   const groups = new Map();
   state.quote.forEach(item => {
     const clean = cleanSupplierName(item.SUPPLIER);
@@ -532,7 +548,7 @@ els.copyQuoteEmail.addEventListener('click', () => {
       lines.push('');
       lines.push(delivery);
     }
-    lines.push(''); // blank line between groups
+    lines.push('');
   });
   copyText(lines.join('\n').trimEnd(), 'Email PO copied.');
 });
@@ -546,8 +562,24 @@ if (els.copyPartLine) {
   });
 }
 
-/* ---------- Start-up ---------- */
+/* ---------- CSV parse ---------- */
+function parseCSV(txt) {
+  const res = Papa.parse(txt, { header: true, skipEmptyLines: true });
+  state.rows = res.data.map(r => ({
+    SUPPLIER: r.SUPPLIER || '',
+    TYPE: r.TYPE || '',
+    DESCRIPTION: r.DESCRIPTION || '',
+    PARTNUMBER: r.PARTNUMBER || '',
+    PRICE: parseFloat((r.PRICE || '').toString().replace(/[^0-9.]/g, '')) || 0,
+    NOTES: r.NOTES || ''
+  }));
+  renderParts();
+}
+
+/* ---------- Start ---------- */
 function start() {
+  const cachedCsv = localStorage.getItem('parts_csv');
+  if (cachedCsv) { try { parseCSV(cachedCsv); } catch {} }
   renderParts();
   renderQuote();
   updateAddToQuoteState();
