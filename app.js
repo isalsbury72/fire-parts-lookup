@@ -1,7 +1,7 @@
-/* Fire Parts Lookup v5.2.8
-   - Step 3: adds "Not intended to be completed on routine visit" when routine is blank or No
-   - Step 2: tiny labour inputs use very faint placeholders
-   - Keeps previous supplier grouping + notes behaviour
+/* Fire Parts Lookup v5.2.9
+   - Quote page: Manual item inputs are hidden until "Enable manual item entry" is ticked. Untick to hide and clear.
+   - Build Case Step 3: Copy buttons now work properly.
+   - Keeps routine-visit messaging and faint placeholders from v5.2.8.
 */
 
 const state = {
@@ -44,19 +44,20 @@ function toast(msg, ok = false) {
 
 function fmtPrice(n) { return '$' + (n || 0).toFixed(2); }
 
+/* Supplier normalisation: same first word, ignore year tokens */
 function supplierKey(name) {
   if (!name) return 'UNKNOWN';
-  const noYear = name.replace(/\b20\d{2}\b/g, '');          // drop year tokens like 2025
-  const firstToken = (noYear.match(/[A-Za-z]+/) || ['UNKNOWN'])[0];
+  const noYear = name.replace(/\b20\d{2}\b/g, '');
+  const firstToken = (noYear.match(/[A-Za-z]+/] || ['UNKNOWN'])[0];
   return firstToken.toUpperCase();
 }
 function displaySupplierName(name) {
-  if (!name) return 'Supplier';
+  if (!name) return 'SUPPLIER';
   const key = supplierKey(name);
   return key.charAt(0) + key.slice(1).toLowerCase();
 }
 
-/* Build the exact same line format used by "Copy items only" */
+/* Items-only format, used for copy and build case estimator notes */
 function buildItemsOnlyLines() {
   return state.quote.map(i => {
     const qty = i.qty || 1;
@@ -64,7 +65,7 @@ function buildItemsOnlyLines() {
   });
 }
 
-/* Labour summary (adds negative statement when blank/No) */
+/* Labour summary with routine-visit line */
 function buildLabourSummary() {
   const nh = parseFloat(state.buildcase.labourHoursNormal || '0') || 0;
   const nm = parseInt(state.buildcase.numTechsNormal || '0', 10) || 0;
@@ -87,7 +88,6 @@ function buildLabourSummary() {
   if (state.buildcase.routineVisit === 'yes') {
     lines.push('Can be completed on next routine visit');
   } else {
-    // when null or 'no'
     lines.push('Not intended to be completed on routine visit');
   }
 
@@ -95,8 +95,8 @@ function buildLabourSummary() {
 }
 
 /* ---------- Elements ---------- */
+// Parts
 const els = {
-  // Parts
   q: document.getElementById('q'),
   csv: document.getElementById('csv'),
   tbl: document.getElementById('tbl')?.querySelector('tbody'),
@@ -124,7 +124,9 @@ const els = {
   deliveryAddress: document.getElementById('deliveryAddress'),
   quoteTableBody: document.querySelector('#quoteTable tbody'),
   quoteSummary: document.getElementById('quoteSummary'),
-  // Manual line inputs
+  // Manual line toggles/inputs
+  manualToggle: document.getElementById('manualToggle'),
+  manualSection: document.getElementById('manualSection'),
   manualSupplier: document.getElementById('manualSupplier'),
   manualDescription: document.getElementById('manualDescription'),
   manualPart: document.getElementById('manualPart'),
@@ -295,8 +297,70 @@ els.clearCache.addEventListener('click', () => {
   toast('Cache cleared.', true);
 });
 
+/* ---------- Manual item toggle ---------- */
+function setManualBtnEnabled(enabled) {
+  const b = els.manualAddBtn;
+  if (!b) return;
+  b.disabled = !enabled;
+  if (enabled) { b.style.borderColor='#22c55e'; b.style.background='#ecfdf5'; b.style.color='#166534'; b.style.opacity='1'; b.style.cursor='pointer'; }
+  else { b.style.borderColor='#d1d5db'; b.style.background='#f3f4f6'; b.style.color='#9ca3af'; b.style.opacity='0.6'; b.style.cursor='not-allowed'; }
+}
+function manualInputsValid() {
+  if (!els.manualSection || els.manualSection.style.display === 'none') return false;
+  const sup = (els.manualSupplier.value || '').trim();
+  const desc = (els.manualDescription.value || '').trim();
+  const pn = (els.manualPart.value || '').trim();
+  const priceEach = parseFloat((els.manualPrice.value || '').toString().replace(/[^0-9.]/g, ''));
+  return !!(sup && desc && pn && !isNaN(priceEach));
+}
+['manualSupplier','manualDescription','manualPart','manualPrice','manualQty'].forEach(id => {
+  const input = els[id]; if (input) input.addEventListener('input', () => setManualBtnEnabled(manualInputsValid()));
+});
+if (els.manualToggle) {
+  els.manualToggle.addEventListener('change', e => {
+    const on = e.target.checked;
+    if (on) {
+      els.manualSection.style.display = 'block';
+      setManualBtnEnabled(manualInputsValid());
+    } else {
+      // Clear and hide
+      if (els.manualSupplier) els.manualSupplier.value = '';
+      if (els.manualDescription) els.manualDescription.value = '';
+      if (els.manualPart) els.manualPart.value = '';
+      if (els.manualPrice) els.manualPrice.value = '';
+      if (els.manualQty) els.manualQty.value = '1';
+      setManualBtnEnabled(false);
+      els.manualSection.style.display = 'none';
+    }
+  });
+}
+setManualBtnEnabled(false);
+
+if (els.manualAddBtn) {
+  els.manualAddBtn.addEventListener('click', () => {
+    const sup = (els.manualSupplier.value || '').trim();
+    const desc = (els.manualDescription.value || '').trim();
+    const pn = (els.manualPart.value || '').trim();
+    const qty = Math.max(1, parseInt(els.manualQty.value, 10) || 1);
+    const priceEach = parseFloat((els.manualPrice.value || '').toString().replace(/[^0-9.]/g, ''));
+    if (!sup || !desc || !pn || isNaN(priceEach)) return toast('Please fill Supplier, Description, Part # and Price.', false);
+
+    state.quote.push({ SUPPLIER: sup, DESCRIPTION: desc, PARTNUMBER: pn, PRICE: priceEach || 0, qty });
+    renderQuote(); toast('Manual line added.', true);
+
+    // Clear fields and disable button until next entry
+    if (els.manualSupplier) els.manualSupplier.value = '';
+    if (els.manualDescription) els.manualDescription.value = '';
+    if (els.manualPart) els.manualPart.value = '';
+    if (els.manualPrice) els.manualPrice.value = '';
+    if (els.manualQty) els.manualQty.value = '1';
+    setManualBtnEnabled(false);
+  });
+}
+
 /* ---------- Actions ---------- */
-els.addToQuote.addEventListener('click', () => {
+const addToQuoteBtn = els.addToQuote;
+if (addToQuoteBtn) addToQuoteBtn.addEventListener('click', () => {
   if (!state.selected) return;
   state.quote.push({
     SUPPLIER: state.selected.SUPPLIER,
@@ -309,42 +373,8 @@ els.addToQuote.addEventListener('click', () => {
   showQuotePage();
 });
 
-/* Manual line helpers */
-function setManualBtnEnabled(enabled) {
-  const b = els.manualAddBtn;
-  b.disabled = !enabled;
-  if (enabled) { b.style.borderColor='#22c55e'; b.style.background='#ecfdf5'; b.style.color='#166534'; b.style.opacity='1'; b.style.cursor='pointer'; }
-  else { b.style.borderColor='#d1d5db'; b.style.background='#f3f4f6'; b.style.color='#9ca3af'; b.style.opacity='0.6'; b.style.cursor='not-allowed'; }
-}
-function manualInputsValid() {
-  const sup = (els.manualSupplier.value || '').trim();
-  const desc = (els.manualDescription.value || '').trim();
-  const pn = (els.manualPart.value || '').trim();
-  const priceEach = parseFloat((els.manualPrice.value || '').toString().replace(/[^0-9.]/g, ''));
-  return !!(sup && desc && pn && !isNaN(priceEach));
-}
-['manualSupplier','manualDescription','manualPart','manualPrice','manualQty'].forEach(id => {
-  const input = els[id]; if (input) input.addEventListener('input', () => setManualBtnEnabled(manualInputsValid()));
-});
-setManualBtnEnabled(manualInputsValid());
-
-els.manualAddBtn.addEventListener('click', () => {
-  const sup = (els.manualSupplier.value || '').trim();
-  const desc = (els.manualDescription.value || '').trim();
-  const pn = (els.manualPart.value || '').trim();
-  const qty = Math.max(1, parseInt(els.manualQty.value, 10) || 1);
-  const priceEach = parseFloat((els.manualPrice.value || '').toString().replace(/[^0-9.]/g, ''));
-  if (!sup || !desc || !pn || isNaN(priceEach)) return toast('Please fill Supplier, Description, Part # and Price.', false);
-
-  state.quote.push({ SUPPLIER: sup, DESCRIPTION: desc, PARTNUMBER: pn, PRICE: priceEach || 0, qty });
-  renderQuote(); toast('Manual line added.', true);
-
-  els.manualSupplier.value=''; els.manualDescription.value=''; els.manualPart.value=''; els.manualPrice.value=''; els.manualQty.value='1';
-  setManualBtnEnabled(false);
-});
-
 /* Copy quote (with total) */
-els.copyQuote.addEventListener('click', () => {
+if (els.copyQuote) els.copyQuote.addEventListener('click', () => {
   if (!state.quote.length) return toast('No items to copy.', false);
   let total = 0;
   const lines = state.quote.map(i => {
@@ -356,19 +386,19 @@ els.copyQuote.addEventListener('click', () => {
 });
 
 /* Copy items only */
-els.copyQuoteRaw.addEventListener('click', () => {
+if (els.copyQuoteRaw) els.copyQuoteRaw.addEventListener('click', () => {
   if (!state.quote.length) return toast('No items to copy.', false);
   const lines = buildItemsOnlyLines();
   copyText(lines.join('\n'), 'Items copied.');
 });
 
-/* Copy for Email PO — group by first-word supplier */
-els.copyQuoteEmail.addEventListener('click', () => {
+/* Copy for Email PO — grouped */
+if (els.copyQuoteEmail) els.copyQuoteEmail.addEventListener('click', () => {
   if (!state.quote.length) return toast('No items to copy.', false);
   const job = els.jobNumber?.value.trim() || '';
   const delivery = els.deliveryAddress?.value.trim() || '';
 
-  const groups = new Map();     // key: supplierKey -> { display, items[] }
+  const groups = new Map();
   state.quote.forEach(item => {
     const key = supplierKey(item.SUPPLIER);
     if (!groups.has(key)) groups.set(key, { display: displaySupplierName(item.SUPPLIER), items: [] });
@@ -391,7 +421,14 @@ els.copyQuoteEmail.addEventListener('click', () => {
   copyText(lines.join('\n').trimEnd(), 'Email PO copied.');
 });
 
-/* Build case */
+/* ---------- Build case ---------- */
+function buildItemsOnlyLines() {
+  return state.quote.map(i => {
+    const qty = i.qty || 1;
+    return `${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each (${i.SUPPLIER} price)`;
+  });
+}
+
 function buildCaseStep1Fill() {
   const lines = buildItemsOnlyLines();
   const itemsTxt = lines.join('\n');
@@ -399,6 +436,7 @@ function buildCaseStep1Fill() {
   state.buildcase.notesEstimator = itemsTxt;
   els.bc1ItemsCount.textContent = `Items: ${state.quote.length}`;
 }
+
 function showBuild1() {
   els.partsPage.style.display = 'none';
   els.quotePage.style.display = 'none';
@@ -446,25 +484,6 @@ function showBuild3() {
 }
 
 /* Navigation bindings */
-function showPartsPage() {
-  els.partsPage.style.display = 'block';
-  els.quotePage.style.display = 'none';
-  els.buildcase1Page.style.display = 'none';
-  els.buildcase2Page.style.display = 'none';
-  els.buildcase3Page.style.display = 'none';
-  els.tabParts.style.background = '#3b82f6'; els.tabParts.style.color = '#fff';
-  els.tabQuote.style.background = '#fff'; els.tabQuote.style.color = '#111';
-}
-function showQuotePage() {
-  els.partsPage.style.display = 'none';
-  els.quotePage.style.display = 'block';
-  els.buildcase1Page.style.display = 'none';
-  els.buildcase2Page.style.display = 'none';
-  els.buildcase3Page.style.display = 'none';
-  els.tabQuote.style.background = '#3b82f6'; els.tabQuote.style.color = '#fff';
-  els.tabParts.style.background = '#fff'; els.tabParts.style.color = '#111';
-}
-
 els.tabParts.addEventListener('click', showPartsPage);
 els.tabQuote.addEventListener('click', showQuotePage);
 if (els.btnBuildCase) els.btnBuildCase.addEventListener('click', showBuild1);
@@ -487,8 +506,16 @@ if (els.btnToBuild3) els.btnToBuild3.addEventListener('click', () => {
   showBuild3();
 });
 
+/* Step 3 copy buttons */
+if (els.btnCopyNC3) els.btnCopyNC3.addEventListener('click', () => {
+  copyText((els.notesCustomer3?.value || '').trim(), 'Copied customer notes.');
+});
+if (els.btnCopyNE3) els.btnCopyNE3.addEventListener('click', () => {
+  copyText((els.notesEstimator3?.value || '').trim(), 'Copied estimator notes.');
+});
+
 /* Clear quote */
-els.btnClearQuote.addEventListener('click', () => {
+if (els.btnClearQuote) els.btnClearQuote.addEventListener('click', () => {
   if (!state.quote.length) return;
   if (confirm('Clear all items?')) {
     state.quote = [];
@@ -500,14 +527,34 @@ els.btnClearQuote.addEventListener('click', () => {
 
 /* Clipboard helper */
 function copyText(txt, msg) {
-  navigator.clipboard?.writeText(txt).then(() => toast(msg, true)).catch(() => {
-    const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta);
+  const toCopy = txt || '';
+  navigator.clipboard?.writeText(toCopy).then(() => toast(msg, true)).catch(() => {
+    const ta = document.createElement('textarea'); ta.value = toCopy; document.body.appendChild(ta);
     ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
     toast(msg, true);
   });
 }
 
-/* ---------- Init ---------- */
+/* ---------- Start ---------- */
+function showPartsPage() {
+  els.partsPage.style.display = 'block';
+  els.quotePage.style.display = 'none';
+  els.buildcase1Page.style.display = 'none';
+  els.buildcase2Page.style.display = 'none';
+  els.buildcase3Page.style.display = 'none';
+  els.tabParts.style.background = '#3b82f6'; els.tabParts.style.color = '#fff';
+  els.tabQuote.style.background = '#fff'; els.tabQuote.style.color = '#111';
+}
+function showQuotePage() {
+  els.partsPage.style.display = 'none';
+  els.quotePage.style.display = 'block';
+  els.buildcase1Page.style.display = 'none';
+  els.buildcase2Page.style.display = 'none';
+  els.buildcase3Page.style.display = 'none';
+  els.tabQuote.style.background = '#3b82f6'; els.tabQuote.style.color = '#fff';
+  els.tabParts.style.background = '#fff'; els.tabParts.style.color = '#111';
+}
+
 function start() {
   const cachedCsv = localStorage.getItem('parts_csv');
   if (cachedCsv) { try { parseCSV(cachedCsv); } catch {} }
