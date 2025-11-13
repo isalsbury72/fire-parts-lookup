@@ -1,6 +1,7 @@
-/* Fire Parts Lookup v5.3.2
-   - Step 2: travel hours (NT/AH) + accommodation nights
-   - Step 3: labour + travel, blank line, Total labour, blank line, then accommodation + routine text
+/* Fire Parts Lookup v5.3.3
+   - Auto-scroll to copy area when selecting a row (especially on phone)
+   - Keep quote action grid tidy
+   - Step 3 labour summary layout: labour + travel, blank line, Total labour, blank line, accom + routine text
 */
 
 const state = {
@@ -169,6 +170,11 @@ function renderParts() {
       state.selected = r;
       els.copyArea.textContent = `${r.SUPPLIER} — ${r.DESCRIPTION} — ${r.PARTNUMBER} — ${fmtPrice(r.PRICE)} each`;
       updateAddToQuoteState();
+
+      // Auto-scroll copy area into view on smaller screens
+      if (window.innerWidth < 768 && els.copyArea && els.copyArea.parentElement) {
+        els.copyArea.parentElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     });
     body.appendChild(tr);
   });
@@ -331,6 +337,16 @@ if (els.addToQuote) els.addToQuote.addEventListener('click', () => {
   showQuotePage();
 });
 
+/* Copy the yellow part line */
+if (els.copyPartLine) els.copyPartLine.addEventListener('click', () => {
+  const text = (els.copyArea?.textContent || '').trim();
+  if (!text) {
+    toast('No part selected.', false);
+    return;
+  }
+  copyText(text, 'Line copied.');
+});
+
 /* ---------- Copy helpers ---------- */
 function copyText(txt, msg) {
   const toCopy = (txt || '').toString();
@@ -453,12 +469,12 @@ function buildLabourSummary() {
     total += ath * am;
   }
 
-  // Accommodation (moved to after total)
+  // Accommodation (after total)
   if (nights > 0) {
     linesAfter.push(`${nights} x Overnight accommodation`);
   }
 
-  // Routine visit text (moved to after total)
+  // Routine visit text (after total)
   if (state.buildcase.routineVisit === 'yes') {
     linesAfter.push('Can be completed on routine visit');
   } else {
@@ -468,11 +484,11 @@ function buildLabourSummary() {
   const out = [];
   out.push(...linesMain);
   if (total > 0) {
-    if (out.length) out.push('');                  // blank line before total
+    if (out.length) out.push('');
     out.push(`Total labour: ${total} hours`);
   }
   if (linesAfter.length) {
-    out.push('');                                  // blank line after total
+    out.push('');
     out.push(...linesAfter);
   }
   return out.join('\n');
