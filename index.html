@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Fire Parts Lookup v5.3.2</title>
+  <title>Fire Parts Lookup v5.3.4</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
 
   <link rel="manifest" href="/fire-parts-lookup/manifest.json">
@@ -40,7 +40,7 @@
     .tab-btn { flex:1; padding:8px 10px; border-radius:999px; border:1px solid #d1d5db; background:#fff; cursor:pointer; font-size:13px; }
 
     table { width:100%; border-collapse:collapse; margin-top:12px; }
-    th, td { text-align:left; padding:8px 6px; border-bottom:1px solid #eee; font-size:13px; vertical-align:top; }
+    th, td { text-align:left; padding:8px 6px; border-bottom:1px solid:#eee; font-size:13px; vertical-align:top; }
     th { position: sticky; top: 64px; background:#fafafa; z-index:5; }
     .badge { font-size:12px; background:#f3f4f6; padding:3px 7px; border-radius:999px; border:1px solid #e5e7eb; }
     .copycell { user-select: all; background:#fffbe6; border:1px dashed #facc15; border-radius:8px; padding:8px; margin-top:8px; font-size:13px; min-height:18px; }
@@ -96,7 +96,7 @@
       <div class="small">Offline-friendly parts and quote helper</div>
     </div>
     <div class="ver">
-      v5.3.2
+      v5.3.4
       <span id="authBanner" class="auth-pill" style="display:inline-block;">Authorised users only</span>
     </div>
   </header>
@@ -106,6 +106,7 @@
     <div class="tabs">
       <button id="tabParts" class="tab-btn">Parts</button>
       <button id="tabQuote" class="tab-btn">Quote</button>
+      <button id="tabSettings" class="tab-btn">Settings</button>
     </div>
 
     <!-- Parts page -->
@@ -197,7 +198,7 @@
             <div style="margin-top:8px; display:flex; gap:8px; justify-content:flex-end;">
               <button id="manualAddBtn" class="btn" style="border-color:#22c55e; background:#ecfdf5; color:#166534;">Add manual line to quote</button>
             </div>
-            <div class="small" style="margin-top:6px; color:#6b7280;">Tip: Price can include a dollar sign, commas, or spaces. We’ll clean it automatically.</div>
+            <div class="small" style="margin-top:6px; color:#6b7280;">Tip: Price can include a dollar sign, commas, or spaces. We will clean it automatically.</div>
           </div>
         </div>
 
@@ -239,10 +240,41 @@
             <button id="btnClearQuote" class="action-btn danger">
               <div class="ico">🗑️</div><div class="lbl">Clear quote</div><div class="cap">Removes all</div>
             </button>
-            <button id="btnEmailDraft" class="action-btn ghost">
-              <div class="ico">📨</div><div class="lbl">Open email draft</div><div class="cap">Launch mail app</div>
+            <button class="action-btn disabled" disabled>
+              <div class="ico">⏳</div><div class="lbl">Reserved</div><div class="cap">Coming soon</div>
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings / Diagnostics page -->
+    <div id="settingsPage" style="display:none;">
+      <div class="card">
+        <h2 style="margin-top:0; font-size:16px;">Settings and diagnostics</h2>
+        <p class="small">Quick health check of your Fire Parts app and data.</p>
+
+        <div class="card" style="margin-top:8px;">
+          <p class="small"><strong>App version:</strong> <span>v5.3.4</span></p>
+          <p class="small"><strong>CSV source:</strong> <span id="diagCsvSource">None loaded</span></p>
+          <p class="small"><strong>Last CSV loaded:</strong> <span id="diagLastLoaded">—</span></p>
+          <p class="small"><strong>Parts rows loaded:</strong> <span id="diagPartsRows">0</span></p>
+          <p class="small"><strong>Quote items:</strong> <span id="diagQuoteItems">0</span></p>
+          <p class="small"><strong>Routine visit setting:</strong> <span id="diagRoutine">Not set</span></p>
+          <p class="small"><strong>Service worker:</strong> <span id="diagSwStatus">Checking…</span></p>
+        </div>
+
+        <div class="card" style="margin-top:8px;">
+          <h3 style="margin:0 0 6px 0; font-size:14px;">Maintenance</h3>
+          <p class="small">If things look odd, you can clear all local data and reload CSV.</p>
+          <button id="btnDiagClearAll" class="btn btn-danger" style="margin-top:6px;">Clear all app data</button>
+          <p class="small" style="margin-top:6px; color:#b91c1c;">This removes cached CSV, saved quotes, build case state, and access flag. It does not touch your CSV file on OneDrive or GitHub.</p>
+        </div>
+
+        <div class="card" style="margin-top:8px;">
+          <h3 style="margin:0 0 6px 0; font-size:14px;">Export debug info</h3>
+          <p class="small">Copies a snapshot of app state (version, CSV metadata, quote counts etc.) so you can paste it into an email or chat.</p>
+          <button id="btnDiagCopy" class="btn btn-secondary" style="margin-top:6px;">Copy debug info</button>
         </div>
       </div>
     </div>
@@ -250,8 +282,8 @@
     <!-- Build Case: Step 1 -->
     <div id="buildcase1Page" style="display:none;">
       <div class="card">
-        <p class="step-title">Build case — Step 1</p>
-        <p class="muted">Notes collection. “Notes to estimator” is auto-filled with current quote line items.</p>
+        <p class="step-title">Build case - Step 1</p>
+        <p class="muted">Notes collection. Notes to estimator is auto filled with current quote line items.</p>
 
         <div class="card" style="margin-top:8px;">
           <label class="small" for="notesCustomer">Notes to customer</label>
@@ -263,7 +295,7 @@
             <label class="small" for="notesEstimator">Notes to estimator</label>
             <span id="bc1ItemsCount" class="pill">Items: 0</span>
           </div>
-          <textarea id="notesEstimator" class="bc-textarea" placeholder="Auto-filled with quote line items..."></textarea>
+          <textarea id="notesEstimator" class="bc-textarea" placeholder="Auto filled with quote line items..."></textarea>
         </div>
 
         <div style="margin-top:10px; display:flex; gap:8px; justify-content:space-between; flex-wrap:wrap;">
@@ -276,7 +308,7 @@
     <!-- Build Case: Step 2 -->
     <div id="buildcase2Page" style="display:none;">
       <div class="card">
-        <p class="step-title">Build case — Step 2</p>
+        <p class="step-title">Build case - Step 2</p>
         <p class="muted">Scheduling and resource details.</p>
 
         <div class="card" style="margin-top:8px;">
@@ -347,7 +379,7 @@
     <!-- Build Case: Step 3 -->
     <div id="buildcase3Page" style="display:none;">
       <div class="card">
-        <p class="step-title">Build case — Step 3</p>
+        <p class="step-title">Build case - Step 3</p>
         <p class="muted">Final review. Notes to estimator carry over exactly from the current quote plus labour summary.</p>
 
         <div class="card" style="margin-top:8px;">
@@ -378,13 +410,12 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <script src="app.js?v=5.3.2"></script>
+  <script src="app.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/fire-parts-lookup/sw.js', { scope: '/fire-parts-lookup/' })
         .catch(() => {});
     }
   </script>
-
 </body>
 </html>
