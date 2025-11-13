@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Fire Parts Lookup v5.3.1</title>
+  <title>Fire Parts Lookup v5.3.3</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
 
   <link rel="manifest" href="/fire-parts-lookup/manifest.json">
@@ -67,9 +67,17 @@
       max-width: 640px;
     }
     .action-btn {
-      height:64px; border-radius:12px;
-      display:flex; flex-direction:column; align-items:center; justify-content:center;
-      padding:6px 10px; text-align:center; border:1px solid #d1d5db;
+      width:100%;
+      height:64px;
+      border-radius:12px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      padding:6px 10px;
+      text-align:center;
+      border:1px solid #d1d5db;
+      box-sizing:border-box;
     }
     .action-btn .ico { font-size:16px; line-height:1; }
     .action-btn .lbl { font-size:13px; margin-top:4px; }
@@ -96,7 +104,7 @@
       <div class="small">Offline-friendly parts and quote helper</div>
     </div>
     <div class="ver">
-      v5.3.1
+      v5.3.3
       <span id="authBanner" class="auth-pill" style="display:inline-block;">Authorised users only</span>
     </div>
   </header>
@@ -378,14 +386,12 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <script src="app.js?v=5.3.1"></script>
-
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/fire-parts-lookup/sw.js', { scope: '/fire-parts-lookup/' })
-      .catch(() => {});
-  }
-</script>
-
+  <script src="app.js?v=5.3.3"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/fire-parts-lookup/sw.js', { scope: '/fire-parts-lookup/' })
+        .catch(() => {});
+    }
+  </script>
 </body>
 </html>
