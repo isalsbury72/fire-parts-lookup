@@ -1,6 +1,8 @@
-/* Fire Parts Lookup v5.3.2
-   - Quote and build case are now saved and restored from localStorage
-   - Auto scroll for selected part copy area
+/* Fire Parts Lookup v5.3.3
+   - Quote and build case saved/restored from localStorage
+   - CSV metadata (source, last loaded) tracked for diagnostics
+   - Settings/Diagnostics tab
+   - Auto-scroll tweak for selected part
 */
 
 const state = {
@@ -18,6 +20,10 @@ const state = {
     labourHoursAfter: '',
     numTechsAfter: '',
     travelHoursAfter: ''
+  },
+  csvMeta: {
+    source: 'None loaded',
+    loadedAt: null
   }
 };
 
@@ -25,6 +31,7 @@ const ACCESS_CODE = 'FP2025';
 
 const LS_KEYS = {
   CSV: 'parts_csv',
+  CSV_META: 'csv_meta_v1',
   QUOTE: 'quote_data_v1',
   BUILDCASE: 'buildcase_state_v1',
   ACCESS: 'hasAccess'
@@ -50,7 +57,9 @@ function toast(msg, ok = false) {
   setTimeout(() => t.remove(), 2600);
 }
 
-function fmtPrice(n) { return '$' + (n || 0).toFixed(2); }
+function fmtPrice(n) {
+  return '$' + (n || 0).toFixed(2);
+}
 
 function supplierKey(name) {
   if (!name) return 'UNKNOWN';
@@ -67,7 +76,35 @@ function displaySupplierName(name) {
 function fmtPriceNum(raw) {
   return parseFloat((raw || '').toString().replace(/[^0-9.]/g, '')) || 0;
 }
-function parseCSV(txt) {
+
+function formatLastLoaded(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return 'Unknown';
+  return d.toLocaleString('en-AU', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+/* CSV parsing and metadata */
+
+function updateCsvMeta(sourceLabel) {
+  if (!sourceLabel) return;
+  const meta = {
+    source: sourceLabel,
+    loadedAt: new Date().toISOString()
+  };
+  state.csvMeta = meta;
+  try {
+    localStorage.setItem(LS_KEYS.CSV_META, JSON.stringify(meta));
+  } catch {}
+}
+
+function parseCSV(txt, sourceLabel) {
   const res = Papa.parse(txt, { header: true, skipEmptyLines: true });
   state.rows = res.data.map(r => ({
     SUPPLIER: r.SUPPLIER || '',
@@ -77,7 +114,9 @@ function parseCSV(txt) {
     PRICE: fmtPriceNum(r.PRICE),
     NOTES: r.NOTES || ''
   }));
+  if (sourceLabel) updateCsvMeta(sourceLabel);
   renderParts();
+  renderDiagnostics();
 }
 
 /* localStorage helpers for quote/buildcase */
@@ -92,7 +131,23 @@ function saveBuildcase() {
     localStorage.setItem(LS_KEYS.BUILDCASE, JSON.stringify(state.buildcase));
   } catch {}
 }
+
 function loadSavedState() {
+  // CSV metadata
+  try {
+    const m = localStorage.getItem(LS_KEYS.CSV_META);
+    if (m) {
+      const parsed = JSON.parse(m);
+      if (parsed && typeof parsed === 'object') {
+        state.csvMeta = {
+          source: parsed.source || 'Unknown',
+          loadedAt: parsed.loadedAt || null
+        };
+      }
+    }
+  } catch {}
+
+  // Quote
   try {
     const q = localStorage.getItem(LS_KEYS.QUOTE);
     if (q) {
@@ -109,6 +164,7 @@ function loadSavedState() {
     }
   } catch {}
 
+  // Buildcase
   try {
     const b = localStorage.getItem(LS_KEYS.BUILDCASE);
     if (b) {
@@ -119,6 +175,8 @@ function loadSavedState() {
     }
   } catch {}
 }
+
+/* DOM refs */
 
 const els = {
   q: document.getElementById('q'),
@@ -132,11 +190,14 @@ const els = {
   partsPage: document.getElementById('partsPage'),
 
   quotePage: document.getElementById('quotePage'),
+  settingsPage: document.getElementById('settingsPage'),
   buildcase1Page: document.getElementById('buildcase1Page'),
   buildcase2Page: document.getElementById('buildcase2Page'),
   buildcase3Page: document.getElementById('buildcase3Page'),
+
   tabParts: document.getElementById('tabParts'),
   tabQuote: document.getElementById('tabQuote'),
+  tabSettings: document.getElementById('tabSettings'),
 
   addToQuote: document.getElementById('addToQuote'),
   copyQuote: document.getElementById('copyQuote'),
@@ -183,15 +244,28 @@ const els = {
   travelHoursAfter: document.getElementById('travelHoursAfter'),
 
   btnCopyNC3: document.getElementById('btnCopyNC3'),
-  btnCopyNE3: document.getElementById('btnCopyNE3')
+  btnCopyNE3: document.getElementById('btnCopyNE3'),
+
+  // Diagnostics
+  diagCsvSource: document.getElementById('diagCsvSource'),
+  diagLastLoaded: document.getElementById('diagLastLoaded'),
+  diagPartsRows: document.getElementById('diagPartsRows'),
+  diagQuoteItems: document.getElementById('diagQuoteItems'),
+  diagRoutine: document.getElementById('diagRoutine'),
+  diagSwStatus: document.getElementById('diagSwStatus'),
+  btnDiagClearAll: document.getElementById('btnDiagClearAll')
 };
 
 /* ---------- Parts page ---------- */
+
 function renderParts() {
-  const q = els.q.value.trim().toLowerCase();
+  const q = els.q ? els.q.value.trim().toLowerCase() : '';
   const body = els.tbl;
+  if (!body) return;
   body.innerHTML = '';
-  const rows = state.rows.filter(r => !q || Object.values(r).join(' ').toLowerCase().includes(q));
+  const rows = state.rows.filter(r =>
+    !q || Object.values(r).join(' ').toLowerCase().includes(q)
+  );
   rows.forEach(r => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
@@ -203,28 +277,29 @@ function renderParts() {
       <td class="notes">${r.NOTES}</td>`;
     tr.addEventListener('click', () => {
       state.selected = r;
-      els.copyArea.textContent = `${r.SUPPLIER} — ${r.DESCRIPTION} — ${r.PARTNUMBER} — ${fmtPrice(r.PRICE)} each`;
+      if (els.copyArea) {
+        els.copyArea.textContent =
+          `${r.SUPPLIER} — ${r.DESCRIPTION} — ${r.PARTNUMBER} — ${fmtPrice(r.PRICE)} each`;
+      }
       updateAddToQuoteState();
 
-      // Auto scroll copy area so its top is just under the sticky header
       if (els.copyArea) {
         const rect = els.copyArea.getBoundingClientRect();
         const scrollY = window.scrollY || window.pageYOffset || 0;
         const header = document.querySelector('header');
         const headerH = header ? header.offsetHeight : 0;
-
-        // Slightly larger offset to try to push it near the top
-        const extraOffset = 140;
+        const extraOffset = 180; // slightly bigger than before
         const rawTarget = rect.top + scrollY - headerH - extraOffset;
         const target = Math.max(rawTarget, 0);
-
         window.scrollTo({ top: target, behavior: 'smooth' });
       }
     });
     body.appendChild(tr);
   });
-  els.count.textContent = rows.length;
+  if (els.count) els.count.textContent = rows.length;
+  renderDiagnostics();
 }
+
 if (els.q) els.q.addEventListener('input', renderParts);
 
 function updateAddToQuoteState() {
@@ -252,9 +327,11 @@ function updateAddToQuoteState() {
 }
 
 /* ---------- Quote ---------- */
+
 function renderQuote() {
   const body = els.quoteTableBody;
   const sum = els.quoteSummary;
+  if (!body || !sum) return;
   body.innerHTML = '';
   let total = 0;
 
@@ -299,23 +376,30 @@ function renderQuote() {
       els.btnClearQuote.style.cursor = 'not-allowed';
     }
   }
+  renderDiagnostics();
 }
 
-/* ---------- Startup cache ---------- */
-const cachedCsv = localStorage.getItem(LS_KEYS.CSV);
-if (cachedCsv) { try { parseCSV(cachedCsv); } catch {} }
+/* ---------- Startup CSV + state ---------- */
 
-/* ---------- Load saved quote/buildcase ---------- */
+// Load saved CSV first
+const cachedCsv = localStorage.getItem(LS_KEYS.CSV);
 loadSavedState();
 
+if (cachedCsv) {
+  try {
+    parseCSV(cachedCsv); // no new meta: keeps existing loadedAt/source
+  } catch {}
+}
+
 /* ---------- Loaders ---------- */
+
 if (els.csv) els.csv.addEventListener('change', e => {
   const f = e.target.files[0];
   if (!f) return;
   const r = new FileReader();
   r.onload = () => {
     localStorage.setItem(LS_KEYS.CSV, r.result);
-    parseCSV(r.result);
+    parseCSV(r.result, 'Local CSV file');
     toast('Loaded local CSV', true);
   };
   r.readAsText(f);
@@ -340,16 +424,19 @@ if (els.loadShared) els.loadShared.addEventListener('click', () => {
     .then(r => r.text())
     .then(t => {
       localStorage.setItem(LS_KEYS.CSV, t);
-      parseCSV(t);
+      parseCSV(t, 'Shared Parts.csv');
       toast('Loaded shared CSV.', true);
     })
     .catch(() => toast('Error loading shared file', false));
 });
 
-if (els.clearCache) els.clearCache.addEventListener('click', () => {
+function clearAllData() {
   localStorage.removeItem(LS_KEYS.CSV);
+  localStorage.removeItem(LS_KEYS.CSV_META);
   localStorage.removeItem(LS_KEYS.QUOTE);
   localStorage.removeItem(LS_KEYS.BUILDCASE);
+  localStorage.removeItem(LS_KEYS.ACCESS);
+
   state.rows = [];
   state.quote = [];
   state.selected = null;
@@ -365,13 +452,23 @@ if (els.clearCache) els.clearCache.addEventListener('click', () => {
     numTechsAfter: '',
     travelHoursAfter: ''
   };
+  state.csvMeta = {
+    source: 'None loaded',
+    loadedAt: null
+  };
+
   renderParts();
   renderQuote();
   updateAddToQuoteState();
-  toast('Cache cleared.', true);
-});
+  renderDiagnostics();
+  toast('All app data cleared.', true);
+}
+
+if (els.clearCache) els.clearCache.addEventListener('click', clearAllData);
+if (els.btnDiagClearAll) els.btnDiagClearAll.addEventListener('click', clearAllData);
 
 /* ---------- Manual item ---------- */
+
 function setManualBtnEnabled(enabled) {
   const b = els.manualAddBtn;
   if (!b) return;
@@ -427,7 +524,32 @@ if (els.manualToggle) {
   }
 }
 
+/* ---------- Copy helpers ---------- */
+
+function copyText(txt, msg) {
+  const toCopy = (txt || '').toString();
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(toCopy)
+      .then(() => toast(msg, true))
+      .catch(() => fallbackCopy(toCopy, msg));
+  } else {
+    fallbackCopy(toCopy, msg);
+  }
+}
+function fallbackCopy(txt, msg) {
+  const ta = document.createElement('textarea');
+  ta.value = txt;
+  ta.style.position = 'fixed';
+  ta.style.top = '-2000px';
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); } catch {}
+  document.body.removeChild(ta);
+  toast(msg, true);
+}
+
 /* ---------- Actions ---------- */
+
 if (els.addToQuote) els.addToQuote.addEventListener('click', () => {
   if (!state.selected) return;
   state.quote.push({
@@ -450,28 +572,6 @@ if (els.copyPartLine) els.copyPartLine.addEventListener('click', () => {
   }
   copyText(text, 'Line copied.');
 });
-
-function copyText(txt, msg) {
-  const toCopy = (txt || '').toString();
-  if (navigator.clipboard && window.isSecureContext) {
-    navigator.clipboard.writeText(toCopy).then(() => toast(msg, true)).catch(() => {
-      fallbackCopy(toCopy, msg);
-    });
-  } else {
-    fallbackCopy(toCopy, msg);
-  }
-}
-function fallbackCopy(txt, msg) {
-  const ta = document.createElement('textarea');
-  ta.value = txt;
-  ta.style.position = 'fixed';
-  ta.style.top = '-2000px';
-  document.body.appendChild(ta);
-  ta.select();
-  try { document.execCommand('copy'); } catch {}
-  document.body.removeChild(ta);
-  toast(msg, true);
-}
 
 /* Copy quote with total */
 if (els.copyQuote) els.copyQuote.addEventListener('click', () => {
@@ -514,7 +614,11 @@ if (els.copyQuoteEmail) els.copyQuoteEmail.addEventListener('click', () => {
   const lines = [];
   groups.forEach(({ display, items }) => {
     const supName = display || 'Supplier';
-    lines.push(job ? `Please forward a PO to ${supName} for job ${job}` : `Please forward a PO to ${supName} for this job`);
+    lines.push(
+      job
+        ? `Please forward a PO to ${supName} for job ${job}`
+        : `Please forward a PO to ${supName} for this job`
+    );
     lines.push('');
     items.forEach(i => {
       const qty = i.qty || 1;
@@ -531,6 +635,7 @@ if (els.copyQuoteEmail) els.copyQuoteEmail.addEventListener('click', () => {
 });
 
 /* Build case helpers */
+
 function buildItemsOnlyLines() {
   return state.quote.map(i => {
     const qty = i.qty || 1;
@@ -539,7 +644,7 @@ function buildItemsOnlyLines() {
 }
 function toNum(x, d = 0) {
   const n = parseFloat((x ?? '').toString());
-  return isNaN(n) ? d : n;
+  return Number.isNaN(n) ? d : n;
 }
 function buildLabourSummary() {
   const nh = toNum(state.buildcase.labourHoursNormal, 0);
@@ -604,60 +709,78 @@ function buildCaseStep1Fill() {
   els.bc1ItemsCount.textContent = `Items: ${state.quote.length}`;
 }
 
-/* Build case navigation/pages */
+/* Page switching */
+
+function selectTab(tab) {
+  const tabs = [els.tabParts, els.tabQuote, els.tabSettings];
+  tabs.forEach(b => {
+    if (!b) return;
+    if (b === tab) {
+      b.style.background = '#3b82f6';
+      b.style.color = '#fff';
+    } else {
+      b.style.background = '#fff';
+      b.style.color = '#111';
+    }
+  });
+}
+
 function showPartsPage() {
-  els.partsPage.style.display = 'block';
-  els.quotePage.style.display = 'none';
-  els.buildcase1Page.style.display = 'none';
-  els.buildcase2Page.style.display = 'none';
-  els.buildcase3Page.style.display = 'none';
-  els.tabParts.style.background = '#3b82f6';
-  els.tabParts.style.color = '#fff';
-  els.tabQuote.style.background = '#fff';
-  els.tabQuote.style.color = '#111';
+  if (els.partsPage) els.partsPage.style.display = 'block';
+  if (els.quotePage) els.quotePage.style.display = 'none';
+  if (els.settingsPage) els.settingsPage.style.display = 'none';
+  if (els.buildcase1Page) els.buildcase1Page.style.display = 'none';
+  if (els.buildcase2Page) els.buildcase2Page.style.display = 'none';
+  if (els.buildcase3Page) els.buildcase3Page.style.display = 'none';
+  selectTab(els.tabParts);
+  renderDiagnostics();
 }
 function showQuotePage() {
-  els.partsPage.style.display = 'none';
-  els.quotePage.style.display = 'block';
-  els.buildcase1Page.style.display = 'none';
-  els.buildcase2Page.style.display = 'none';
-  els.buildcase3Page.style.display = 'none';
-  els.tabQuote.style.background = '#3b82f6';
-  els.tabQuote.style.color = '#fff';
-  els.tabParts.style.background = '#fff';
-  els.tabParts.style.color = '#111';
+  if (els.partsPage) els.partsPage.style.display = 'none';
+  if (els.quotePage) els.quotePage.style.display = 'block';
+  if (els.settingsPage) els.settingsPage.style.display = 'none';
+  if (els.buildcase1Page) els.buildcase1Page.style.display = 'none';
+  if (els.buildcase2Page) els.buildcase2Page.style.display = 'none';
+  if (els.buildcase3Page) els.buildcase3Page.style.display = 'none';
+  selectTab(els.tabQuote);
+  renderDiagnostics();
+}
+function showSettingsPage() {
+  if (els.partsPage) els.partsPage.style.display = 'none';
+  if (els.quotePage) els.quotePage.style.display = 'none';
+  if (els.settingsPage) els.settingsPage.style.display = 'block';
+  if (els.buildcase1Page) els.buildcase1Page.style.display = 'none';
+  if (els.buildcase2Page) els.buildcase2Page.style.display = 'none';
+  if (els.buildcase3Page) els.buildcase3Page.style.display = 'none';
+  selectTab(els.tabSettings);
+  renderDiagnostics();
 }
 function showBuild1() {
-  els.partsPage.style.display = 'none';
-  els.quotePage.style.display = 'none';
-  els.buildcase1Page.style.display = 'block';
-  els.buildcase2Page.style.display = 'none';
-  els.buildcase3Page.style.display = 'none';
-  els.tabQuote.style.background = '#3b82f6';
-  els.tabQuote.style.color = '#fff';
-  els.tabParts.style.background = '#fff';
-  els.tabParts.style.color = '#111';
+  if (els.partsPage) els.partsPage.style.display = 'none';
+  if (els.quotePage) els.quotePage.style.display = 'none';
+  if (els.settingsPage) els.settingsPage.style.display = 'none';
+  if (els.buildcase1Page) els.buildcase1Page.style.display = 'block';
+  if (els.buildcase2Page) els.buildcase2Page.style.display = 'none';
+  if (els.buildcase3Page) els.buildcase3Page.style.display = 'none';
+  selectTab(els.tabQuote);
 
-  // Fill notes from saved buildcase
   els.notesCustomer.value = state.buildcase.notesCustomer || '';
-
   if (state.buildcase.notesEstimator && state.buildcase.notesEstimator.trim().length > 0) {
     els.notesEstimator.value = state.buildcase.notesEstimator;
   } else {
     buildCaseStep1Fill();
   }
   els.bc1ItemsCount.textContent = `Items: ${state.quote.length}`;
+  renderDiagnostics();
 }
 function showBuild2() {
-  els.partsPage.style.display = 'none';
-  els.quotePage.style.display = 'none';
-  els.buildcase1Page.style.display = 'none';
-  els.buildcase2Page.style.display = 'block';
-  els.buildcase3Page.style.display = 'none';
-  els.tabQuote.style.background = '#3b82f6';
-  els.tabQuote.style.color = '#fff';
-  els.tabParts.style.background = '#fff';
-  els.tabParts.style.color = '#111';
+  if (els.partsPage) els.partsPage.style.display = 'none';
+  if (els.quotePage) els.quotePage.style.display = 'none';
+  if (els.settingsPage) els.settingsPage.style.display = 'none';
+  if (els.buildcase1Page) els.buildcase1Page.style.display = 'none';
+  if (els.buildcase2Page) els.buildcase2Page.style.display = 'block';
+  if (els.buildcase3Page) els.buildcase3Page.style.display = 'none';
+  selectTab(els.tabQuote);
 
   if (state.buildcase.routineVisit === 'yes') els.routineYes.checked = true;
   else if (state.buildcase.routineVisit === 'no') els.routineNo.checked = true;
@@ -669,17 +792,17 @@ function showBuild2() {
   els.labourHoursAfter.value = state.buildcase.labourHoursAfter || '';
   els.numTechsAfter.value = state.buildcase.numTechsAfter || '';
   els.travelHoursAfter.value = state.buildcase.travelHoursAfter || '';
+
+  renderDiagnostics();
 }
 function showBuild3() {
-  els.partsPage.style.display = 'none';
-  els.quotePage.style.display = 'none';
-  els.buildcase1Page.style.display = 'none';
-  els.buildcase2Page.style.display = 'none';
-  els.buildcase3Page.style.display = 'block';
-  els.tabQuote.style.background = '#3b82f6';
-  els.tabQuote.style.color = '#fff';
-  els.tabParts.style.background = '#fff';
-  els.tabParts.style.color = '#111';
+  if (els.partsPage) els.partsPage.style.display = 'none';
+  if (els.quotePage) els.quotePage.style.display = 'none';
+  if (els.settingsPage) els.settingsPage.style.display = 'none';
+  if (els.buildcase1Page) els.buildcase1Page.style.display = 'none';
+  if (els.buildcase2Page) els.buildcase2Page.style.display = 'none';
+  if (els.buildcase3Page) els.buildcase3Page.style.display = 'block';
+  selectTab(els.tabQuote);
 
   const base = buildItemsOnlyLines().join('\n');
   const labour = buildLabourSummary();
@@ -687,11 +810,17 @@ function showBuild3() {
 
   els.notesCustomer3.value = state.buildcase.notesCustomer || '';
   els.bc3ItemsCount.textContent = `Items: ${state.quote.length}`;
+  renderDiagnostics();
 }
 
-/* Build case buttons */
+/* Tab click handlers */
+
 if (els.tabParts) els.tabParts.addEventListener('click', showPartsPage);
 if (els.tabQuote) els.tabQuote.addEventListener('click', showQuotePage);
+if (els.tabSettings) els.tabSettings.addEventListener('click', showSettingsPage);
+
+/* Build case navigation */
+
 if (els.btnBuildCase) els.btnBuildCase.addEventListener('click', showBuild1);
 if (els.btnBackToQuote) els.btnBackToQuote.addEventListener('click', showQuotePage);
 if (els.btnBackToQuoteFrom3) els.btnBackToQuoteFrom3.addEventListener('click', showQuotePage);
@@ -705,7 +834,9 @@ if (els.btnToBuild2) els.btnToBuild2.addEventListener('click', () => {
   showBuild2();
 });
 if (els.btnToBuild3) els.btnToBuild3.addEventListener('click', () => {
-  state.buildcase.routineVisit = els.routineYes?.checked ? 'yes' : (els.routineNo?.checked ? 'no' : null);
+  state.buildcase.routineVisit = els.routineYes?.checked
+    ? 'yes'
+    : (els.routineNo?.checked ? 'no' : null);
   state.buildcase.accomNights = (els.accomNights?.value || '').trim();
   state.buildcase.labourHoursNormal = (els.labourHoursNormal?.value || '').trim();
   state.buildcase.numTechsNormal = (els.numTechsNormal?.value || '').trim();
@@ -718,6 +849,7 @@ if (els.btnToBuild3) els.btnToBuild3.addEventListener('click', () => {
 });
 
 /* Step 3 copy */
+
 if (els.btnCopyNC3) els.btnCopyNC3.addEventListener('click', () => {
   copyText((els.notesCustomer3?.value || '').trim(), 'Copied customer notes.');
 });
@@ -726,6 +858,7 @@ if (els.btnCopyNE3) els.btnCopyNE3.addEventListener('click', () => {
 });
 
 /* Clear quote */
+
 if (els.btnClearQuote) els.btnClearQuote.addEventListener('click', () => {
   if (!state.quote.length) return;
   if (confirm('Clear all items?')) {
@@ -738,6 +871,7 @@ if (els.btnClearQuote) els.btnClearQuote.addEventListener('click', () => {
 });
 
 /* Manual add button */
+
 if (els.manualAddBtn) els.manualAddBtn.addEventListener('click', () => {
   if (!manualInputsValid()) {
     toast('Fill supplier, description, part number and price.', false);
@@ -768,11 +902,45 @@ if (els.manualAddBtn) els.manualAddBtn.addEventListener('click', () => {
   toast('Manual item added.', true);
 });
 
+/* ---------- Diagnostics rendering ---------- */
+
+function renderDiagnostics() {
+  if (els.diagCsvSource) {
+    els.diagCsvSource.textContent = state.csvMeta.source || 'None loaded';
+  }
+  if (els.diagLastLoaded) {
+    els.diagLastLoaded.textContent = formatLastLoaded(state.csvMeta.loadedAt);
+  }
+  if (els.diagPartsRows) {
+    els.diagPartsRows.textContent = state.rows.length.toString();
+  }
+  if (els.diagQuoteItems) {
+    els.diagQuoteItems.textContent = state.quote.length.toString();
+  }
+  if (els.diagRoutine) {
+    let txt = 'Not set';
+    if (state.buildcase.routineVisit === 'yes') txt = 'Yes';
+    else if (state.buildcase.routineVisit === 'no') txt = 'No';
+    els.diagRoutine.textContent = txt;
+  }
+  if (els.diagSwStatus) {
+    if (!('serviceWorker' in navigator)) {
+      els.diagSwStatus.textContent = 'Not supported';
+    } else if (navigator.serviceWorker.controller) {
+      els.diagSwStatus.textContent = 'Active';
+    } else {
+      els.diagSwStatus.textContent = 'Registered / waiting';
+    }
+  }
+}
+
 /* ---------- Start ---------- */
+
 function start() {
   renderParts();
   renderQuote();
   updateAddToQuoteState();
   showPartsPage();
 }
+
 start();
