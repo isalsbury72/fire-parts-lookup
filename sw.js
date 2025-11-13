@@ -1,10 +1,10 @@
-// sw.js for Fire Parts Lookup v5.3.4
-const CACHE = 'fpl-v5-3-4';
+// sw.js for Fire Parts Lookup v5.3.5
+const CACHE = 'fpl-v5-3-5';
 
 const ASSETS = [
   '/fire-parts-lookup/',
   '/fire-parts-lookup/index.html',
-  '/fire-parts-lookup/app.js?v=5.3.4',
+  '/fire-parts-lookup/app.js?v=5.3.5',
   '/fire-parts-lookup/manifest.json',
   '/fire-parts-lookup/icon-192.png',
   '/fire-parts-lookup/icon-512.png',
