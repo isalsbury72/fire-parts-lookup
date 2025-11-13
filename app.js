@@ -1,969 +1,753 @@
-/* Fire Parts Lookup v5.3.4
-   - Quote and build case saved/restored from localStorage
-   - CSV metadata (source, last loaded) tracked for diagnostics
-   - Settings/Diagnostics tab + Copy debug info
-   - Scroll-to-top simplified (better on mobile)
-*/
+// app.js v5.3.3
 
-const APP_VERSION = '5.3.4';
+const APP_VERSION = '5.3.3';
 
-const state = {
-  rows: [],
-  selected: null,
-  quote: [],
-  buildcase: {
-    notesCustomer: '',
-    notesEstimator: '',
-    routineVisit: null,
-    accomNights: '',
-    labourHoursNormal: '',
-    numTechsNormal: '',
-    travelHoursNormal: '',
-    labourHoursAfter: '',
-    numTechsAfter: '',
-    travelHoursAfter: ''
-  },
-  csvMeta: {
-    source: 'None loaded',
-    loadedAt: null
-  }
-};
+// ---------- State ----------
+let parts = [];          // all parts from CSV
+let filtered = [];       // indices into parts after search
+let selectedIndex = -1;  // index in filtered
+let quoteItems = [];     // {supplier,type,description,part,price,qty,notes}
 
-const ACCESS_CODE = 'FP2025';
-
-const LS_KEYS = {
-  CSV: 'parts_csv',
-  CSV_META: 'csv_meta_v1',
-  QUOTE: 'quote_data_v1',
-  BUILDCASE: 'buildcase_state_v1',
-  ACCESS: 'hasAccess'
-};
-
-function toast(msg, ok = false) {
-  const t = document.createElement('div');
-  t.textContent = msg;
-  Object.assign(t.style, {
-    position: 'fixed',
-    bottom: '16px',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    padding: '10px 14px',
-    borderRadius: '8px',
-    background: '#fff',
-    border: `1px solid ${ok ? '#10b981' : '#f59e0b'}`,
-    boxShadow: '0 1px 6px rgba(0,0,0,0.15)',
-    zIndex: '9999',
-    fontSize: '14px'
-  });
-  document.body.appendChild(t);
-  setTimeout(() => t.remove(), 2600);
+// ---------- DOM helpers ----------
+function $(id) {
+  return document.getElementById(id);
 }
 
-function fmtPrice(n) {
-  return '$' + (n || 0).toFixed(2);
-}
-
-function supplierKey(name) {
-  if (!name) return 'UNKNOWN';
-  const noYear = name.replace(/\b20\d{2}\b/g, '');
-  const firstToken = (noYear.match(/[A-Za-z]+/) || ['UNKNOWN'])[0];
-  return firstToken.toUpperCase();
-}
-function displaySupplierName(name) {
-  if (!name) return 'SUPPLIER';
-  const key = supplierKey(name);
-  return key.charAt(0) + key.slice(1).toLowerCase();
-}
-
-function fmtPriceNum(raw) {
-  return parseFloat((raw || '').toString().replace(/[^0-9.]/g, '')) || 0;
-}
-
-function formatLastLoaded(iso) {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return 'Unknown';
-  return d.toLocaleString('en-AU', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-}
-
-/* CSV parsing and metadata */
-
-function updateCsvMeta(sourceLabel) {
-  if (!sourceLabel) return;
-  const meta = {
-    source: sourceLabel,
-    loadedAt: new Date().toISOString()
-  };
-  state.csvMeta = meta;
-  try {
-    localStorage.setItem(LS_KEYS.CSV_META, JSON.stringify(meta));
-  } catch {}
-}
-
-function parseCSV(txt, sourceLabel) {
-  const res = Papa.parse(txt, { header: true, skipEmptyLines: true });
-  state.rows = res.data.map(r => ({
-    SUPPLIER: r.SUPPLIER || '',
-    TYPE: r.TYPE || '',
-    DESCRIPTION: r.DESCRIPTION || '',
-    PARTNUMBER: r.PARTNUMBER || '',
-    PRICE: fmtPriceNum(r.PRICE),
-    NOTES: r.NOTES || ''
-  }));
-  if (sourceLabel) updateCsvMeta(sourceLabel);
-  renderParts();
-  renderDiagnostics();
-}
-
-/* localStorage helpers for quote/buildcase */
-
-function saveQuote() {
-  try {
-    localStorage.setItem(LS_KEYS.QUOTE, JSON.stringify(state.quote));
-  } catch {}
-}
-function saveBuildcase() {
-  try {
-    localStorage.setItem(LS_KEYS.BUILDCASE, JSON.stringify(state.buildcase));
-  } catch {}
-}
-
-function loadSavedState() {
-  // CSV metadata
-  try {
-    const m = localStorage.getItem(LS_KEYS.CSV_META);
-    if (m) {
-      const parsed = JSON.parse(m);
-      if (parsed && typeof parsed === 'object') {
-        state.csvMeta = {
-          source: parsed.source || 'Unknown',
-          loadedAt: parsed.loadedAt || null
-        };
-      }
-    }
-  } catch {}
-
-  // Quote
-  try {
-    const q = localStorage.getItem(LS_KEYS.QUOTE);
-    if (q) {
-      const parsed = JSON.parse(q);
-      if (Array.isArray(parsed)) {
-        state.quote = parsed.map(i => ({
-          SUPPLIER: i.SUPPLIER || '',
-          DESCRIPTION: i.DESCRIPTION || '',
-          PARTNUMBER: i.PARTNUMBER || '',
-          PRICE: typeof i.PRICE === 'number' ? i.PRICE : fmtPriceNum(i.PRICE),
-          qty: i.qty && i.qty > 0 ? i.qty : 1
-        }));
-      }
-    }
-  } catch {}
-
-  // Buildcase
-  try {
-    const b = localStorage.getItem(LS_KEYS.BUILDCASE);
-    if (b) {
-      const parsed = JSON.parse(b);
-      if (parsed && typeof parsed === 'object') {
-        state.buildcase = Object.assign({}, state.buildcase, parsed);
-      }
-    }
-  } catch {}
-}
-
-/* DOM refs */
-
-const els = {
-  q: document.getElementById('q'),
-  csv: document.getElementById('csv'),
-  tbl: document.getElementById('tbl')?.querySelector('tbody'),
-  count: document.getElementById('count'),
-  copyArea: document.getElementById('copyArea'),
-  copyPartLine: document.getElementById('copyPartLine'),
-  clearCache: document.getElementById('clearCache'),
-  loadShared: document.getElementById('loadShared'),
-  partsPage: document.getElementById('partsPage'),
-
-  quotePage: document.getElementById('quotePage'),
-  settingsPage: document.getElementById('settingsPage'),
-  buildcase1Page: document.getElementById('buildcase1Page'),
-  buildcase2Page: document.getElementById('buildcase2Page'),
-  buildcase3Page: document.getElementById('buildcase3Page'),
-
-  tabParts: document.getElementById('tabParts'),
-  tabQuote: document.getElementById('tabQuote'),
-  tabSettings: document.getElementById('tabSettings'),
-
-  addToQuote: document.getElementById('addToQuote'),
-  copyQuote: document.getElementById('copyQuote'),
-  copyQuoteRaw: document.getElementById('copyQuoteRaw'),
-  copyQuoteEmail: document.getElementById('copyQuoteEmail'),
-  btnClearQuote: document.getElementById('btnClearQuote'),
-  btnBuildCase: document.getElementById('btnBuildCase'),
-  jobNumber: document.getElementById('jobNumber'),
-  deliveryAddress: document.getElementById('deliveryAddress'),
-  quoteTableBody: document.querySelector('#quoteTable tbody'),
-  quoteSummary: document.getElementById('quoteSummary'),
-
-  manualToggle: document.getElementById('manualToggle'),
-  manualSection: document.getElementById('manualSection'),
-  manualSupplier: document.getElementById('manualSupplier'),
-  manualDescription: document.getElementById('manualDescription'),
-  manualPart: document.getElementById('manualPart'),
-  manualPrice: document.getElementById('manualPrice'),
-  manualQty: document.getElementById('manualQty'),
-  manualAddBtn: document.getElementById('manualAddBtn'),
-
-  btnBackToQuote: document.getElementById('btnBackToQuote'),
-  btnToBuild2: document.getElementById('btnToBuild2'),
-  btnBackToBuild1: document.getElementById('btnBackToBuild1'),
-  btnToBuild3: document.getElementById('btnToBuild3'),
-  btnBackToBuild2: document.getElementById('btnBackToBuild2'),
-  btnBackToQuoteFrom3: document.getElementById('btnBackToQuoteFrom3'),
-
-  notesCustomer: document.getElementById('notesCustomer'),
-  notesEstimator: document.getElementById('notesEstimator'),
-  bc1ItemsCount: document.getElementById('bc1ItemsCount'),
-  notesCustomer3: document.getElementById('notesCustomer3'),
-  notesEstimator3: document.getElementById('notesEstimator3'),
-  bc3ItemsCount: document.getElementById('bc3ItemsCount'),
-
-  routineYes: document.getElementById('routineYes'),
-  routineNo: document.getElementById('routineNo'),
-  accomNights: document.getElementById('accomNights'),
-  labourHoursNormal: document.getElementById('labourHoursNormal'),
-  numTechsNormal: document.getElementById('numTechsNormal'),
-  travelHoursNormal: document.getElementById('travelHoursNormal'),
-  labourHoursAfter: document.getElementById('labourHoursAfter'),
-  numTechsAfter: document.getElementById('numTechsAfter'),
-  travelHoursAfter: document.getElementById('travelHoursAfter'),
-
-  btnCopyNC3: document.getElementById('btnCopyNC3'),
-  btnCopyNE3: document.getElementById('btnCopyNE3'),
-
-  // Diagnostics
-  diagCsvSource: document.getElementById('diagCsvSource'),
-  diagLastLoaded: document.getElementById('diagLastLoaded'),
-  diagPartsRows: document.getElementById('diagPartsRows'),
-  diagQuoteItems: document.getElementById('diagQuoteItems'),
-  diagRoutine: document.getElementById('diagRoutine'),
-  diagSwStatus: document.getElementById('diagSwStatus'),
-  btnDiagClearAll: document.getElementById('btnDiagClearAll'),
-  btnDiagCopy: document.getElementById('btnDiagCopy')
-};
-
-/* ---------- Parts page ---------- */
-
-function renderParts() {
-  const q = els.q ? els.q.value.trim().toLowerCase() : '';
-  const body = els.tbl;
-  if (!body) return;
-  body.innerHTML = '';
-  const rows = state.rows.filter(r =>
-    !q || Object.values(r).join(' ').toLowerCase().includes(q)
-  );
-  rows.forEach(r => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${r.SUPPLIER}</td>
-      <td>${r.TYPE}</td>
-      <td>${r.DESCRIPTION}</td>
-      <td><span class="badge">${r.PARTNUMBER}</span></td>
-      <td>${fmtPrice(r.PRICE)}</td>
-      <td class="notes">${r.NOTES}</td>`;
-    tr.addEventListener('click', () => {
-      state.selected = r;
-      if (els.copyArea) {
-        els.copyArea.textContent =
-          `${r.SUPPLIER} — ${r.DESCRIPTION} — ${r.PARTNUMBER} — ${fmtPrice(r.PRICE)} each`;
-      }
-      updateAddToQuoteState();
-
-      // Strong scroll-to-top for mobile and desktop
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-    body.appendChild(tr);
-  });
-  if (els.count) els.count.textContent = rows.length;
-  renderDiagnostics();
-}
-
-if (els.q) els.q.addEventListener('input', renderParts);
-
-function updateAddToQuoteState() {
-  const b = els.addToQuote;
-  if (!b) return;
-  if (state.selected) {
-    b.disabled = false;
-    Object.assign(b.style, {
-      opacity: '1',
-      cursor: 'pointer',
-      borderColor: '#22c55e',
-      background: '#ecfdf5',
-      color: '#166534'
-    });
-  } else {
-    b.disabled = true;
-    Object.assign(b.style, {
-      opacity: '0.5',
-      cursor: 'not-allowed',
-      borderColor: '#d1d5db',
-      background: '#f3f4f6',
-      color: '#9ca3af'
-    });
-  }
-}
-
-/* ---------- Quote ---------- */
-
-function renderQuote() {
-  const body = els.quoteTableBody;
-  const sum = els.quoteSummary;
-  if (!body || !sum) return;
-  body.innerHTML = '';
-  let total = 0;
-
-  state.quote.forEach((i, idx) => {
-    const qty = i.qty || 1;
-    const lineTotal = i.PRICE * qty;
-    total += lineTotal;
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td><input type="number" min="1" value="${qty}" style="width:60px"></td>
-      <td>${i.SUPPLIER}</td>
-      <td>${i.DESCRIPTION}</td>
-      <td>${i.PARTNUMBER}</td>
-      <td>${fmtPrice(lineTotal)}</td>
-      <td><button data-i="${idx}" style="border:none;background:#fee2e2;color:#b91c1c;border-radius:6px;padding:2px 6px;cursor:pointer;">✖</button></td>`;
-    tr.querySelector('input').addEventListener('change', e => {
-      i.qty = Math.max(1, parseInt(e.target.value, 10) || 1);
-      saveQuote();
-      renderQuote();
-    });
-    tr.querySelector('button').addEventListener('click', e => {
-      const idx2 = parseInt(e.target.dataset.i, 10);
-      if (confirm('Remove this item?')) {
-        state.quote.splice(idx2, 1);
-        saveQuote();
-        renderQuote();
-      }
-    });
-    body.appendChild(tr);
-  });
-
-  sum.textContent = 'Total: ' + fmtPrice(total);
-
-  if (els.btnClearQuote) {
-    if (state.quote.length) {
-      els.btnClearQuote.disabled = false;
-      els.btnClearQuote.style.opacity = '1';
-      els.btnClearQuote.style.cursor = 'pointer';
-    } else {
-      els.btnClearQuote.disabled = true;
-      els.btnClearQuote.style.opacity = '0.6';
-      els.btnClearQuote.style.cursor = 'not-allowed';
-    }
-  }
-  renderDiagnostics();
-}
-
-/* ---------- Startup CSV + state ---------- */
-
-// Load saved CSV first
-const cachedCsv = localStorage.getItem(LS_KEYS.CSV);
-loadSavedState();
-
-if (cachedCsv) {
-  try {
-    parseCSV(cachedCsv); // keep existing metadata
-  } catch {}
-}
-
-/* ---------- Loaders ---------- */
-
-if (els.csv) els.csv.addEventListener('change', e => {
-  const f = e.target.files[0];
-  if (!f) return;
-  const r = new FileReader();
-  r.onload = () => {
-    localStorage.setItem(LS_KEYS.CSV, r.result);
-    parseCSV(r.result, 'Local CSV file');
-    toast('Loaded local CSV', true);
-  };
-  r.readAsText(f);
-});
-
+// ---------- Authorisation banner ----------
 function ensureAccess() {
-  const ok = localStorage.getItem(LS_KEYS.ACCESS);
-  if (ok === 'yes') return true;
-  const code = prompt('Enter access code:');
-  if (code === ACCESS_CODE) {
-    localStorage.setItem(LS_KEYS.ACCESS, 'yes');
-    toast('Access granted.', true);
+  const banner = $('authBanner');
+  const ok = localStorage.getItem('hasAccess');
+  if (ok === 'yes') {
+    if (banner) banner.style.display = 'inline-flex';
     return true;
   }
-  toast('Access denied.', false);
+  const code = prompt('Enter access code');
+  if (code === 'FP2025') {
+    localStorage.setItem('hasAccess', 'yes');
+    if (banner) banner.style.display = 'inline-flex';
+    alert('Access granted');
+    return true;
+  }
+  alert('Access denied');
   return false;
 }
 
-if (els.loadShared) els.loadShared.addEventListener('click', () => {
-  if (!ensureAccess()) return;
-  fetch('Parts.csv')
-    .then(r => r.text())
-    .then(t => {
-      localStorage.setItem(LS_KEYS.CSV, t);
-      parseCSV(t, 'Shared Parts.csv');
-      toast('Loaded shared CSV.', true);
-    })
-    .catch(() => toast('Error loading shared file', false));
-});
+// ---------- Parsing & formatting ----------
+function parsePrice(raw) {
+  if (!raw) return NaN;
+  let s = String(raw).trim();
+  s = s.replace('$', '').replace(/,/g, '');
+  const v = parseFloat(s);
+  return isNaN(v) ? NaN : v;
+}
 
-function clearAllData() {
-  localStorage.removeItem(LS_KEYS.CSV);
-  localStorage.removeItem(LS_KEYS.CSV_META);
-  localStorage.removeItem(LS_KEYS.QUOTE);
-  localStorage.removeItem(LS_KEYS.BUILDCASE);
-  localStorage.removeItem(LS_KEYS.ACCESS);
+function fmtPrice(v) {
+  if (isNaN(v)) return '';
+  return v.toFixed(2);
+}
 
-  state.rows = [];
-  state.quote = [];
-  state.selected = null;
-  state.buildcase = {
-    notesCustomer: '',
-    notesEstimator: '',
-    routineVisit: null,
-    accomNights: '',
-    labourHoursNormal: '',
-    numTechsNormal: '',
-    travelHoursNormal: '',
-    labourHoursAfter: '',
-    numTechsAfter: '',
-    travelHoursAfter: ''
+// Map CSV row to our structure
+function mapRow(row) {
+  const supplier = (row.SUPPLIER || row.Supplier || '').trim();
+  const type = (row.TYPE || row.Type || '').trim();
+  const description = (row.DESCRIPTION || row.Description || '').trim();
+  const part = (row.PARTNUMBER || row.PartNumber || row['PART NUMBER'] || '').trim();
+  const notes = (row.NOTES || row.Notes || '').trim();
+  const priceNum = parsePrice(row.PRICE || row.Price);
+  return {
+    supplier,
+    type,
+    description,
+    part,
+    price: priceNum,
+    notes
   };
-  state.csvMeta = {
-    source: 'None loaded',
-    loadedAt: null
-  };
-
-  renderParts();
-  renderQuote();
-  updateAddToQuoteState();
-  renderDiagnostics();
-  toast('All app data cleared.', true);
 }
 
-if (els.clearCache) els.clearCache.addEventListener('click', clearAllData);
-if (els.btnDiagClearAll) els.btnDiagClearAll.addEventListener('click', clearAllData);
-
-/* ---------- Manual item ---------- */
-
-function setManualBtnEnabled(enabled) {
-  const b = els.manualAddBtn;
-  if (!b) return;
-  b.disabled = !enabled;
-  if (enabled) {
-    b.style.borderColor = '#22c55e';
-    b.style.background = '#ecfdf5';
-    b.style.color = '#166534';
-    b.style.opacity = '1';
-    b.style.cursor = 'pointer';
-  } else {
-    b.style.borderColor = '#d1d5db';
-    b.style.background = '#f3f4f6';
-    b.style.color = '#9ca3af';
-    b.style.opacity = '0.6';
-    b.style.cursor = 'not-allowed';
-  }
+// For display in yellow copy area and quote lines
+function formatPartLine(p) {
+  const priceText = isNaN(p.price) ? '' : `$${fmtPrice(p.price)}`;
+  return `${p.description} — ${p.part} — ${priceText}`;
 }
-function manualInputsValid() {
-  if (!els.manualSection || els.manualSection.style.display === 'none') return false;
-  const sup = (els.manualSupplier.value || '').trim();
-  const desc = (els.manualDescription.value || '').trim();
-  const pn = (els.manualPart.value || '').trim();
-  const priceEach = parseFloat((els.manualPrice.value || '').toString().replace(/[^0-9.]/g, ''));
-  return !!(sup && desc && pn && !isNaN(priceEach));
-}
-['manualSupplier','manualDescription','manualPart','manualPrice','manualQty'].forEach(id => {
-  const input = els[id];
-  if (input) input.addEventListener('input', () => setManualBtnEnabled(manualInputsValid()));
-});
-if (els.manualToggle) {
-  els.manualToggle.addEventListener('change', e => {
-    const on = e.target.checked;
-    if (on) {
-      els.manualSection.style.display = 'block';
-      setManualBtnEnabled(manualInputsValid());
-    } else {
-      if (els.manualSupplier) els.manualSupplier.value = '';
-      if (els.manualDescription) els.manualDescription.value = '';
-      if (els.manualPart) els.manualPart.value = '';
-      if (els.manualPrice) els.manualPrice.value = '';
-      if (els.manualQty) els.manualQty.value = '1';
-      setManualBtnEnabled(false);
-      els.manualSection.style.display = 'none';
+
+// ---------- CSV load & cache ----------
+function parseCSV(text) {
+  Papa.parse(text, {
+    header: true,
+    skipEmptyLines: true,
+    complete: (res) => {
+      parts = res.data.map(mapRow).filter(p =>
+        p.supplier || p.description || p.part
+      );
+      // sort by supplier then description
+      parts.sort((a, b) => {
+        const sa = a.supplier.toLowerCase();
+        const sb = b.supplier.toLowerCase();
+        if (sa < sb) return -1;
+        if (sa > sb) return 1;
+        const da = a.description.toLowerCase();
+        const db = b.description.toLowerCase();
+        if (da < db) return -1;
+        if (da > db) return 1;
+        return 0;
+      });
+      filtered = parts.map((_, i) => i);
+      selectedIndex = -1;
+      localStorage.setItem('parts_csv', text);
+
+      const stamp = new Date();
+      const dd = String(stamp.getDate()).padStart(2, '0');
+      const mm = String(stamp.getMonth() + 1).padStart(2, '0');
+      const yyyy = stamp.getFullYear();
+      const hh = String(stamp.getHours()).padStart(2, '0');
+      const mi = String(stamp.getMinutes()).padStart(2, '0');
+      const nice = `${dd}/${mm}/${yyyy} ${hh}:${mi}`;
+      localStorage.setItem('lastLoaded', nice);
+      const lastEl = $('lastLoaded');
+      if (lastEl) lastEl.textContent = nice;
+
+      renderTable();
     }
   });
-  if (els.manualToggle.checked) {
-    els.manualSection.style.display = 'block';
-    setManualBtnEnabled(manualInputsValid());
-  } else {
-    els.manualSection.style.display = 'none';
-    setManualBtnEnabled(false);
+}
+
+function loadCachedCSV() {
+  const cached = localStorage.getItem('parts_csv');
+  if (cached) {
+    parseCSV(cached);
   }
 }
 
-/* ---------- Copy helpers ---------- */
-
-function copyText(txt, msg) {
-  const toCopy = (txt || '').toString();
-  if (navigator.clipboard && window.isSecureContext) {
-    navigator.clipboard.writeText(toCopy)
-      .then(() => toast(msg, true))
-      .catch(() => fallbackCopy(toCopy, msg));
-  } else {
-    fallbackCopy(toCopy, msg);
+// ---------- Quote persistence ----------
+function saveQuoteState() {
+  try {
+    localStorage.setItem('quote_items_v1', JSON.stringify(quoteItems));
+    const jobInput = $('jobNumber');
+    const delSel = $('deliveryAddress');
+    if (jobInput) localStorage.setItem('quote_job', jobInput.value || '');
+    if (delSel) localStorage.setItem('quote_delivery', delSel.value || '');
+  } catch (e) {
+    console.error('Failed to save quote state', e);
   }
 }
-function fallbackCopy(txt, msg) {
-  const ta = document.createElement('textarea');
-  ta.value = txt;
-  ta.style.position = 'fixed';
-  ta.style.top = '-2000px';
-  document.body.appendChild(ta);
-  ta.select();
-  try { document.execCommand('copy'); } catch {}
-  document.body.removeChild(ta);
-  toast(msg, true);
+
+function loadQuoteState() {
+  try {
+    const raw = localStorage.getItem('quote_items_v1');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        quoteItems = parsed;
+      }
+    }
+    const job = localStorage.getItem('quote_job');
+    const del = localStorage.getItem('quote_delivery');
+    if (job && $('jobNumber')) $('jobNumber').value = job;
+    if (del && $('deliveryAddress')) $('deliveryAddress').value = del;
+  } catch (e) {
+    console.error('Failed to load quote state', e);
+  }
 }
 
-/* ---------- Actions ---------- */
+// ---------- Search ----------
+function applySearch() {
+  const q = ($('q').value || '').trim().toLowerCase();
+  if (!q) {
+    filtered = parts.map((_, i) => i);
+  } else {
+    const tokens = q.split(/\s+/).filter(Boolean);
+    filtered = parts
+      .map((p, idx) => ({ p, idx }))
+      .filter(({ p }) => {
+        const hay = [
+          p.supplier,
+          p.type,
+          p.description,
+          p.part
+        ].join(' ').toLowerCase();
+        // all tokens must appear
+        return tokens.every(t => hay.includes(t));
+      })
+      .map(x => x.idx);
+  }
+  selectedIndex = -1;
+  $('copyArea').textContent = '';
+  setAddToQuoteEnabled(false);
+  renderTable();
+}
 
-if (els.addToQuote) els.addToQuote.addEventListener('click', () => {
-  if (!state.selected) return;
-  state.quote.push({
-    SUPPLIER: state.selected.SUPPLIER,
-    DESCRIPTION: state.selected.DESCRIPTION,
-    PARTNUMBER: state.selected.PARTNUMBER,
-    PRICE: state.selected.PRICE,
-    qty: 1
+// ---------- Table render & selection ----------
+function renderTable() {
+  const tbody = $('tbl').querySelector('tbody');
+  tbody.innerHTML = '';
+  $('count').textContent = filtered.length;
+
+  filtered.forEach((idx, pos) => {
+    const p = parts[idx];
+    const tr = document.createElement('tr');
+    tr.dataset.index = String(pos);
+
+    if (pos === selectedIndex) {
+      tr.style.background = '#fef9c3'; // light yellow
+    }
+
+    function td(text, cls) {
+      const cell = document.createElement('td');
+      if (cls) cell.className = cls;
+      cell.textContent = text || '';
+      return cell;
+    }
+
+    const priceText = isNaN(p.price) ? '' : `$${fmtPrice(p.price)}`;
+
+    tr.appendChild(td(p.supplier));
+    tr.appendChild(td(p.type || ''));
+    tr.appendChild(td(p.description));
+    tr.appendChild(td(p.part));
+    tr.appendChild(td(priceText));
+    tr.appendChild(td(p.notes || '', 'notes'));
+
+    tr.addEventListener('click', () => {
+      selectedIndex = pos;
+      // update highlight
+      Array.from(tbody.children).forEach((row, i) => {
+        row.style.background = (i === selectedIndex) ? '#fef9c3' : '';
+      });
+      // update yellow copy area
+      const part = parts[filtered[selectedIndex]];
+      $('copyArea').textContent = formatPartLine(part);
+      setAddToQuoteEnabled(true);
+    });
+
+    tbody.appendChild(tr);
   });
-  saveQuote();
-  renderQuote();
-  showQuotePage();
-});
+}
 
-if (els.copyPartLine) els.copyPartLine.addEventListener('click', () => {
-  const text = (els.copyArea?.textContent || '').trim();
-  if (!text) {
-    toast('No part selected.', false);
-    return;
+function setAddToQuoteEnabled(on) {
+  const btn = $('addToQuote');
+  if (!btn) return;
+  if (on) {
+    btn.disabled = false;
+    btn.style.background = '#eff6ff';
+    btn.style.color = '#1d4ed8';
+    btn.style.borderColor = '#2563eb';
+    btn.style.opacity = '1';
+    btn.style.cursor = 'pointer';
+  } else {
+    btn.disabled = true;
+    btn.style.background = '#f3f4f6';
+    btn.style.color = '#9ca3af';
+    btn.style.borderColor = '#d1d5db';
+    btn.style.opacity = '0.5';
+    btn.style.cursor = 'not-allowed';
   }
-  copyText(text, 'Line copied.');
-});
+}
 
-/* Copy quote with total */
-if (els.copyQuote) els.copyQuote.addEventListener('click', () => {
-  if (!state.quote.length) return toast('No items to copy.', false);
+// ---------- Quote handling ----------
+function addSelectedToQuote() {
+  if (selectedIndex < 0 || selectedIndex >= filtered.length) return;
+  const part = parts[filtered[selectedIndex]];
+  if (!part) return;
+
+  const existing = quoteItems.find(q =>
+    q.supplier === part.supplier &&
+    q.description === part.description &&
+    q.part === part.part &&
+    q.price === part.price
+  );
+  if (existing) {
+    existing.qty += 1;
+  } else {
+    quoteItems.push({
+      supplier: part.supplier,
+      type: part.type,
+      description: part.description,
+      part: part.part,
+      price: part.price,
+      qty: 1,
+      notes: part.notes || ''
+    });
+  }
+  renderQuoteTable();
+  showQuoteTab();
+}
+
+function renderQuoteTable() {
+  const tbody = $('quoteTable').querySelector('tbody');
+  tbody.innerHTML = '';
+
   let total = 0;
-  const lines = state.quote.map(i => {
-    const qty = i.qty || 1;
-    total += i.PRICE * qty;
-    return `${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each (${i.SUPPLIER} price list)`;
+
+  quoteItems.forEach((item, idx) => {
+    const tr = document.createElement('tr');
+
+    const tdQty = document.createElement('td');
+    const inputQty = document.createElement('input');
+    inputQty.type = 'number';
+    inputQty.min = '1';
+    inputQty.value = String(item.qty);
+    inputQty.style.width = '52px';
+    inputQty.addEventListener('change', () => {
+      let q = parseInt(inputQty.value, 10);
+      if (!q || q < 1) q = 1;
+      item.qty = q;
+      renderQuoteTable();
+    });
+    tdQty.appendChild(inputQty);
+    tr.appendChild(tdQty);
+
+    const tdSup = document.createElement('td');
+    tdSup.textContent = item.supplier || '';
+    tr.appendChild(tdSup);
+
+    const tdDesc = document.createElement('td');
+    tdDesc.textContent = item.description || '';
+    tr.appendChild(tdDesc);
+
+    const tdPart = document.createElement('td');
+    tdPart.textContent = item.part || '';
+    tr.appendChild(tdPart);
+
+    const tdLine = document.createElement('td');
+    const line = (item.price || 0) * item.qty;
+    if (!isNaN(line)) {
+      tdLine.textContent = `$${fmtPrice(line)}`;
+      total += line;
+    } else {
+      tdLine.textContent = '';
+    }
+    tr.appendChild(tdLine);
+
+    const tdRemove = document.createElement('td');
+    const btnRem = document.createElement('button');
+    btnRem.textContent = '✕';
+    btnRem.className = 'btn btn-ghost';
+    btnRem.style.padding = '4px 8px';
+    btnRem.addEventListener('click', () => {
+      quoteItems.splice(idx, 1);
+      renderQuoteTable();
+    });
+    tdRemove.appendChild(btnRem);
+    tr.appendChild(tdRemove);
+
+    tbody.appendChild(tr);
   });
-  lines.push('', 'Total: ' + fmtPrice(total));
-  copyText(lines.join('\n'), 'Quote copied.');
-});
 
-/* Copy items only */
-if (els.copyQuoteRaw) els.copyQuoteRaw.addEventListener('click', () => {
-  if (!state.quote.length) return toast('No items to copy.', false);
-  const lines = state.quote.map(i => {
-    const qty = i.qty || 1;
-    return `${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each (${i.SUPPLIER} price list)`;
-  });
-  copyText(lines.join('\n'), 'Items copied.');
-});
+  $('quoteSummary').textContent = `Total: $${fmtPrice(total)}`;
 
-/* Copy for Email PO - grouped by supplier */
-if (els.copyQuoteEmail) els.copyQuoteEmail.addEventListener('click', () => {
-  if (!state.quote.length) return toast('No items to copy.', false);
-  const job = els.jobNumber?.value.trim() || '';
-  const delivery = els.deliveryAddress?.value.trim() || '';
+  const hasItems = quoteItems.length > 0;
+  ['copyQuote', 'copyQuoteRaw', 'copyQuoteEmail', 'btnClearQuote', 'btnBuildCase', 'btnEmailDraft']
+    .forEach(id => {
+      const b = $(id);
+      if (!b) return;
+      b.disabled = !hasItems;
+      b.classList.toggle('disabled', !hasItems && b.classList.contains('action-btn'));
+    });
 
-  const groups = new Map();
-  state.quote.forEach(item => {
-    const key = supplierKey(item.SUPPLIER);
+  saveQuoteState();
+}
+
+// ---------- Supplier helpers ----------
+function baseSupplierName(s) {
+  if (!s) return '';
+  const trimmed = s.trim();
+  if (trimmed.toLowerCase().endsWith('2025')) {
+    const without = trimmed.slice(0, -4).trim();
+    if (without) return without;
+  }
+  return trimmed;
+}
+
+function firstWord(s) {
+  if (!s) return '';
+  return s.trim().split(/\s+/)[0];
+}
+
+// Items-only with "(Supplier price list)" suffix
+function buildItemsOnlyText() {
+  return quoteItems.map(item => {
+    const priceText = isNaN(item.price) ? '' : `$${fmtPrice(item.price)}`;
+    const supplierLabel = baseSupplierName(item.supplier);
+    return `${item.qty} x ${item.description} — ${item.part} — ${priceText} each (${supplierLabel} price list)`;
+  }).join('\n');
+}
+
+// ---------- Clipboard ----------
+async function copyText(text, okMsg = 'Copied') {
+  try {
+    await navigator.clipboard.writeText(text);
+    console.log(okMsg);
+  } catch (e) {
+    console.error('Clipboard failed', e);
+    alert('Could not copy to clipboard');
+  }
+}
+
+// ---------- Tabs ----------
+function showPartsTab() {
+  $('partsPage').style.display = '';
+  $('quotePage').style.display = 'none';
+  $('buildcase1Page').style.display = 'none';
+  $('buildcase2Page').style.display = 'none';
+  $('buildcase3Page').style.display = 'none';
+  $('tabParts').style.background = '#eff6ff';
+  $('tabParts').style.borderColor = '#2563eb';
+  $('tabQuote').style.background = '#fff';
+  $('tabQuote').style.borderColor = '#d1d5db';
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function showQuoteTab() {
+  $('partsPage').style.display = 'none';
+  $('quotePage').style.display = '';
+  $('buildcase1Page').style.display = 'none';
+  $('buildcase2Page').style.display = 'none';
+  $('buildcase3Page').style.display = 'none';
+  $('tabQuote').style.background = '#eff6ff';
+  $('tabQuote').style.borderColor = '#2563eb';
+  $('tabParts').style.background = '#fff';
+  $('tabParts').style.borderColor = '#d1d5db';
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function showBuildCaseStep(step) {
+  $('partsPage').style.display = 'none';
+  $('quotePage').style.display = 'none';
+  $('buildcase1Page').style.display = step === 1 ? '' : 'none';
+  $('buildcase2Page').style.display = step === 2 ? '' : 'none';
+  $('buildcase3Page').style.display = step === 3 ? '' : 'none';
+
+  $('tabParts').style.background = '#fff';
+  $('tabParts').style.borderColor = '#d1d5db';
+  $('tabQuote').style.background = '#fff';
+  $('tabQuote').style.borderColor = '#d1d5db';
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ---------- Build case helpers ----------
+function populateBuildCaseFromQuote() {
+  const itemsText = buildItemsOnlyText();
+  $('notesEstimator').value = itemsText;
+  $('bc1ItemsCount').textContent = `Items: ${quoteItems.length}`;
+}
+
+function buildLabourSummary() {
+  const ntH = parseFloat($('labourHoursNormal').value) || 0;
+  const ntT = parseInt($('numTechsNormal').value, 10) || 0;
+  const ntTr = parseFloat($('travelHoursNormal').value) || 0;
+
+  const ahH = parseFloat($('labourHoursAfter').value) || 0;
+  const ahT = parseInt($('numTechsAfter').value, 10) || 0;
+  const ahTr = parseFloat($('travelHoursAfter').value) || 0;
+
+  const accom = parseInt($('accomNights').value, 10) || 0;
+
+  const lines = [];
+  let totalHours = 0;
+
+  if (ntH && ntT) {
+    lines.push(`${ntH} hours ${ntT} men NT`);
+    totalHours += ntH * ntT;
+  }
+  if (ahH && ahT) {
+    lines.push(`${ahH} hours ${ahT} men AH`);
+    totalHours += ahH * ahT;
+  }
+  if (ntTr && ntT) {
+    lines.push(`${ntTr} hours ${ntT} men NT Travel`);
+    totalHours += ntTr * ntT;
+  }
+  if (ahTr && ahT) {
+    lines.push(`${ahTr} hours ${ahT} men AH Travel`);
+    totalHours += ahTr * ahT;
+  }
+
+  if (lines.length > 0) {
+    lines.push('');
+    lines.push(`Total labour: ${totalHours} hours`);
+  }
+
+  if (accom > 0) {
+    lines.push('');
+    lines.push(`${accom} x Overnight accommodation`);
+  }
+
+  const yes = $('routineYes').checked;
+  const no = $('routineNo').checked;
+  if (yes) {
+    lines.push('Can be completed on routine visit');
+  } else {
+    lines.push('Not intended to be completed on routine visit');
+  }
+
+  return lines.join('\n');
+}
+
+// ---------- Email PO formats ----------
+function buildGroupedEmailBlocks() {
+  const groups = new Map(); // key: first word(lower) => {label, items[]}
+  quoteItems.forEach(item => {
+    const base = baseSupplierName(item.supplier);
+    const key = firstWord(base).toLowerCase();
+    if (!key) return;
     if (!groups.has(key)) {
-      groups.set(key, { display: displaySupplierName(item.SUPPLIER), items: [] });
+      groups.set(key, { label: baseSupplierName(base), items: [] });
     }
     groups.get(key).items.push(item);
   });
 
-  const lines = [];
-  groups.forEach(({ display, items }) => {
-    const supName = display || 'Supplier';
-    lines.push(
-      job
-        ? `Please forward a PO to ${supName} for job ${job}`
-        : `Please forward a PO to ${supName} for this job`
-    );
-    lines.push('');
-    items.forEach(i => {
-      const qty = i.qty || 1;
-      lines.push(`${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each`);
-    });
+  const job = ($('jobNumber').value || '').trim();
+  const delivery = ($('deliveryAddress').value || '').trim();
+
+  const blocks = [];
+
+  for (const [key, group] of groups.entries()) {
+    const label = baseSupplierName(group.label);
+    const hasJob = job.length > 0;
+
+    const subjectLine = hasJob
+      ? `PO for job ${job}`
+      : `PO request`;
+
+    const headerLine = hasJob
+      ? `Please forward a PO to ${label} for job ${job}`
+      : `Please forward a PO to ${label} for the following items`;
+
+    const itemsText = group.items.map(item => {
+      const priceText = isNaN(item.price) ? '' : `$${fmtPrice(item.price)}`;
+      return `${item.qty} x ${item.description} — ${item.part} — ${priceText} each`;
+    }).join('\n');
+
+    const blockParts = [
+      subjectLine,
+      '',
+      headerLine,
+      '',
+      itemsText
+    ];
+
     if (delivery) {
-      lines.push('');
-      lines.push(delivery);
+      blockParts.push('');
+      blockParts.push(delivery);
     }
-    lines.push('');
+
+    blocks.push(blockParts.join('\n'));
+  }
+
+  return blocks;
+}
+
+// ---------- Init ----------
+document.addEventListener('DOMContentLoaded', () => {
+  ensureAccess();
+
+  // Show existing lastLoaded if present
+  const savedLast = localStorage.getItem('lastLoaded');
+  if (savedLast && $('lastLoaded')) {
+    $('lastLoaded').textContent = savedLast;
+  }
+
+  loadCachedCSV();
+  loadQuoteState();
+
+  // Search
+  $('q').addEventListener('input', applySearch);
+
+  // Local CSV
+  $('csv').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => parseCSV(ev.target.result);
+    reader.readAsText(file);
   });
 
-  copyText(lines.join('\n').trimEnd(), 'Email PO copied.');
-});
-
-/* Build case helpers */
-
-function buildItemsOnlyLines() {
-  return state.quote.map(i => {
-    const qty = i.qty || 1;
-    return `${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each (${i.SUPPLIER} price list)`;
+  // Load shared CSV from same origin
+  $('loadShared').addEventListener('click', () => {
+    fetch('Parts.csv')
+      .then(resp => {
+        if (!resp.ok) throw new Error('Network not ok');
+        return resp.text();
+      })
+      .then(text => parseCSV(text))
+      .catch(() => alert('Could not load shared Parts.csv'));
   });
-}
-function toNum(x, d = 0) {
-  const n = parseFloat((x ?? '').toString());
-  return Number.isNaN(n) ? d : n;
-}
-function buildLabourSummary() {
-  const nh = toNum(state.buildcase.labourHoursNormal, 0);
-  const nm = Math.max(0, parseInt(state.buildcase.numTechsNormal || '0', 10) || 0);
-  const nth = toNum(state.buildcase.travelHoursNormal, 0);
 
-  const ah = toNum(state.buildcase.labourHoursAfter, 0);
-  const am = Math.max(0, parseInt(state.buildcase.numTechsAfter || '0', 10) || 0);
-  const ath = toNum(state.buildcase.travelHoursAfter, 0);
+  // Clear cache
+  $('clearCache').addEventListener('click', () => {
+    if (!confirm('Clear loaded CSV and reset?')) return;
+    localStorage.removeItem('parts_csv');
+    localStorage.removeItem('lastLoaded');
+    parts = [];
+    filtered = [];
+    selectedIndex = -1;
+    $('copyArea').textContent = '';
+    setAddToQuoteEnabled(false);
+    renderTable();
+    const lastEl = $('lastLoaded');
+    if (lastEl) lastEl.textContent = 'never';
+  });
 
-  const nights = Math.max(0, parseInt(state.buildcase.accomNights || '0', 10) || 0);
+  // Copy selected part line
+  $('copyPartLine').addEventListener('click', () => {
+    const text = $('copyArea').textContent || '';
+    if (!text) return;
+    copyText(text);
+  });
 
-  const linesMain = [];
-  const linesAfter = [];
-  let total = 0;
+  // Add to quote
+  $('addToQuote').addEventListener('click', addSelectedToQuote);
 
-  if (nh > 0 && nm > 0) {
-    linesMain.push(`${nh} ${nh === 1 ? 'hour' : 'hours'} ${nm} ${nm === 1 ? 'man' : 'men'} NT`);
-    total += nh * nm;
-  }
-  if (ah > 0 && am > 0) {
-    linesMain.push(`${ah} ${ah === 1 ? 'hour' : 'hours'} ${am} ${am === 1 ? 'man' : 'men'} AH`);
-    total += ah * am;
-  }
-  if (nth > 0 && nm > 0) {
-    linesMain.push(`${nth} ${nth === 1 ? 'hour' : 'hours'} ${nm} ${nm === 1 ? 'man' : 'men'} NT Travel`);
-    total += nth * nm;
-  }
-  if (ath > 0 && am > 0) {
-    linesMain.push(`${ath} ${ath === 1 ? 'hour' : 'hours'} ${am} ${am === 1 ? 'man' : 'men'} AH Travel`);
-    total += ath * am;
-  }
+  // Tabs
+  $('tabParts').addEventListener('click', showPartsTab);
+  $('tabQuote').addEventListener('click', showQuoteTab);
 
-  if (nights > 0) {
-    linesAfter.push(`${nights} x Overnight accommodation`);
-  }
+  // Manual item toggle
+  $('manualToggle').addEventListener('change', () => {
+    const on = $('manualToggle').checked;
+    $('manualSection').style.display = on ? 'block' : 'none';
+  });
 
-  if (state.buildcase.routineVisit === 'yes') {
-    linesAfter.push('Can be completed on routine visit');
-  } else {
-    linesAfter.push('Not intended to be completed on routine visit');
-  }
-
-  const out = [];
-  out.push(...linesMain);
-  if (total > 0) {
-    if (out.length) out.push('');
-    out.push(`Total labour: ${total} hours`);
-  }
-  if (linesAfter.length) {
-    out.push('');
-    out.push(...linesAfter);
-  }
-  return out.join('\n');
-}
-
-function buildCaseStep1Fill() {
-  const lines = buildItemsOnlyLines();
-  const itemsTxt = lines.join('\n');
-  els.notesEstimator.value = itemsTxt;
-  state.buildcase.notesEstimator = itemsTxt;
-  els.bc1ItemsCount.textContent = `Items: ${state.quote.length}`;
-}
-
-/* Page switching */
-
-function selectTab(tab) {
-  const tabs = [els.tabParts, els.tabQuote, els.tabSettings];
-  tabs.forEach(b => {
-    if (!b) return;
-    if (b === tab) {
-      b.style.background = '#3b82f6';
-      b.style.color = '#fff';
-    } else {
-      b.style.background = '#fff';
-      b.style.color = '#111';
+  // Manual item add
+  $('manualAddBtn').addEventListener('click', () => {
+    const sup = $('manualSupplier').value.trim();
+    const desc = $('manualDescription').value.trim();
+    const part = $('manualPart').value.trim();
+    const priceRaw = $('manualPrice').value.trim();
+    const qtyVal = parseInt($('manualQty').value, 10) || 1;
+    if (!sup || !desc || !part || !priceRaw) {
+      alert('Please fill supplier, description, part and price.');
+      return;
     }
+    const price = parsePrice(priceRaw);
+    quoteItems.push({
+      supplier: sup,
+      type: '',
+      description: desc,
+      part,
+      price,
+      qty: qtyVal,
+      notes: ''
+    });
+    $('manualSupplier').value = '';
+    $('manualDescription').value = '';
+    $('manualPart').value = '';
+    $('manualPrice').value = '';
+    $('manualQty').value = '1';
+    renderQuoteTable();
   });
-}
 
-function showPartsPage() {
-  if (els.partsPage) els.partsPage.style.display = 'block';
-  if (els.quotePage) els.quotePage.style.display = 'none';
-  if (els.settingsPage) els.settingsPage.style.display = 'none';
-  if (els.buildcase1Page) els.buildcase1Page.style.display = 'none';
-  if (els.buildcase2Page) els.buildcase2Page.style.display = 'none';
-  if (els.buildcase3Page) els.buildcase3Page.style.display = 'none';
-  selectTab(els.tabParts);
-  renderDiagnostics();
-}
-function showQuotePage() {
-  if (els.partsPage) els.partsPage.style.display = 'none';
-  if (els.quotePage) els.quotePage.style.display = 'block';
-  if (els.settingsPage) els.settingsPage.style.display = 'none';
-  if (els.buildcase1Page) els.buildcase1Page.style.display = 'none';
-  if (els.buildcase2Page) els.buildcase2Page.style.display = 'none';
-  if (els.buildcase3Page) els.buildcase3Page.style.display = 'none';
-  selectTab(els.tabQuote);
-  renderDiagnostics();
-}
-function showSettingsPage() {
-  if (els.partsPage) els.partsPage.style.display = 'none';
-  if (els.quotePage) els.quotePage.style.display = 'none';
-  if (els.settingsPage) els.settingsPage.style.display = 'block';
-  if (els.buildcase1Page) els.buildcase1Page.style.display = 'none';
-  if (els.buildcase2Page) els.buildcase2Page.style.display = 'none';
-  if (els.buildcase3Page) els.buildcase3Page.style.display = 'none';
-  selectTab(els.tabSettings);
-  renderDiagnostics();
-}
-function showBuild1() {
-  if (els.partsPage) els.partsPage.style.display = 'none';
-  if (els.quotePage) els.quotePage.style.display = 'none';
-  if (els.settingsPage) els.settingsPage.style.display = 'none';
-  if (els.buildcase1Page) els.buildcase1Page.style.display = 'block';
-  if (els.buildcase2Page) els.buildcase2Page.style.display = 'none';
-  if (els.buildcase3Page) els.buildcase3Page.style.display = 'none';
-  selectTab(els.tabQuote);
+  // Persist job / delivery changes
+  $('jobNumber').addEventListener('input', saveQuoteState);
+  $('deliveryAddress').addEventListener('change', saveQuoteState);
 
-  els.notesCustomer.value = state.buildcase.notesCustomer || '';
-  if (state.buildcase.notesEstimator && state.buildcase.notesEstimator.trim().length > 0) {
-    els.notesEstimator.value = state.buildcase.notesEstimator;
-  } else {
-    buildCaseStep1Fill();
-  }
-  els.bc1ItemsCount.textContent = `Items: ${state.quote.length}`;
-  renderDiagnostics();
-}
-function showBuild2() {
-  if (els.partsPage) els.partsPage.style.display = 'none';
-  if (els.quotePage) els.quotePage.style.display = 'none';
-  if (els.settingsPage) els.settingsPage.style.display = 'none';
-  if (els.buildcase1Page) els.buildcase1Page.style.display = 'none';
-  if (els.buildcase2Page) els.buildcase2Page.style.display = 'block';
-  if (els.buildcase3Page) els.buildcase3Page.style.display = 'none';
-  selectTab(els.tabQuote);
-
-  if (state.buildcase.routineVisit === 'yes') els.routineYes.checked = true;
-  else if (state.buildcase.routineVisit === 'no') els.routineNo.checked = true;
-
-  els.accomNights.value = state.buildcase.accomNights || '';
-  els.labourHoursNormal.value = state.buildcase.labourHoursNormal || '';
-  els.numTechsNormal.value = state.buildcase.numTechsNormal || '';
-  els.travelHoursNormal.value = state.buildcase.travelHoursNormal || '';
-  els.labourHoursAfter.value = state.buildcase.labourHoursAfter || '';
-  els.numTechsAfter.value = state.buildcase.numTechsAfter || '';
-  els.travelHoursAfter.value = state.buildcase.travelHoursAfter || '';
-
-  renderDiagnostics();
-}
-function showBuild3() {
-  if (els.partsPage) els.partsPage.style.display = 'none';
-  if (els.quotePage) els.quotePage.style.display = 'none';
-  if (els.settingsPage) els.settingsPage.style.display = 'none';
-  if (els.buildcase1Page) els.buildcase1Page.style.display = 'none';
-  if (els.buildcase2Page) els.buildcase2Page.style.display = 'none';
-  if (els.buildcase3Page) els.buildcase3Page.style.display = 'block';
-  selectTab(els.tabQuote);
-
-  const base = buildItemsOnlyLines().join('\n');
-  const labour = buildLabourSummary();
-  els.notesEstimator3.value = labour ? `${base}\n\n${labour}` : base;
-
-  els.notesCustomer3.value = state.buildcase.notesCustomer || '';
-  els.bc3ItemsCount.textContent = `Items: ${state.quote.length}`;
-  renderDiagnostics();
-}
-
-/* Tab click handlers */
-
-if (els.tabParts) els.tabParts.addEventListener('click', showPartsPage);
-if (els.tabQuote) els.tabQuote.addEventListener('click', showQuotePage);
-if (els.tabSettings) els.tabSettings.addEventListener('click', showSettingsPage);
-
-/* Build case navigation */
-
-if (els.btnBuildCase) els.btnBuildCase.addEventListener('click', showBuild1);
-if (els.btnBackToQuote) els.btnBackToQuote.addEventListener('click', showQuotePage);
-if (els.btnBackToQuoteFrom3) els.btnBackToQuoteFrom3.addEventListener('click', showQuotePage);
-if (els.btnBackToBuild1) els.btnBackToBuild1.addEventListener('click', showBuild1);
-if (els.btnBackToBuild2) els.btnBackToBuild2.addEventListener('click', showBuild2);
-
-if (els.btnToBuild2) els.btnToBuild2.addEventListener('click', () => {
-  state.buildcase.notesCustomer = (els.notesCustomer?.value || '').trim();
-  state.buildcase.notesEstimator = (els.notesEstimator?.value || '').trim();
-  saveBuildcase();
-  showBuild2();
-});
-if (els.btnToBuild3) els.btnToBuild3.addEventListener('click', () => {
-  state.buildcase.routineVisit = els.routineYes?.checked
-    ? 'yes'
-    : (els.routineNo?.checked ? 'no' : null);
-  state.buildcase.accomNights = (els.accomNights?.value || '').trim();
-  state.buildcase.labourHoursNormal = (els.labourHoursNormal?.value || '').trim();
-  state.buildcase.numTechsNormal = (els.numTechsNormal?.value || '').trim();
-  state.buildcase.travelHoursNormal = (els.travelHoursNormal?.value || '').trim();
-  state.buildcase.labourHoursAfter = (els.labourHoursAfter?.value || '').trim();
-  state.buildcase.numTechsAfter = (els.numTechsAfter?.value || '').trim();
-  state.buildcase.travelHoursAfter = (els.travelHoursAfter?.value || '').trim();
-  saveBuildcase();
-  showBuild3();
-});
-
-/* Step 3 copy */
-
-if (els.btnCopyNC3) els.btnCopyNC3.addEventListener('click', () => {
-  copyText((els.notesCustomer3?.value || '').trim(), 'Copied customer notes.');
-});
-if (els.btnCopyNE3) els.btnCopyNE3.addEventListener('click', () => {
-  copyText((els.notesEstimator3?.value || '').trim(), 'Copied estimator notes.');
-});
-
-/* Clear quote */
-
-if (els.btnClearQuote) els.btnClearQuote.addEventListener('click', () => {
-  if (!state.quote.length) return;
-  if (confirm('Clear all items?')) {
-    state.quote = [];
-    saveQuote();
-    renderQuote();
-    toast('Quote cleared.', true);
-    showPartsPage();
-  }
-});
-
-/* Manual add button */
-
-if (els.manualAddBtn) els.manualAddBtn.addEventListener('click', () => {
-  if (!manualInputsValid()) {
-    toast('Fill supplier, description, part number and price.', false);
-    return;
-  }
-  const sup = els.manualSupplier.value.trim();
-  const desc = els.manualDescription.value.trim();
-  const pn = els.manualPart.value.trim();
-  const priceEach = parseFloat((els.manualPrice.value || '').toString().replace(/[^0-9.]/g, '')) || 0;
-  const qty = Math.max(1, parseInt(els.manualQty.value, 10) || 1);
-
-  state.quote.push({
-    SUPPLIER: sup,
-    DESCRIPTION: desc,
-    PARTNUMBER: pn,
-    PRICE: priceEach,
-    qty
+  // Copy full quote (with total)
+  $('copyQuote').addEventListener('click', () => {
+    if (!quoteItems.length) return;
+    const itemsText = buildItemsOnlyText();
+    const total = quoteItems.reduce((sum, i) =>
+      sum + ((i.price || 0) * i.qty), 0
+    );
+    const full = `${itemsText}\n\nTotal: $${fmtPrice(total)}`;
+    copyText(full);
   });
-  saveQuote();
-  renderQuote();
 
-  els.manualSupplier.value = '';
-  els.manualDescription.value = '';
-  els.manualPart.value = '';
-  els.manualPrice.value = '';
-  els.manualQty.value = '1';
-  setManualBtnEnabled(false);
-  toast('Manual item added.', true);
-});
-
-/* ---------- Diagnostics + debug export ---------- */
-
-function renderDiagnostics() {
-  if (els.diagCsvSource) {
-    els.diagCsvSource.textContent = state.csvMeta.source || 'None loaded';
-  }
-  if (els.diagLastLoaded) {
-    els.diagLastLoaded.textContent = formatLastLoaded(state.csvMeta.loadedAt);
-  }
-  if (els.diagPartsRows) {
-    els.diagPartsRows.textContent = state.rows.length.toString();
-  }
-  if (els.diagQuoteItems) {
-    els.diagQuoteItems.textContent = state.quote.length.toString();
-  }
-  if (els.diagRoutine) {
-    let txt = 'Not set';
-    if (state.buildcase.routineVisit === 'yes') txt = 'Yes';
-    else if (state.buildcase.routineVisit === 'no') txt = 'No';
-    els.diagRoutine.textContent = txt;
-  }
-  if (els.diagSwStatus) {
-    if (!('serviceWorker' in navigator)) {
-      els.diagSwStatus.textContent = 'Not supported';
-    } else if (navigator.serviceWorker.controller) {
-      els.diagSwStatus.textContent = 'Active';
-    } else {
-      els.diagSwStatus.textContent = 'Registered / waiting';
-    }
-  }
-}
-
-function buildDebugInfo() {
-  const swStatus = !('serviceWorker' in navigator)
-    ? 'not-supported'
-    : (navigator.serviceWorker.controller ? 'active' : 'registered/waiting');
-
-  const info = {
-    version: APP_VERSION,
-    timestamp: new Date().toISOString(),
-    csvMeta: state.csvMeta,
-    rowsCount: state.rows.length,
-    firstFewRows: state.rows.slice(0, 3),
-    quoteItems: state.quote.length,
-    quoteSuppliers: [...new Set(state.quote.map(q => q.SUPPLIER))],
-    buildcase: state.buildcase,
-    routineVisit: state.buildcase.routineVisit,
-    serviceWorker: swStatus,
-    userAgent: navigator.userAgent
-  };
-  return JSON.stringify(info, null, 2);
-}
-
-if (els.btnDiagCopy) {
-  els.btnDiagCopy.addEventListener('click', () => {
-    const txt = buildDebugInfo();
-    copyText(txt, 'Debug info copied.');
+  // Copy items only
+  $('copyQuoteRaw').addEventListener('click', () => {
+    if (!quoteItems.length) return;
+    const txt = buildItemsOnlyText();
+    copyText(txt);
   });
-}
 
-/* ---------- Start ---------- */
+  // Copy for Email PO (subject + body, grouped by supplier)
+  $('copyQuoteEmail').addEventListener('click', () => {
+    if (!quoteItems.length) return;
+    const blocks = buildGroupedEmailBlocks();
+    const txt = blocks.join('\n\n');
+    copyText(txt);
+  });
 
-function start() {
-  renderParts();
-  renderQuote();
-  updateAddToQuoteState();
-  showPartsPage();
-}
+  // Clear quote & go back to parts
+  $('btnClearQuote').addEventListener('click', () => {
+    if (!quoteItems.length) return;
+    if (!confirm('Clear all quote items?')) return;
+    quoteItems = [];
+    renderQuoteTable();
+    showPartsTab();
+  });
 
-start();
+  // Build case
+  $('btnBuildCase').addEventListener('click', () => {
+    if (!quoteItems.length) return;
+    populateBuildCaseFromQuote();
+    showBuildCaseStep(1);
+  });
+
+  $('btnBackToQuote').addEventListener('click', showQuoteTab);
+  $('btnToBuild2').addEventListener('click', () => showBuildCaseStep(2));
+  $('btnBackToBuild1').addEventListener('click', () => showBuildCaseStep(1));
+  $('btnToBuild3').addEventListener('click', () => {
+    const nc1 = $('notesCustomer').value || '';
+    const ne1 = $('notesEstimator').value || buildItemsOnlyText();
+    const labour = buildLabourSummary();
+
+    $('notesCustomer3').value = nc1;
+    $('notesEstimator3').value = ne1
+      ? `${ne1}\n\n${labour}`
+      : labour;
+
+    $('bc3ItemsCount').textContent = `Items: ${quoteItems.length}`;
+    showBuildCaseStep(3);
+  });
+  $('btnBackToBuild2').addEventListener('click', () => showBuildCaseStep(2));
+  $('btnBackToQuoteFrom3').addEventListener('click', showQuoteTab);
+
+  // Copy buttons on Step 3
+  $('btnCopyNC3').addEventListener('click', () => {
+    const txt = $('notesCustomer3').value || '';
+    if (!txt) return;
+    copyText(txt);
+  });
+  $('btnCopyNE3').addEventListener('click', () => {
+    const txt = $('notesEstimator3').value || '';
+    if (!txt) return;
+    copyText(txt);
+  });
+
+  // Open email draft (mailto)
+  $('btnEmailDraft').addEventListener('click', () => {
+    if (!quoteItems.length) return;
+    const blocks = buildGroupedEmailBlocks();
+    if (!blocks.length) return;
+
+    const job = ($('jobNumber').value || '').trim();
+    const hasJob = job.length > 0;
+    const subject = hasJob ? `PO for job ${job}` : 'PO request';
+
+    const body = blocks[0]; // first supplier group
+    const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = mailto;
+  });
+
+  // Settings / diagnostics – export debug info
+  const dbgBtn = $('btnExportDebug');
+  if (dbgBtn) {
+    dbgBtn.addEventListener('click', () => {
+      const debug = {
+        version: APP_VERSION,
+        lastLoaded: localStorage.getItem('lastLoaded') || null,
+        hasPartsCSV: !!localStorage.getItem('parts_csv'),
+        quoteItemsCount: quoteItems.length,
+        jobNumber: $('jobNumber') ? $('jobNumber').value : '',
+        deliveryAddress: $('deliveryAddress') ? $('deliveryAddress').value : ''
+      };
+      copyText(JSON.stringify(debug, null, 2), 'Debug info copied');
+    });
+  }
+
+  // Initial render of quote table from loaded state
+  renderQuoteTable();
+});
