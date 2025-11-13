@@ -1,9 +1,11 @@
-/* Fire Parts Lookup v5.3.3
+/* Fire Parts Lookup v5.3.4
    - Quote and build case saved/restored from localStorage
    - CSV metadata (source, last loaded) tracked for diagnostics
-   - Settings/Diagnostics tab
-   - Auto-scroll tweak for selected part
+   - Settings/Diagnostics tab + Copy debug info
+   - Scroll-to-top simplified (better on mobile)
 */
+
+const APP_VERSION = '5.3.4';
 
 const state = {
   rows: [],
@@ -253,7 +255,8 @@ const els = {
   diagQuoteItems: document.getElementById('diagQuoteItems'),
   diagRoutine: document.getElementById('diagRoutine'),
   diagSwStatus: document.getElementById('diagSwStatus'),
-  btnDiagClearAll: document.getElementById('btnDiagClearAll')
+  btnDiagClearAll: document.getElementById('btnDiagClearAll'),
+  btnDiagCopy: document.getElementById('btnDiagCopy')
 };
 
 /* ---------- Parts page ---------- */
@@ -283,16 +286,8 @@ function renderParts() {
       }
       updateAddToQuoteState();
 
-      if (els.copyArea) {
-        const rect = els.copyArea.getBoundingClientRect();
-        const scrollY = window.scrollY || window.pageYOffset || 0;
-        const header = document.querySelector('header');
-        const headerH = header ? header.offsetHeight : 0;
-        const extraOffset = 180; // slightly bigger than before
-        const rawTarget = rect.top + scrollY - headerH - extraOffset;
-        const target = Math.max(rawTarget, 0);
-        window.scrollTo({ top: target, behavior: 'smooth' });
-      }
+      // Strong scroll-to-top for mobile and desktop
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     });
     body.appendChild(tr);
   });
@@ -387,7 +382,7 @@ loadSavedState();
 
 if (cachedCsv) {
   try {
-    parseCSV(cachedCsv); // no new meta: keeps existing loadedAt/source
+    parseCSV(cachedCsv); // keep existing metadata
   } catch {}
 }
 
@@ -902,7 +897,7 @@ if (els.manualAddBtn) els.manualAddBtn.addEventListener('click', () => {
   toast('Manual item added.', true);
 });
 
-/* ---------- Diagnostics rendering ---------- */
+/* ---------- Diagnostics + debug export ---------- */
 
 function renderDiagnostics() {
   if (els.diagCsvSource) {
@@ -932,6 +927,34 @@ function renderDiagnostics() {
       els.diagSwStatus.textContent = 'Registered / waiting';
     }
   }
+}
+
+function buildDebugInfo() {
+  const swStatus = !('serviceWorker' in navigator)
+    ? 'not-supported'
+    : (navigator.serviceWorker.controller ? 'active' : 'registered/waiting');
+
+  const info = {
+    version: APP_VERSION,
+    timestamp: new Date().toISOString(),
+    csvMeta: state.csvMeta,
+    rowsCount: state.rows.length,
+    firstFewRows: state.rows.slice(0, 3),
+    quoteItems: state.quote.length,
+    quoteSuppliers: [...new Set(state.quote.map(q => q.SUPPLIER))],
+    buildcase: state.buildcase,
+    routineVisit: state.buildcase.routineVisit,
+    serviceWorker: swStatus,
+    userAgent: navigator.userAgent
+  };
+  return JSON.stringify(info, null, 2);
+}
+
+if (els.btnDiagCopy) {
+  els.btnDiagCopy.addEventListener('click', () => {
+    const txt = buildDebugInfo();
+    copyText(txt, 'Debug info copied.');
+  });
 }
 
 /* ---------- Start ---------- */
