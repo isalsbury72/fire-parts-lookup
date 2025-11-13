@@ -379,11 +379,12 @@
 
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <script src="app.js"></script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/fire-parts-lookup/sw.js', { scope: '/fire-parts-lookup/' })
-        .catch(() => {});
-    }
-  </script>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/fire-parts-lookup/sw.js', { scope: '/fire-parts-lookup/' })
+      .catch(() => {});
+  }
+</script>
+
 </body>
 </html>
