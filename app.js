@@ -1,7 +1,6 @@
-/* Fire Parts Lookup v5.3.1
-   - Step 2: add travel hours (NT/AH) and overnight accommodation (nights)
-   - Step 3: show “NT Travel / AH Travel” lines and accommodation lines
-   - Travel hours are included in total labour hours
+/* Fire Parts Lookup v5.3.2
+   - Step 2: travel hours (NT/AH) + accommodation nights
+   - Step 3: labour + travel, blank line, Total labour, blank line, then accommodation + routine text
 */
 
 const state = {
@@ -136,7 +135,7 @@ const els = {
   notesEstimator3: document.getElementById('notesEstimator3'),
   bc3ItemsCount: document.getElementById('bc3ItemsCount'),
 
-  // Step 2 fields (added)
+  // Step 2 fields
   routineYes: document.getElementById('routineYes'),
   routineNo: document.getElementById('routineNo'),
   accomNights: document.getElementById('accomNights'),
@@ -417,6 +416,7 @@ function toNum(x, d = 0) {
   return isNaN(n) ? d : n;
 }
 
+/* Step 3 labour summary: labour + travel, blank line, total, blank line, accom + routine */
 function buildLabourSummary() {
   const nh = toNum(state.buildcase.labourHoursNormal, 0);
   const nm = Math.max(0, parseInt(state.buildcase.numTechsNormal || '0', 10) || 0);
@@ -428,46 +428,54 @@ function buildLabourSummary() {
 
   const nights = Math.max(0, parseInt(state.buildcase.accomNights || '0', 10) || 0);
 
-  const lines = [];
+  const linesMain = [];
+  const linesAfter = [];
   let total = 0;
 
   // NT labour
   if (nh > 0 && nm > 0) {
-    lines.push(`${nh} hours ${nm} ${nm === 1 ? 'man' : 'men'} NT`);
+    linesMain.push(`${nh} ${nh === 1 ? 'hour' : 'hours'} ${nm} ${nm === 1 ? 'man' : 'men'} NT`);
     total += nh * nm;
   }
   // AH labour
   if (ah > 0 && am > 0) {
-    lines.push(`${ah} hours ${am} ${am === 1 ? 'man' : 'men'} AH`);
+    linesMain.push(`${ah} ${ah === 1 ? 'hour' : 'hours'} ${am} ${am === 1 ? 'man' : 'men'} AH`);
     total += ah * am;
   }
-
   // NT travel
   if (nth > 0 && nm > 0) {
-    lines.push(`${nth} ${nth === 1 ? 'hour' : 'hours'} ${nm} ${nm === 1 ? 'man' : 'men'} NT Travel`);
+    linesMain.push(`${nth} ${nth === 1 ? 'hour' : 'hours'} ${nm} ${nm === 1 ? 'man' : 'men'} NT Travel`);
     total += nth * nm;
   }
   // AH travel
   if (ath > 0 && am > 0) {
-    lines.push(`${ath} ${ath === 1 ? 'hour' : 'hours'} ${am} ${am === 1 ? 'man' : 'men'} AH Travel`);
+    linesMain.push(`${ath} ${ath === 1 ? 'hour' : 'hours'} ${am} ${am === 1 ? 'man' : 'men'} AH Travel`);
     total += ath * am;
   }
 
-  // Accommodation
+  // Accommodation (moved to after total)
   if (nights > 0) {
-    lines.push(`${nights} x Overnight accommodation`);
+    linesAfter.push(`${nights} x Overnight accommodation`);
   }
 
-  // Routine visit text
+  // Routine visit text (moved to after total)
   if (state.buildcase.routineVisit === 'yes') {
-    lines.push('Can be completed on routine visit');
+    linesAfter.push('Can be completed on routine visit');
   } else {
-    lines.push('Not intended to be completed on routine visit');
+    linesAfter.push('Not intended to be completed on routine visit');
   }
 
-  if (total > 0) lines.push(`Total labour: ${total} hours`);
-
-  return lines.join('\n');
+  const out = [];
+  out.push(...linesMain);
+  if (total > 0) {
+    if (out.length) out.push('');                  // blank line before total
+    out.push(`Total labour: ${total} hours`);
+  }
+  if (linesAfter.length) {
+    out.push('');                                  // blank line after total
+    out.push(...linesAfter);
+  }
+  return out.join('\n');
 }
 
 function buildCaseStep1Fill() {
