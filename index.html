@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Fire Parts Lookup v5.3.3</title>
+  <title>Fire Parts Lookup v5.3.4</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
 
   <link rel="manifest" href="/fire-parts-lookup/manifest.json">
@@ -96,7 +96,7 @@
       <div class="small">Offline-friendly parts and quote helper</div>
     </div>
     <div class="ver">
-      v5.3.3
+      v5.3.4
       <span id="authBanner" class="auth-pill" style="display:inline-block;">Authorised users only</span>
     </div>
   </header>
@@ -255,7 +255,7 @@
         <p class="small">Quick health check of your Fire Parts app and data.</p>
 
         <div class="card" style="margin-top:8px;">
-          <p class="small"><strong>App version:</strong> <span>v5.3.3</span></p>
+          <p class="small"><strong>App version:</strong> <span>v5.3.4</span></p>
           <p class="small"><strong>CSV source:</strong> <span id="diagCsvSource">None loaded</span></p>
           <p class="small"><strong>Last CSV loaded:</strong> <span id="diagLastLoaded">—</span></p>
           <p class="small"><strong>Parts rows loaded:</strong> <span id="diagPartsRows">0</span></p>
@@ -269,6 +269,12 @@
           <p class="small">If things look odd, you can clear all local data and reload CSV.</p>
           <button id="btnDiagClearAll" class="btn btn-danger" style="margin-top:6px;">Clear all app data</button>
           <p class="small" style="margin-top:6px; color:#b91c1c;">This removes cached CSV, saved quotes, build case state, and access flag. It does not touch your CSV file on OneDrive or GitHub.</p>
+        </div>
+
+        <div class="card" style="margin-top:8px;">
+          <h3 style="margin:0 0 6px 0; font-size:14px;">Export debug info</h3>
+          <p class="small">Copies a snapshot of app state (version, CSV metadata, quote counts etc.) so you can paste it into an email or chat.</p>
+          <button id="btnDiagCopy" class="btn btn-secondary" style="margin-top:6px;">Copy debug info</button>
         </div>
       </div>
     </div>
