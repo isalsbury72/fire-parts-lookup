@@ -1,6 +1,5 @@
-/* Fire Parts Lookup v5.3.4
-   - Auto-scroll to copy area when selecting a row (all screen sizes)
-   - Layout as per v5.3.3
+/* Fire Parts Lookup v5.3.5
+   - Auto-scroll to copy area using actual header height so it sits right below the blue bar
 */
 
 const state = {
@@ -158,11 +157,13 @@ function renderParts() {
       els.copyArea.textContent = `${r.SUPPLIER} — ${r.DESCRIPTION} — ${r.PARTNUMBER} — ${fmtPrice(r.PRICE)} each`;
       updateAddToQuoteState();
 
-      // Always scroll copy area into view with a small offset
+      // Auto-scroll copy area so it sits just below the sticky header
       if (els.copyArea) {
         const rect = els.copyArea.getBoundingClientRect();
         const scrollY = window.scrollY || window.pageYOffset || 0;
-        const offsetTop = rect.top + scrollY - 80; // 80px to clear the sticky header
+        const header = document.querySelector('header');
+        const headerH = header ? header.offsetHeight : 0;
+        const offsetTop = rect.top + scrollY - headerH - 8; // 8px gap under header
         window.scrollTo({ top: offsetTop, behavior: 'smooth' });
       }
     });
