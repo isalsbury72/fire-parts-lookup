@@ -1,10 +1,10 @@
-	// sw.js
-const CACHE = 'fpl-v5-3-4';
+// sw.js
+const CACHE = 'fpl-v5-3-3';
 
 const ASSETS = [
   '/fire-parts-lookup/',
   '/fire-parts-lookup/index.html',
-  '/fire-parts-lookup/app.js?v=5.3.4',
+  '/fire-parts-lookup/app.js?v=5.3.3',
   '/fire-parts-lookup/manifest.json',
   '/fire-parts-lookup/icon-192.png',
   '/fire-parts-lookup/icon-512.png',
@@ -21,11 +21,13 @@ self.addEventListener('install', e => {
 
 self.addEventListener('activate', e => {
   e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(
-        keys.map(k => (k === CACHE ? null : caches.delete(k)))
+    caches.keys()
+      .then(keys =>
+        Promise.all(
+          keys.map(k => (k === CACHE ? null : caches.delete(k)))
+        )
       )
-    ).then(() => self.clients.claim())
+      .then(() => self.clients.claim())
   );
 });
 
@@ -35,9 +37,9 @@ self.addEventListener('fetch', e => {
     e.request.mode === 'navigate' ||
     (e.request.headers.get('accept') || '').includes('text/html');
   const isApp =
-    url.pathname.endsWith('/app.js') || url.searchParams.has('v');
+    url.pathname.endsWith('/app.js') ||
+    url.searchParams.has('v');
 
-  // Network first for HTML + app.js so updates appear quickly
   if (isHTML || isApp) {
     e.respondWith(
       fetch(e.request)
@@ -51,7 +53,6 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // Cache first for everything else
   e.respondWith(
     caches.match(e.request).then(r => r || fetch(e.request))
   );
