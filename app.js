@@ -1,5 +1,6 @@
-/* Fire Parts Lookup v5.3.6
-   - Auto-scroll: copy area now snaps just under the blue header using a bigger offset
+/* Fire Parts Lookup v5.3.2
+   - Quote and build case are now saved and restored from localStorage
+   - Auto scroll for selected part copy area
 */
 
 const state = {
@@ -21,6 +22,13 @@ const state = {
 };
 
 const ACCESS_CODE = 'FP2025';
+
+const LS_KEYS = {
+  CSV: 'parts_csv',
+  QUOTE: 'quote_data_v1',
+  BUILDCASE: 'buildcase_state_v1',
+  ACCESS: 'hasAccess'
+};
 
 function toast(msg, ok = false) {
   const t = document.createElement('div');
@@ -70,6 +78,46 @@ function parseCSV(txt) {
     NOTES: r.NOTES || ''
   }));
   renderParts();
+}
+
+/* localStorage helpers for quote/buildcase */
+
+function saveQuote() {
+  try {
+    localStorage.setItem(LS_KEYS.QUOTE, JSON.stringify(state.quote));
+  } catch {}
+}
+function saveBuildcase() {
+  try {
+    localStorage.setItem(LS_KEYS.BUILDCASE, JSON.stringify(state.buildcase));
+  } catch {}
+}
+function loadSavedState() {
+  try {
+    const q = localStorage.getItem(LS_KEYS.QUOTE);
+    if (q) {
+      const parsed = JSON.parse(q);
+      if (Array.isArray(parsed)) {
+        state.quote = parsed.map(i => ({
+          SUPPLIER: i.SUPPLIER || '',
+          DESCRIPTION: i.DESCRIPTION || '',
+          PARTNUMBER: i.PARTNUMBER || '',
+          PRICE: typeof i.PRICE === 'number' ? i.PRICE : fmtPriceNum(i.PRICE),
+          qty: i.qty && i.qty > 0 ? i.qty : 1
+        }));
+      }
+    }
+  } catch {}
+
+  try {
+    const b = localStorage.getItem(LS_KEYS.BUILDCASE);
+    if (b) {
+      const parsed = JSON.parse(b);
+      if (parsed && typeof parsed === 'object') {
+        state.buildcase = Object.assign({}, state.buildcase, parsed);
+      }
+    }
+  } catch {}
 }
 
 const els = {
@@ -141,7 +189,8 @@ const els = {
 /* ---------- Parts page ---------- */
 function renderParts() {
   const q = els.q.value.trim().toLowerCase();
-  const body = els.tbl; body.innerHTML = '';
+  const body = els.tbl;
+  body.innerHTML = '';
   const rows = state.rows.filter(r => !q || Object.values(r).join(' ').toLowerCase().includes(q));
   rows.forEach(r => {
     const tr = document.createElement('tr');
@@ -157,14 +206,14 @@ function renderParts() {
       els.copyArea.textContent = `${r.SUPPLIER} — ${r.DESCRIPTION} — ${r.PARTNUMBER} — ${fmtPrice(r.PRICE)} each`;
       updateAddToQuoteState();
 
-      // Auto-scroll copy area so its top is just under the sticky header
+      // Auto scroll copy area so its top is just under the sticky header
       if (els.copyArea) {
         const rect = els.copyArea.getBoundingClientRect();
         const scrollY = window.scrollY || window.pageYOffset || 0;
         const header = document.querySelector('header');
         const headerH = header ? header.offsetHeight : 0;
 
-        // Bigger offset so the yellow bar ends right up near the top
+        // Slightly larger offset to try to push it near the top
         const extraOffset = 140;
         const rawTarget = rect.top + scrollY - headerH - extraOffset;
         const target = Math.max(rawTarget, 0);
@@ -183,10 +232,22 @@ function updateAddToQuoteState() {
   if (!b) return;
   if (state.selected) {
     b.disabled = false;
-    Object.assign(b.style, { opacity:'1', cursor:'pointer', borderColor:'#22c55e', background:'#ecfdf5', color:'#166534' });
+    Object.assign(b.style, {
+      opacity: '1',
+      cursor: 'pointer',
+      borderColor: '#22c55e',
+      background: '#ecfdf5',
+      color: '#166534'
+    });
   } else {
     b.disabled = true;
-    Object.assign(b.style, { opacity:'0.5', cursor:'not-allowed', borderColor:'#d1d5db', background:'#f3f4f6', color:'#9ca3af' });
+    Object.assign(b.style, {
+      opacity: '0.5',
+      cursor: 'not-allowed',
+      borderColor: '#d1d5db',
+      background: '#f3f4f6',
+      color: '#9ca3af'
+    });
   }
 }
 
@@ -211,11 +272,16 @@ function renderQuote() {
       <td><button data-i="${idx}" style="border:none;background:#fee2e2;color:#b91c1c;border-radius:6px;padding:2px 6px;cursor:pointer;">✖</button></td>`;
     tr.querySelector('input').addEventListener('change', e => {
       i.qty = Math.max(1, parseInt(e.target.value, 10) || 1);
+      saveQuote();
       renderQuote();
     });
     tr.querySelector('button').addEventListener('click', e => {
       const idx2 = parseInt(e.target.dataset.i, 10);
-      if (confirm('Remove this item?')) { state.quote.splice(idx2, 1); renderQuote(); }
+      if (confirm('Remove this item?')) {
+        state.quote.splice(idx2, 1);
+        saveQuote();
+        renderQuote();
+      }
     });
     body.appendChild(tr);
   });
@@ -236,8 +302,11 @@ function renderQuote() {
 }
 
 /* ---------- Startup cache ---------- */
-const cachedCsv = localStorage.getItem('parts_csv');
+const cachedCsv = localStorage.getItem(LS_KEYS.CSV);
 if (cachedCsv) { try { parseCSV(cachedCsv); } catch {} }
+
+/* ---------- Load saved quote/buildcase ---------- */
+loadSavedState();
 
 /* ---------- Loaders ---------- */
 if (els.csv) els.csv.addEventListener('change', e => {
@@ -245,7 +314,7 @@ if (els.csv) els.csv.addEventListener('change', e => {
   if (!f) return;
   const r = new FileReader();
   r.onload = () => {
-    localStorage.setItem('parts_csv', r.result);
+    localStorage.setItem(LS_KEYS.CSV, r.result);
     parseCSV(r.result);
     toast('Loaded local CSV', true);
   };
@@ -253,25 +322,52 @@ if (els.csv) els.csv.addEventListener('change', e => {
 });
 
 function ensureAccess() {
-  const ok = localStorage.getItem('hasAccess');
+  const ok = localStorage.getItem(LS_KEYS.ACCESS);
   if (ok === 'yes') return true;
   const code = prompt('Enter access code:');
-  if (code === ACCESS_CODE) { localStorage.setItem('hasAccess', 'yes'); toast('Access granted.', true); return true; }
-  toast('Access denied.', false); return false;
+  if (code === ACCESS_CODE) {
+    localStorage.setItem(LS_KEYS.ACCESS, 'yes');
+    toast('Access granted.', true);
+    return true;
+  }
+  toast('Access denied.', false);
+  return false;
 }
 
 if (els.loadShared) els.loadShared.addEventListener('click', () => {
   if (!ensureAccess()) return;
   fetch('Parts.csv')
     .then(r => r.text())
-    .then(t => { localStorage.setItem('parts_csv', t); parseCSV(t); toast('Loaded shared CSV.', true); })
+    .then(t => {
+      localStorage.setItem(LS_KEYS.CSV, t);
+      parseCSV(t);
+      toast('Loaded shared CSV.', true);
+    })
     .catch(() => toast('Error loading shared file', false));
 });
 
 if (els.clearCache) els.clearCache.addEventListener('click', () => {
-  localStorage.removeItem('parts_csv');
-  state.rows = []; state.quote = []; state.selected = null;
-  renderParts(); renderQuote(); updateAddToQuoteState();
+  localStorage.removeItem(LS_KEYS.CSV);
+  localStorage.removeItem(LS_KEYS.QUOTE);
+  localStorage.removeItem(LS_KEYS.BUILDCASE);
+  state.rows = [];
+  state.quote = [];
+  state.selected = null;
+  state.buildcase = {
+    notesCustomer: '',
+    notesEstimator: '',
+    routineVisit: null,
+    accomNights: '',
+    labourHoursNormal: '',
+    numTechsNormal: '',
+    travelHoursNormal: '',
+    labourHoursAfter: '',
+    numTechsAfter: '',
+    travelHoursAfter: ''
+  };
+  renderParts();
+  renderQuote();
+  updateAddToQuoteState();
   toast('Cache cleared.', true);
 });
 
@@ -280,8 +376,19 @@ function setManualBtnEnabled(enabled) {
   const b = els.manualAddBtn;
   if (!b) return;
   b.disabled = !enabled;
-  if (enabled) { b.style.borderColor='#22c55e'; b.style.background='#ecfdf5'; b.style.color='#166534'; b.style.opacity='1'; b.style.cursor='pointer'; }
-  else { b.style.borderColor='#d1d5db'; b.style.background='#f3f4f6'; b.style.color='#9ca3af'; b.style.opacity='0.6'; b.style.cursor='not-allowed'; }
+  if (enabled) {
+    b.style.borderColor = '#22c55e';
+    b.style.background = '#ecfdf5';
+    b.style.color = '#166534';
+    b.style.opacity = '1';
+    b.style.cursor = 'pointer';
+  } else {
+    b.style.borderColor = '#d1d5db';
+    b.style.background = '#f3f4f6';
+    b.style.color = '#9ca3af';
+    b.style.opacity = '0.6';
+    b.style.cursor = 'not-allowed';
+  }
 }
 function manualInputsValid() {
   if (!els.manualSection || els.manualSection.style.display === 'none') return false;
@@ -292,7 +399,8 @@ function manualInputsValid() {
   return !!(sup && desc && pn && !isNaN(priceEach));
 }
 ['manualSupplier','manualDescription','manualPart','manualPrice','manualQty'].forEach(id => {
-  const input = els[id]; if (input) input.addEventListener('input', () => setManualBtnEnabled(manualInputsValid()));
+  const input = els[id];
+  if (input) input.addEventListener('input', () => setManualBtnEnabled(manualInputsValid()));
 });
 if (els.manualToggle) {
   els.manualToggle.addEventListener('change', e => {
@@ -329,6 +437,7 @@ if (els.addToQuote) els.addToQuote.addEventListener('click', () => {
     PRICE: state.selected.PRICE,
     qty: 1
   });
+  saveQuote();
   renderQuote();
   showQuotePage();
 });
@@ -353,8 +462,10 @@ function copyText(txt, msg) {
   }
 }
 function fallbackCopy(txt, msg) {
-  const ta = document.createElement('textarea'); ta.value = txt;
-  ta.style.position = 'fixed'; ta.style.top = '-2000px';
+  const ta = document.createElement('textarea');
+  ta.value = txt;
+  ta.style.position = 'fixed';
+  ta.style.top = '-2000px';
   document.body.appendChild(ta);
   ta.select();
   try { document.execCommand('copy'); } catch {}
@@ -367,8 +478,9 @@ if (els.copyQuote) els.copyQuote.addEventListener('click', () => {
   if (!state.quote.length) return toast('No items to copy.', false);
   let total = 0;
   const lines = state.quote.map(i => {
-    const qty = i.qty || 1; total += i.PRICE * qty;
-    return `${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each (${i.SUPPLIER} price)`;
+    const qty = i.qty || 1;
+    total += i.PRICE * qty;
+    return `${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each (${i.SUPPLIER} price list)`;
   });
   lines.push('', 'Total: ' + fmtPrice(total));
   copyText(lines.join('\n'), 'Quote copied.');
@@ -379,12 +491,12 @@ if (els.copyQuoteRaw) els.copyQuoteRaw.addEventListener('click', () => {
   if (!state.quote.length) return toast('No items to copy.', false);
   const lines = state.quote.map(i => {
     const qty = i.qty || 1;
-    return `${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each (${i.SUPPLIER} price)`;
+    return `${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each (${i.SUPPLIER} price list)`;
   });
   copyText(lines.join('\n'), 'Items copied.');
 });
 
-/* Copy for Email PO — grouped by supplier */
+/* Copy for Email PO - grouped by supplier */
 if (els.copyQuoteEmail) els.copyQuoteEmail.addEventListener('click', () => {
   if (!state.quote.length) return toast('No items to copy.', false);
   const job = els.jobNumber?.value.trim() || '';
@@ -393,12 +505,14 @@ if (els.copyQuoteEmail) els.copyQuoteEmail.addEventListener('click', () => {
   const groups = new Map();
   state.quote.forEach(item => {
     const key = supplierKey(item.SUPPLIER);
-    if (!groups.has(key)) groups.set(key, { display: displaySupplierName(item.SUPPLIER), items: [] });
+    if (!groups.has(key)) {
+      groups.set(key, { display: displaySupplierName(item.SUPPLIER), items: [] });
+    }
     groups.get(key).items.push(item);
   });
 
   const lines = [];
-  groups.forEach(({display, items}) => {
+  groups.forEach(({ display, items }) => {
     const supName = display || 'Supplier';
     lines.push(job ? `Please forward a PO to ${supName} for job ${job}` : `Please forward a PO to ${supName} for this job`);
     lines.push('');
@@ -406,7 +520,10 @@ if (els.copyQuoteEmail) els.copyQuoteEmail.addEventListener('click', () => {
       const qty = i.qty || 1;
       lines.push(`${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each`);
     });
-    if (delivery) { lines.push(''); lines.push(delivery); }
+    if (delivery) {
+      lines.push('');
+      lines.push(delivery);
+    }
     lines.push('');
   });
 
@@ -417,7 +534,7 @@ if (els.copyQuoteEmail) els.copyQuoteEmail.addEventListener('click', () => {
 function buildItemsOnlyLines() {
   return state.quote.map(i => {
     const qty = i.qty || 1;
-    return `${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each (${i.SUPPLIER} price)`;
+    return `${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each (${i.SUPPLIER} price list)`;
   });
 }
 function toNum(x, d = 0) {
@@ -494,8 +611,10 @@ function showPartsPage() {
   els.buildcase1Page.style.display = 'none';
   els.buildcase2Page.style.display = 'none';
   els.buildcase3Page.style.display = 'none';
-  els.tabParts.style.background = '#3b82f6'; els.tabParts.style.color = '#fff';
-  els.tabQuote.style.background = '#fff'; els.tabQuote.style.color = '#111';
+  els.tabParts.style.background = '#3b82f6';
+  els.tabParts.style.color = '#fff';
+  els.tabQuote.style.background = '#fff';
+  els.tabQuote.style.color = '#111';
 }
 function showQuotePage() {
   els.partsPage.style.display = 'none';
@@ -503,8 +622,10 @@ function showQuotePage() {
   els.buildcase1Page.style.display = 'none';
   els.buildcase2Page.style.display = 'none';
   els.buildcase3Page.style.display = 'none';
-  els.tabQuote.style.background = '#3b82f6'; els.tabQuote.style.color = '#fff';
-  els.tabParts.style.background = '#fff'; els.tabParts.style.color = '#111';
+  els.tabQuote.style.background = '#3b82f6';
+  els.tabQuote.style.color = '#fff';
+  els.tabParts.style.background = '#fff';
+  els.tabParts.style.color = '#111';
 }
 function showBuild1() {
   els.partsPage.style.display = 'none';
@@ -512,11 +633,20 @@ function showBuild1() {
   els.buildcase1Page.style.display = 'block';
   els.buildcase2Page.style.display = 'none';
   els.buildcase3Page.style.display = 'none';
-  els.tabQuote.style.background = '#3b82f6'; els.tabQuote.style.color = '#fff';
-  els.tabParts.style.background = '#fff'; els.tabParts.style.color = '#111';
+  els.tabQuote.style.background = '#3b82f6';
+  els.tabQuote.style.color = '#fff';
+  els.tabParts.style.background = '#fff';
+  els.tabParts.style.color = '#111';
 
-  buildCaseStep1Fill();
+  // Fill notes from saved buildcase
   els.notesCustomer.value = state.buildcase.notesCustomer || '';
+
+  if (state.buildcase.notesEstimator && state.buildcase.notesEstimator.trim().length > 0) {
+    els.notesEstimator.value = state.buildcase.notesEstimator;
+  } else {
+    buildCaseStep1Fill();
+  }
+  els.bc1ItemsCount.textContent = `Items: ${state.quote.length}`;
 }
 function showBuild2() {
   els.partsPage.style.display = 'none';
@@ -524,8 +654,10 @@ function showBuild2() {
   els.buildcase1Page.style.display = 'none';
   els.buildcase2Page.style.display = 'block';
   els.buildcase3Page.style.display = 'none';
-  els.tabQuote.style.background = '#3b82f6'; els.tabQuote.style.color = '#fff';
-  els.tabParts.style.background = '#fff'; els.tabParts.style.color = '#111';
+  els.tabQuote.style.background = '#3b82f6';
+  els.tabQuote.style.color = '#fff';
+  els.tabParts.style.background = '#fff';
+  els.tabParts.style.color = '#111';
 
   if (state.buildcase.routineVisit === 'yes') els.routineYes.checked = true;
   else if (state.buildcase.routineVisit === 'no') els.routineNo.checked = true;
@@ -544,8 +676,10 @@ function showBuild3() {
   els.buildcase1Page.style.display = 'none';
   els.buildcase2Page.style.display = 'none';
   els.buildcase3Page.style.display = 'block';
-  els.tabQuote.style.background = '#3b82f6'; els.tabQuote.style.color = '#fff';
-  els.tabParts.style.background = '#fff'; els.tabParts.style.color = '#111';
+  els.tabQuote.style.background = '#3b82f6';
+  els.tabQuote.style.color = '#fff';
+  els.tabParts.style.background = '#fff';
+  els.tabParts.style.color = '#111';
 
   const base = buildItemsOnlyLines().join('\n');
   const labour = buildLabourSummary();
@@ -567,6 +701,7 @@ if (els.btnBackToBuild2) els.btnBackToBuild2.addEventListener('click', showBuild
 if (els.btnToBuild2) els.btnToBuild2.addEventListener('click', () => {
   state.buildcase.notesCustomer = (els.notesCustomer?.value || '').trim();
   state.buildcase.notesEstimator = (els.notesEstimator?.value || '').trim();
+  saveBuildcase();
   showBuild2();
 });
 if (els.btnToBuild3) els.btnToBuild3.addEventListener('click', () => {
@@ -578,6 +713,7 @@ if (els.btnToBuild3) els.btnToBuild3.addEventListener('click', () => {
   state.buildcase.labourHoursAfter = (els.labourHoursAfter?.value || '').trim();
   state.buildcase.numTechsAfter = (els.numTechsAfter?.value || '').trim();
   state.buildcase.travelHoursAfter = (els.travelHoursAfter?.value || '').trim();
+  saveBuildcase();
   showBuild3();
 });
 
@@ -594,16 +730,46 @@ if (els.btnClearQuote) els.btnClearQuote.addEventListener('click', () => {
   if (!state.quote.length) return;
   if (confirm('Clear all items?')) {
     state.quote = [];
+    saveQuote();
     renderQuote();
     toast('Quote cleared.', true);
     showPartsPage();
   }
 });
 
+/* Manual add button */
+if (els.manualAddBtn) els.manualAddBtn.addEventListener('click', () => {
+  if (!manualInputsValid()) {
+    toast('Fill supplier, description, part number and price.', false);
+    return;
+  }
+  const sup = els.manualSupplier.value.trim();
+  const desc = els.manualDescription.value.trim();
+  const pn = els.manualPart.value.trim();
+  const priceEach = parseFloat((els.manualPrice.value || '').toString().replace(/[^0-9.]/g, '')) || 0;
+  const qty = Math.max(1, parseInt(els.manualQty.value, 10) || 1);
+
+  state.quote.push({
+    SUPPLIER: sup,
+    DESCRIPTION: desc,
+    PARTNUMBER: pn,
+    PRICE: priceEach,
+    qty
+  });
+  saveQuote();
+  renderQuote();
+
+  els.manualSupplier.value = '';
+  els.manualDescription.value = '';
+  els.manualPart.value = '';
+  els.manualPrice.value = '';
+  els.manualQty.value = '1';
+  setManualBtnEnabled(false);
+  toast('Manual item added.', true);
+});
+
 /* ---------- Start ---------- */
 function start() {
-  const cachedCsv2 = localStorage.getItem('parts_csv');
-  if (cachedCsv2) { try { parseCSV(cachedCsv2); } catch {} }
   renderParts();
   renderQuote();
   updateAddToQuoteState();
