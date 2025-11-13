@@ -234,13 +234,13 @@
             </button>
 
             <button id="copyQuoteEmail" class="action-btn primary">
-              <div class="ico">✉️</div><div class="lbl">Copy for Email PO</div><div class="cap">Subject + body</div>
+              <div class="ico">✉️</div><div class="lbl">Copy for Email PO</div><div class="cap">Grouped by supplier</div>
             </button>
             <button id="btnClearQuote" class="action-btn danger">
               <div class="ico">🗑️</div><div class="lbl">Clear quote</div><div class="cap">Removes all</div>
             </button>
-            <button id="btnOpenEmailDraft" class="action-btn ghost">
-              <div class="ico">📨</div><div class="lbl">Open Email Draft</div><div class="cap">Uses mail app</div>
+            <button id="btnEmailDraft" class="action-btn ghost">
+              <div class="ico">📨</div><div class="lbl">Open email draft</div><div class="cap">Launch mail app</div>
             </button>
           </div>
         </div>
@@ -378,7 +378,7 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <script src="app.js"></script>
+  <script src="app.js?v=5.3.2"></script>
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/fire-parts-lookup/sw.js', { scope: '/fire-parts-lookup/' })
