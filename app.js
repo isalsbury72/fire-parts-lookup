@@ -1,7 +1,6 @@
-/* Fire Parts Lookup v5.3.3
-   - Auto-scroll to copy area when selecting a row (especially on phone)
-   - Keep quote action grid tidy
-   - Step 3 labour summary layout: labour + travel, blank line, Total labour, blank line, accom + routine text
+/* Fire Parts Lookup v5.3.4
+   - Auto-scroll to copy area when selecting a row (all screen sizes)
+   - Layout as per v5.3.3
 */
 
 const state = {
@@ -11,8 +10,8 @@ const state = {
   buildcase: {
     notesCustomer: '',
     notesEstimator: '',
-    routineVisit: null,        // 'yes' | 'no' | null
-    accomNights: '',           // number string
+    routineVisit: null,
+    accomNights: '',
     labourHoursNormal: '',
     numTechsNormal: '',
     travelHoursNormal: '',
@@ -24,7 +23,6 @@ const state = {
 
 const ACCESS_CODE = 'FP2025';
 
-/* ---------- Utils ---------- */
 function toast(msg, ok = false) {
   const t = document.createElement('div');
   t.textContent = msg;
@@ -47,7 +45,6 @@ function toast(msg, ok = false) {
 
 function fmtPrice(n) { return '$' + (n || 0).toFixed(2); }
 
-/* Supplier normalisation */
 function supplierKey(name) {
   if (!name) return 'UNKNOWN';
   const noYear = name.replace(/\b20\d{2}\b/g, '');
@@ -60,7 +57,6 @@ function displaySupplierName(name) {
   return key.charAt(0) + key.slice(1).toLowerCase();
 }
 
-/* ---------- CSV parsing ---------- */
 function fmtPriceNum(raw) {
   return parseFloat((raw || '').toString().replace(/[^0-9.]/g, '')) || 0;
 }
@@ -77,9 +73,7 @@ function parseCSV(txt) {
   renderParts();
 }
 
-/* ---------- Elements ---------- */
 const els = {
-  // Parts
   q: document.getElementById('q'),
   csv: document.getElementById('csv'),
   tbl: document.getElementById('tbl')?.querySelector('tbody'),
@@ -90,7 +84,6 @@ const els = {
   loadShared: document.getElementById('loadShared'),
   partsPage: document.getElementById('partsPage'),
 
-  // Tabs & pages
   quotePage: document.getElementById('quotePage'),
   buildcase1Page: document.getElementById('buildcase1Page'),
   buildcase2Page: document.getElementById('buildcase2Page'),
@@ -98,7 +91,6 @@ const els = {
   tabParts: document.getElementById('tabParts'),
   tabQuote: document.getElementById('tabQuote'),
 
-  // Quote controls
   addToQuote: document.getElementById('addToQuote'),
   copyQuote: document.getElementById('copyQuote'),
   copyQuoteRaw: document.getElementById('copyQuoteRaw'),
@@ -110,7 +102,6 @@ const els = {
   quoteTableBody: document.querySelector('#quoteTable tbody'),
   quoteSummary: document.getElementById('quoteSummary'),
 
-  // Manual line toggles/inputs
   manualToggle: document.getElementById('manualToggle'),
   manualSection: document.getElementById('manualSection'),
   manualSupplier: document.getElementById('manualSupplier'),
@@ -120,7 +111,6 @@ const els = {
   manualQty: document.getElementById('manualQty'),
   manualAddBtn: document.getElementById('manualAddBtn'),
 
-  // Buildcase buttons
   btnBackToQuote: document.getElementById('btnBackToQuote'),
   btnToBuild2: document.getElementById('btnToBuild2'),
   btnBackToBuild1: document.getElementById('btnBackToBuild1'),
@@ -128,7 +118,6 @@ const els = {
   btnBackToBuild2: document.getElementById('btnBackToBuild2'),
   btnBackToQuoteFrom3: document.getElementById('btnBackToQuoteFrom3'),
 
-  // Buildcase textareas/fields
   notesCustomer: document.getElementById('notesCustomer'),
   notesEstimator: document.getElementById('notesEstimator'),
   bc1ItemsCount: document.getElementById('bc1ItemsCount'),
@@ -136,7 +125,6 @@ const els = {
   notesEstimator3: document.getElementById('notesEstimator3'),
   bc3ItemsCount: document.getElementById('bc3ItemsCount'),
 
-  // Step 2 fields
   routineYes: document.getElementById('routineYes'),
   routineNo: document.getElementById('routineNo'),
   accomNights: document.getElementById('accomNights'),
@@ -147,7 +135,6 @@ const els = {
   numTechsAfter: document.getElementById('numTechsAfter'),
   travelHoursAfter: document.getElementById('travelHoursAfter'),
 
-  // Step 3 copy buttons
   btnCopyNC3: document.getElementById('btnCopyNC3'),
   btnCopyNE3: document.getElementById('btnCopyNE3')
 };
@@ -171,9 +158,12 @@ function renderParts() {
       els.copyArea.textContent = `${r.SUPPLIER} — ${r.DESCRIPTION} — ${r.PARTNUMBER} — ${fmtPrice(r.PRICE)} each`;
       updateAddToQuoteState();
 
-      // Auto-scroll copy area into view on smaller screens
-      if (window.innerWidth < 768 && els.copyArea && els.copyArea.parentElement) {
-        els.copyArea.parentElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // Always scroll copy area into view with a small offset
+      if (els.copyArea) {
+        const rect = els.copyArea.getBoundingClientRect();
+        const scrollY = window.scrollY || window.pageYOffset || 0;
+        const offsetTop = rect.top + scrollY - 80; // 80px to clear the sticky header
+        window.scrollTo({ top: offsetTop, behavior: 'smooth' });
       }
     });
     body.appendChild(tr);
@@ -194,7 +184,7 @@ function updateAddToQuoteState() {
   }
 }
 
-/* ---------- Quote table ---------- */
+/* ---------- Quote ---------- */
 function renderQuote() {
   const body = els.quoteTableBody;
   const sum = els.quoteSummary;
@@ -239,7 +229,7 @@ function renderQuote() {
   }
 }
 
-/* ---------- Start-up cache ---------- */
+/* ---------- Startup cache ---------- */
 const cachedCsv = localStorage.getItem('parts_csv');
 if (cachedCsv) { try { parseCSV(cachedCsv); } catch {} }
 
@@ -279,7 +269,7 @@ if (els.clearCache) els.clearCache.addEventListener('click', () => {
   toast('Cache cleared.', true);
 });
 
-/* ---------- Manual item toggle ---------- */
+/* ---------- Manual item ---------- */
 function setManualBtnEnabled(enabled) {
   const b = els.manualAddBtn;
   if (!b) return;
@@ -337,7 +327,6 @@ if (els.addToQuote) els.addToQuote.addEventListener('click', () => {
   showQuotePage();
 });
 
-/* Copy the yellow part line */
 if (els.copyPartLine) els.copyPartLine.addEventListener('click', () => {
   const text = (els.copyArea?.textContent || '').trim();
   if (!text) {
@@ -347,7 +336,6 @@ if (els.copyPartLine) els.copyPartLine.addEventListener('click', () => {
   copyText(text, 'Line copied.');
 });
 
-/* ---------- Copy helpers ---------- */
 function copyText(txt, msg) {
   const toCopy = (txt || '').toString();
   if (navigator.clipboard && window.isSecureContext) {
@@ -368,7 +356,7 @@ function fallbackCopy(txt, msg) {
   toast(msg, true);
 }
 
-/* Copy quote (with total) */
+/* Copy quote with total */
 if (els.copyQuote) els.copyQuote.addEventListener('click', () => {
   if (!state.quote.length) return toast('No items to copy.', false);
   let total = 0;
@@ -390,7 +378,7 @@ if (els.copyQuoteRaw) els.copyQuoteRaw.addEventListener('click', () => {
   copyText(lines.join('\n'), 'Items copied.');
 });
 
-/* Copy for Email PO — grouped by supplier key */
+/* Copy for Email PO — grouped by supplier */
 if (els.copyQuoteEmail) els.copyQuoteEmail.addEventListener('click', () => {
   if (!state.quote.length) return toast('No items to copy.', false);
   const job = els.jobNumber?.value.trim() || '';
@@ -419,20 +407,17 @@ if (els.copyQuoteEmail) els.copyQuoteEmail.addEventListener('click', () => {
   copyText(lines.join('\n').trimEnd(), 'Email PO copied.');
 });
 
-/* ---------- Build case helpers ---------- */
+/* Build case helpers */
 function buildItemsOnlyLines() {
   return state.quote.map(i => {
     const qty = i.qty || 1;
     return `${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each (${i.SUPPLIER} price)`;
   });
 }
-
 function toNum(x, d = 0) {
   const n = parseFloat((x ?? '').toString());
   return isNaN(n) ? d : n;
 }
-
-/* Step 3 labour summary: labour + travel, blank line, total, blank line, accom + routine */
 function buildLabourSummary() {
   const nh = toNum(state.buildcase.labourHoursNormal, 0);
   const nm = Math.max(0, parseInt(state.buildcase.numTechsNormal || '0', 10) || 0);
@@ -448,33 +433,27 @@ function buildLabourSummary() {
   const linesAfter = [];
   let total = 0;
 
-  // NT labour
   if (nh > 0 && nm > 0) {
     linesMain.push(`${nh} ${nh === 1 ? 'hour' : 'hours'} ${nm} ${nm === 1 ? 'man' : 'men'} NT`);
     total += nh * nm;
   }
-  // AH labour
   if (ah > 0 && am > 0) {
     linesMain.push(`${ah} ${ah === 1 ? 'hour' : 'hours'} ${am} ${am === 1 ? 'man' : 'men'} AH`);
     total += ah * am;
   }
-  // NT travel
   if (nth > 0 && nm > 0) {
     linesMain.push(`${nth} ${nth === 1 ? 'hour' : 'hours'} ${nm} ${nm === 1 ? 'man' : 'men'} NT Travel`);
     total += nth * nm;
   }
-  // AH travel
   if (ath > 0 && am > 0) {
     linesMain.push(`${ath} ${ath === 1 ? 'hour' : 'hours'} ${am} ${am === 1 ? 'man' : 'men'} AH Travel`);
     total += ath * am;
   }
 
-  // Accommodation (after total)
   if (nights > 0) {
     linesAfter.push(`${nights} x Overnight accommodation`);
   }
 
-  // Routine visit text (after total)
   if (state.buildcase.routineVisit === 'yes') {
     linesAfter.push('Can be completed on routine visit');
   } else {
@@ -502,7 +481,25 @@ function buildCaseStep1Fill() {
   els.bc1ItemsCount.textContent = `Items: ${state.quote.length}`;
 }
 
-/* ---------- Build case navigation ---------- */
+/* Build case navigation/pages */
+function showPartsPage() {
+  els.partsPage.style.display = 'block';
+  els.quotePage.style.display = 'none';
+  els.buildcase1Page.style.display = 'none';
+  els.buildcase2Page.style.display = 'none';
+  els.buildcase3Page.style.display = 'none';
+  els.tabParts.style.background = '#3b82f6'; els.tabParts.style.color = '#fff';
+  els.tabQuote.style.background = '#fff'; els.tabQuote.style.color = '#111';
+}
+function showQuotePage() {
+  els.partsPage.style.display = 'none';
+  els.quotePage.style.display = 'block';
+  els.buildcase1Page.style.display = 'none';
+  els.buildcase2Page.style.display = 'none';
+  els.buildcase3Page.style.display = 'none';
+  els.tabQuote.style.background = '#3b82f6'; els.tabQuote.style.color = '#fff';
+  els.tabParts.style.background = '#fff'; els.tabParts.style.color = '#111';
+}
 function showBuild1() {
   els.partsPage.style.display = 'none';
   els.quotePage.style.display = 'none';
@@ -524,7 +521,6 @@ function showBuild2() {
   els.tabQuote.style.background = '#3b82f6'; els.tabQuote.style.color = '#fff';
   els.tabParts.style.background = '#fff'; els.tabParts.style.color = '#111';
 
-  // restore fields
   if (state.buildcase.routineVisit === 'yes') els.routineYes.checked = true;
   else if (state.buildcase.routineVisit === 'no') els.routineNo.checked = true;
 
@@ -553,7 +549,7 @@ function showBuild3() {
   els.bc3ItemsCount.textContent = `Items: ${state.quote.length}`;
 }
 
-/* Nav */
+/* Build case buttons */
 if (els.tabParts) els.tabParts.addEventListener('click', showPartsPage);
 if (els.tabQuote) els.tabQuote.addEventListener('click', showQuotePage);
 if (els.btnBuildCase) els.btnBuildCase.addEventListener('click', showBuild1);
@@ -579,7 +575,7 @@ if (els.btnToBuild3) els.btnToBuild3.addEventListener('click', () => {
   showBuild3();
 });
 
-/* Step 3 copy buttons */
+/* Step 3 copy */
 if (els.btnCopyNC3) els.btnCopyNC3.addEventListener('click', () => {
   copyText((els.notesCustomer3?.value || '').trim(), 'Copied customer notes.');
 });
@@ -599,27 +595,9 @@ if (els.btnClearQuote) els.btnClearQuote.addEventListener('click', () => {
 });
 
 /* ---------- Start ---------- */
-function showPartsPage() {
-  els.partsPage.style.display = 'block';
-  els.quotePage.style.display = 'none';
-  els.buildcase1Page.style.display = 'none';
-  els.buildcase2Page.style.display = 'none';
-  els.buildcase3Page.style.display = 'none';
-  els.tabParts.style.background = '#3b82f6'; els.tabParts.style.color = '#fff';
-  els.tabQuote.style.background = '#fff'; els.tabQuote.style.color = '#111';
-}
-function showQuotePage() {
-  els.partsPage.style.display = 'none';
-  els.quotePage.style.display = 'block';
-  els.buildcase1Page.style.display = 'none';
-  els.buildcase2Page.style.display = 'none';
-  els.buildcase3Page.style.display = 'none';
-  els.tabQuote.style.background = '#3b82f6'; els.tabQuote.style.color = '#fff';
-  els.tabParts.style.background = '#fff'; els.tabParts.style.color = '#111';
-}
 function start() {
-  const cachedCsv = localStorage.getItem('parts_csv');
-  if (cachedCsv) { try { parseCSV(cachedCsv); } catch {} }
+  const cachedCsv2 = localStorage.getItem('parts_csv');
+  if (cachedCsv2) { try { parseCSV(cachedCsv2); } catch {} }
   renderParts();
   renderQuote();
   updateAddToQuoteState();
