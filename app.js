@@ -164,8 +164,8 @@ function renderParts() {
         const header = document.querySelector('header');
         const headerH = header ? header.offsetHeight : 0;
 
-        // Extra padding to account for any browser bars / spacing
-        const extraOffset = 72; // bump this up if you still want it higher
+        // Bigger offset so the yellow bar ends right up near the top
+        const extraOffset = 140;
         const rawTarget = rect.top + scrollY - headerH - extraOffset;
         const target = Math.max(rawTarget, 0);
 
