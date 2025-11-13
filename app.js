@@ -1,5 +1,5 @@
-/* Fire Parts Lookup v5.3.5
-   - Auto-scroll to copy area using actual header height so it sits right below the blue bar
+/* Fire Parts Lookup v5.3.6
+   - Auto-scroll: copy area now snaps just under the blue header using a bigger offset
 */
 
 const state = {
@@ -157,14 +157,19 @@ function renderParts() {
       els.copyArea.textContent = `${r.SUPPLIER} — ${r.DESCRIPTION} — ${r.PARTNUMBER} — ${fmtPrice(r.PRICE)} each`;
       updateAddToQuoteState();
 
-      // Auto-scroll copy area so it sits just below the sticky header
+      // Auto-scroll copy area so its top is just under the sticky header
       if (els.copyArea) {
         const rect = els.copyArea.getBoundingClientRect();
         const scrollY = window.scrollY || window.pageYOffset || 0;
         const header = document.querySelector('header');
         const headerH = header ? header.offsetHeight : 0;
-        const offsetTop = rect.top + scrollY - headerH - 8; // 8px gap under header
-        window.scrollTo({ top: offsetTop, behavior: 'smooth' });
+
+        // Extra padding to account for any browser bars / spacing
+        const extraOffset = 72; // bump this up if you still want it higher
+        const rawTarget = rect.top + scrollY - headerH - extraOffset;
+        const target = Math.max(rawTarget, 0);
+
+        window.scrollTo({ top: target, behavior: 'smooth' });
       }
     });
     body.appendChild(tr);
