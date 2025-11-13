@@ -2,14 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Fire Parts Lookup v5.3.0</title>
+  <title>Fire Parts Lookup v5.3.1</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
 
   <link rel="manifest" href="/fire-parts-lookup/manifest.json">
-<link rel="icon" href="/fire-parts-lookup/icon-192.png">
-
+  <link rel="icon" href="/fire-parts-lookup/icon-192.png">
   <meta name="theme-color" content="#3b82f6">
-
 
   <style>
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; background: #fafafa; color: #111; }
@@ -98,7 +96,7 @@
       <div class="small">Offline-friendly parts and quote helper</div>
     </div>
     <div class="ver">
-      v5.3.0
+      v5.3.1
       <span id="authBanner" class="auth-pill" style="display:inline-block;">Authorised users only</span>
     </div>
   </header>
@@ -292,6 +290,14 @@
             </label>
           </div>
 
+          <!-- Overnight accommodation -->
+          <div class="row" style="margin-bottom:10px;">
+            <div>
+              <label class="small" for="accomNights">Overnight accommodation (nights)</label><br>
+              <input id="accomNights" class="bc-input bc-input--tiny" type="number" min="0" step="1" placeholder="0">
+            </div>
+          </div>
+
           <!-- Normal Time -->
           <div class="card" style="background:#f9fafb;">
             <p class="small" style="margin:0 0 6px 0;"><strong>Normal Time</strong></p>
@@ -303,6 +309,10 @@
               <div>
                 <label class="small" for="numTechsNormal">Number of techs</label><br>
                 <input id="numTechsNormal" class="bc-input bc-input--tiny" type="number" min="0" step="1" placeholder="2">
+              </div>
+              <div>
+                <label class="small" for="travelHoursNormal">Travel hours</label><br>
+                <input id="travelHoursNormal" class="bc-input bc-input--tiny" type="number" min="0" step="0.5" placeholder="1">
               </div>
             </div>
           </div>
@@ -318,6 +328,10 @@
               <div>
                 <label class="small" for="numTechsAfter">Number of techs</label><br>
                 <input id="numTechsAfter" class="bc-input bc-input--tiny" type="number" min="0" step="1" placeholder="1">
+              </div>
+              <div>
+                <label class="small" for="travelHoursAfter">Travel hours</label><br>
+                <input id="travelHoursAfter" class="bc-input bc-input--tiny" type="number" min="0" step="0.5" placeholder="1">
               </div>
             </div>
           </div>
@@ -365,13 +379,11 @@
 
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <script src="app.js"></script>
-<script>
-  if ('serviceWorker' in navigator) {
-    // Absolute path and scope for GitHub Pages project sites
-    navigator.serviceWorker.register('/fire-parts-lookup/sw.js', { scope: '/fire-parts-lookup/' })
-      .catch(() => {});
-  }
-</script>
-
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/fire-parts-lookup/sw.js', { scope: '/fire-parts-lookup/' })
+        .catch(() => {});
+    }
+  </script>
 </body>
 </html>
