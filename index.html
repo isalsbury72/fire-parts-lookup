@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Fire Parts Lookup v5.3.4</title>
+  <title>Fire Parts Lookup v5.3.5</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
 
   <link rel="manifest" href="/fire-parts-lookup/manifest.json">
@@ -40,7 +40,7 @@
     .tab-btn { flex:1; padding:8px 10px; border-radius:999px; border:1px solid #d1d5db; background:#fff; cursor:pointer; font-size:13px; }
 
     table { width:100%; border-collapse:collapse; margin-top:12px; }
-    th, td { text-align:left; padding:8px 6px; border-bottom:1px solid #eee; font-size:13px; vertical-align:top; }
+    th, td { text-align:left; padding:8px 6px; border-bottom:1px solid:#eee; font-size:13px; vertical-align:top; }
     th { position: sticky; top: 64px; background:#fafafa; z-index:5; }
     .badge { font-size:12px; background:#f3f4f6; padding:3px 7px; border-radius:999px; border:1px solid #e5e7eb; }
     .copycell { user-select: all; background:#fffbe6; border:1px dashed #facc15; border-radius:8px; padding:8px; margin-top:8px; font-size:13px; min-height:18px; }
@@ -104,7 +104,7 @@
       <div class="small">Offline-friendly parts and quote helper</div>
     </div>
     <div class="ver">
-      v5.3.4
+      v5.3.5
       <span id="authBanner" class="auth-pill" style="display:inline-block;">Authorised users only</span>
     </div>
   </header>
@@ -386,7 +386,7 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <script src="app.js?v=5.3.4"></script>
+  <script src="app.js?v=5.3.5"></script>
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/fire-parts-lookup/sw.js', { scope: '/fire-parts-lookup/' })
