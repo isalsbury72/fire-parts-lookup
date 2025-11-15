@@ -7,9 +7,6 @@
 
 const APP_VERSION = '5.3.4';
 
-const DATA_URL = "https://1drv.ms/x/c/583d778a54b66ad7/Efin4UqVG8dPkOMYRaInrXsB1_13F1apiqCCFAsRYnKIlw?e=VcTJtp&download=1";
-
-
 const state = {
   rows: [],
   selected: null,
@@ -69,7 +66,7 @@ function fmtPrice(n) {
 function supplierKey(name) {
   if (!name) return 'UNKNOWN';
   const noYear = name.replace(/\b20\d{2}\b/g, '');
-  const firstToken = (noYear.match(/[A-Za-z]+/) || ['UNKNOWN'])[0];
+  const firstToken = (noYear.match(/[A-Za-z]+/] || ['UNKNOWN'])[0];
   return firstToken.toUpperCase();
 }
 function displaySupplierName(name) {
@@ -288,8 +285,6 @@ function renderParts() {
           `${r.SUPPLIER} — ${r.DESCRIPTION} — ${r.PARTNUMBER} — ${fmtPrice(r.PRICE)} each`;
       }
       updateAddToQuoteState();
-
-      // Strong scroll-to-top for mobile and desktop
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
     body.appendChild(tr);
@@ -379,32 +374,29 @@ function renderQuote() {
 
 /* ---------- Startup CSV + state ---------- */
 
-// Load saved CSV first
 const cachedCsv = localStorage.getItem(LS_KEYS.CSV);
 loadSavedState();
 
 if (cachedCsv) {
   try {
-    parseCSV(cachedCsv); // keep existing metadata
+    parseCSV(cachedCsv);
   } catch {}
 }
 
 /* ---------- Loaders ---------- */
 
-async function loadSharedFromCloud() {
+async function loadSharedFromRepo() {
   if (!ensureAccess()) return;
-
   try {
-    const res = await fetch(DATA_URL);
+    const res = await fetch('Parts.csv', { cache: 'no-cache' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
-
     const text = await res.text();
     localStorage.setItem(LS_KEYS.CSV, text);
-    parseCSV(text, 'OneDrive shared CSV');
-    toast('Loaded shared CSV from OneDrive.', true);
+    parseCSV(text, 'GitHub Parts.csv');
+    toast('Loaded shared CSV from repo.', true);
   } catch (err) {
     console.error(err);
-    toast('Error loading shared OneDrive file', false);
+    toast('Error loading shared CSV from repo', false);
   }
 }
 
@@ -433,7 +425,7 @@ function ensureAccess() {
   return false;
 }
 
-if (els.loadShared) els.loadShared.addEventListener('click', loadSharedFromCloud);
+if (els.loadShared) els.loadShared.addEventListener('click', loadSharedFromRepo);
 
 function clearAllData() {
   localStorage.removeItem(LS_KEYS.CSV);
