@@ -7,6 +7,9 @@
 
 const APP_VERSION = '5.3.4';
 
+const DATA_URL = "https://1drv.ms/x/c/583d778a54b66ad7/Efin4UqVG8dPkOMYRaInrXsB1_13F1apiqCCFAsRYnKIlw?e=VcTJtp&download=1";
+
+
 const state = {
   rows: [],
   selected: null,
@@ -388,6 +391,23 @@ if (cachedCsv) {
 
 /* ---------- Loaders ---------- */
 
+async function loadSharedFromCloud() {
+  if (!ensureAccess()) return;
+
+  try {
+    const res = await fetch(DATA_URL);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+
+    const text = await res.text();
+    localStorage.setItem(LS_KEYS.CSV, text);
+    parseCSV(text, 'OneDrive shared CSV');
+    toast('Loaded shared CSV from OneDrive.', true);
+  } catch (err) {
+    console.error(err);
+    toast('Error loading shared OneDrive file', false);
+  }
+}
+
 if (els.csv) els.csv.addEventListener('change', e => {
   const f = e.target.files[0];
   if (!f) return;
@@ -413,17 +433,7 @@ function ensureAccess() {
   return false;
 }
 
-if (els.loadShared) els.loadShared.addEventListener('click', () => {
-  if (!ensureAccess()) return;
-  fetch('Parts.csv')
-    .then(r => r.text())
-    .then(t => {
-      localStorage.setItem(LS_KEYS.CSV, t);
-      parseCSV(t, 'Shared Parts.csv');
-      toast('Loaded shared CSV.', true);
-    })
-    .catch(() => toast('Error loading shared file', false));
-});
+if (els.loadShared) els.loadShared.addEventListener('click', loadSharedFromCloud);
 
 function clearAllData() {
   localStorage.removeItem(LS_KEYS.CSV);
