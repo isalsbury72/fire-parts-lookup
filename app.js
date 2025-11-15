@@ -66,7 +66,7 @@ function fmtPrice(n) {
 function supplierKey(name) {
   if (!name) return 'UNKNOWN';
   const noYear = name.replace(/\b20\d{2}\b/g, '');
-  const firstToken = (noYear.match(/[A-Za-z]+/] || ['UNKNOWN'])[0];
+  const firstToken = (noYear.match(/[A-Za-z]+/ || ['UNKNOWN'])[0];
   return firstToken.toUpperCase();
 }
 function displaySupplierName(name) {
