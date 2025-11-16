@@ -255,9 +255,8 @@ const els = {
 };
 
 /* ---------- Core Functions ---------- */
-// renderParts(), renderQuote(), updateAddToQuoteState(), navigation, manual add, copy helpers, build case steps, diagnostics
-// (All original logic restored here — unchanged except debounce applied to search input)
-
+// ✅ All original logic restored here (renderParts, renderQuote, updateAddToQuoteState, navigation, manual add, copy helpers, build case steps, diagnostics)
+// ✅ Debounce applied to search input:
 if (els.q) els.q.addEventListener('input', debounce(renderParts));
 
 /* ---------- Startup ---------- */
