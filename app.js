@@ -692,11 +692,13 @@ function buildLabourSummary() {
     linesAfter.push(`${nights} x Overnight accommodation`);
   }
 
+  // *** Changed logic here ***
   if (state.buildcase.routineVisit === 'yes') {
     linesAfter.push('Can be completed on routine visit');
-  } else {
+  } else if (state.buildcase.routineVisit === 'no') {
     linesAfter.push('Not intended to be completed on routine visit');
   }
+  // If neither radio is chosen, we push nothing and leave this blank.
 
   const out = [];
   out.push(...linesMain);
