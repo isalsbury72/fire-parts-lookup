@@ -303,6 +303,52 @@ function renderParts() {
 /* Apply debounce to search input */
 if (els.q) els.q.addEventListener('input', debounce(renderParts));
 
+/* ---------- Quote rendering ---------- */
+function renderQuote() {
+  const body = els.quoteTableBody;
+  const sum = els.quoteSummary;
+  if (!body || !sum) return;
+  body.innerHTML = '';
+  let total = 0;
+
+  state.quote.forEach((i, idx) => {
+    const qty = i.qty || 1;
+    const lineTotal = i.PRICE * qty;
+    total += lineTotal;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="number" min="1" value="${qty}" style="width:60px"></td>
+      <td>${i.SUPPLIER}</td>
+      <td>${i.DESCRIPTION}</td>
+      <td>${i.PARTNUMBER}</td>
+      <td>${fmtPrice(lineTotal)}</td>
+      <td><button data-i="${idx}" style="border:none;background:#fee2e2;color:#b91c1c;border-radius:6px;padding:2px 6px;cursor:pointer;">✖</button></td>`;
+    tr.querySelector('input').addEventListener('change', e => {
+      i.qty = Math.max(1, parseInt(e.target.value, 10) || 1);
+      saveQuote();
+      renderQuote();
+    });
+    tr.querySelector('button').addEventListener('click', e => {
+      const idx2 = parseInt(e.target.dataset.i, 10);
+      if (confirm('Remove this item?')) {
+        state.quote.splice(idx2, 1);
+        saveQuote();
+        renderQuote();
+      }
+    });
+    body.appendChild(tr);
+  });
+
+  sum.textContent = 'Total: ' + fmtPrice(total);
+
+  if (els.btnClearQuote) {
+    els.btnClearQuote.disabled = !state.quote.length;
+    els.btnClearQuote.style.opacity = state.quote.length ? '1' : '0.6';
+    els.btnClearQuote.style.cursor = state.quote.length ? 'pointer' : 'not-allowed';
+  }
+  renderDiagnostics();
+}
+
 /* ---------- Diagnostics ---------- */
 function renderDiagnostics() {
   if (els.diagCsvSource) {
