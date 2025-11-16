@@ -226,7 +226,7 @@
           </div>
 
           <!-- Actions grid -->
-          <div class="action-grid" style="margin-top:6px%;">
+          <div class="action-grid" style="margin-top:6px;">
             <button id="btnBuildCase" class="action-btn ghost">
               <div class="ico">🧩</div><div class="lbl">Build case</div><div class="cap">Prep scope notes</div>
             </button>
@@ -285,6 +285,17 @@
           </p>
           <button id="btnShowAccessPanel" class="btn btn-secondary" style="margin-top:6px;">Enter / update access code</button>
           <p class="small" style="margin-top:6px;">Required for loading the shared CSV from the repo.</p>
+        </div>
+
+        <!-- Shared CSV path -->
+        <div class="card" style="margin-top:8px;">
+          <h3 style="margin:0 0 6px 0; font-size:14px;">Shared CSV path</h3>
+          <p class="small">Remote CSV used when you tap “Load shared file”. Leave blank to use the default Parts.csv next to the app.</p>
+          <input id="csvPathInput" type="text" class="bc-input" placeholder="https://.../Parts.csv">
+          <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
+            <button id="btnResetCsvPath" class="btn btn-ghost">Reset to default</button>
+            <button id="btnSaveCsvPath" class="btn btn-primary">Save path</button>
+          </div>
         </div>
 
         <!-- Maintenance -->
