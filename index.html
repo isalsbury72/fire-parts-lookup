@@ -226,7 +226,7 @@
           </div>
 
           <!-- Actions grid -->
-          <div class="action-grid" style="margin-top:6px;">
+          <div class="action-grid" style="margin-top:6px%;">
             <button id="btnBuildCase" class="action-btn ghost">
               <div class="ico">🧩</div><div class="lbl">Build case</div><div class="cap">Prep scope notes</div>
             </button>
@@ -274,6 +274,17 @@
           <p class="small"><strong>Quote items:</strong> <span id="diagQuoteItems">0</span></p>
           <p class="small"><strong>Routine visit setting:</strong> <span id="diagRoutine">Not set</span></p>
           <p class="small"><strong>Service worker:</strong> <span id="diagSwStatus">Checking…</span></p>
+        </div>
+
+        <!-- Security -->
+        <div class="card" style="margin-top:8px;">
+          <h3 style="margin:0 0 6px 0; font-size:14px;">Security</h3>
+          <p class="small">
+            <strong>Access status:</strong>
+            <span id="diagAccessStatus">Locked</span>
+          </p>
+          <button id="btnShowAccessPanel" class="btn btn-secondary" style="margin-top:6px;">Enter / update access code</button>
+          <p class="small" style="margin-top:6px;">Required for loading the shared CSV from the repo.</p>
         </div>
 
         <!-- Maintenance -->
@@ -422,6 +433,19 @@
       </div>
     </div>
   </main>
+
+  <!-- Access code overlay -->
+  <div id="accessOverlay" style="position:fixed; inset:0; background:rgba(0,0,0,0.35); display:none; align-items:center; justify-content:center; z-index:9998;">
+    <div class="card" style="max-width:320px; width:90%; box-shadow:0 10px 30px rgba(0,0,0,0.35);">
+      <h3 style="margin:0 0 6px 0; font-size:16px;">Access code</h3>
+      <p class="small">Enter the 2025 access PIN to unlock shared parts data.</p>
+      <input id="accessInput" type="password" class="bc-input" placeholder="Access code">
+      <div style="margin-top:10px; display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap;">
+        <button id="btnAccessCancel" class="btn btn-ghost">Cancel</button>
+        <button id="btnAccessSubmit" class="btn btn-primary">Unlock</button>
+      </div>
+    </div>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <script src="app.js"></script>
