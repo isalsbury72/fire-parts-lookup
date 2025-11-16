@@ -1,10 +1,10 @@
 // sw.js
-const CACHE = 'fpl-v5-3-5';
+const CACHE = 'fpl-v5-3-6';
 
 const ASSETS = [
   './',
   './index.html',
-  './app.js?v=5.3.5',
+  './app.js?v=5.3.6',
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
@@ -30,37 +30,47 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  const url = new URL(e.request.url);
-  const isHTML =
-    e.request.mode === 'navigate' ||
-    (e.request.headers.get('accept') || '').includes('text/html');
-  const isApp =
-    url.pathname.endsWith('/app.js') || url.searchParams.has('v');
+  const req = e.request;
+  const url = new URL(req.url);
 
-  // Network first for HTML + app.js so updates appear quickly
-  if (isHTML || isApp) {
+  const isNavigate =
+    req.mode === 'navigate' ||
+    (req.headers.get('accept') || '').includes('text/html');
+
+  const isApp =
+    url.pathname.endsWith('app.js') ||
+    url.searchParams.has('v');
+
+  // Navigation: network first, fall back to cached index.html
+  if (isNavigate) {
     e.respondWith(
-      fetch(e.request)
+      fetch(req)
         .then(resp => {
           const copy = resp.clone();
-          caches.open(CACHE).then(c => c.put(e.request, copy));
+          caches.open(CACHE).then(c => c.put('./index.html', copy));
           return resp;
         })
-        .catch(() => {
-          // Proper navigation fallback: if HTML navigation fails,
-          // serve the cached index.html explicitly
-          if (isHTML) {
-            return caches.match('./index.html');
-          }
-          // For app.js (or other versioned bundle), fall back to its own cache entry
-          return caches.match(e.request);
-        })
+        .catch(() => caches.match('./index.html'))
     );
     return;
   }
 
-  // Cache first for everything else
+  // app.js: network first
+  if (isApp) {
+    e.respondWith(
+      fetch(req)
+        .then(resp => {
+          const copy = resp.clone();
+          caches.open(CACHE).then(c => c.put(req, copy));
+          return resp;
+        })
+        .catch(() => caches.match(req))
+    );
+    return;
+  }
+
+  // Everything else: cache first
   e.respondWith(
-    caches.match(e.request).then(r => r || fetch(e.request))
+    caches.match(req).then(r => r || fetch(req))
   );
 });
