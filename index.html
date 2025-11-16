@@ -2,11 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Fire Parts Lookup v5.3.4</title>
+  <title>Fire Parts Lookup v5.3.5</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
 
-  <link rel="manifest" href="/fire-parts-lookup/manifest.json">
-  <link rel="icon" href="/fire-parts-lookup/icon-192.png">
+  <!-- Relative paths -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon-192.png">
   <meta name="theme-color" content="#3b82f6">
 
   <style>
@@ -96,7 +97,7 @@
       <div class="small">Offline-friendly parts and quote helper</div>
     </div>
     <div class="ver">
-      v5.3.4
+      v5.3.5
       <span id="authBanner" class="auth-pill" style="display:inline-block;">Authorised users only</span>
     </div>
   </header>
@@ -198,7 +199,7 @@
               <input id="manualPrice" type="text" placeholder="Price each * e.g. 12.95" class="bc-input" style="flex:1; min-width:160px;">
               <input id="manualQty" type="number" min="1" value="1" placeholder="Qty" class="bc-input" style="width:100px;">
             </div>
-            <div style="margin-top:8px; display:flex; gap:8px; justify-content:flex-end;">
+            <div style="margin-top:8px; display:flex; gap:8px; justify-content:flex-end%;">
               <button id="manualAddBtn" class="btn" style="border-color:#22c55e; background:#ecfdf5; color:#166534;">Add manual line to quote</button>
             </div>
             <div class="small" style="margin-top:6px; color:#6b7280;">Tip: Price can include a dollar sign, commas, or spaces. We will clean it automatically.</div>
@@ -260,9 +261,9 @@
         <!-- Software versions bubble -->
         <div class="card" style="margin-top:8px;">
           <h3 style="margin:0 0 6px 0; font-size:14px;">Software versions</h3>
-          <p class="small"><strong>App version:</strong> <span>v5.3.4</span></p>
-          <p class="small"><strong>Index.html version:</strong> <span id="diagIdxVersion">v5.3.4</span></p>
-          <p class="small"><strong>Service Worker version:</strong> <span id="diagSwVersion">fpl-v5-3-4</span></p>
+          <p class="small"><strong>App version:</strong> <span>v5.3.5</span></p>
+          <p class="small"><strong>Index.html version:</strong> <span id="diagIdxVersion">v5.3.5</span></p>
+          <p class="small"><strong>Service Worker version:</strong> <span id="diagSwVersion">fpl-v5-3-5</span></p>
         </div>
 
         <!-- Data & status bubble -->
@@ -274,28 +275,6 @@
           <p class="small"><strong>Quote items:</strong> <span id="diagQuoteItems">0</span></p>
           <p class="small"><strong>Routine visit setting:</strong> <span id="diagRoutine">Not set</span></p>
           <p class="small"><strong>Service worker:</strong> <span id="diagSwStatus">Checking…</span></p>
-        </div>
-
-        <!-- Security -->
-        <div class="card" style="margin-top:8px;">
-          <h3 style="margin:0 0 6px 0; font-size:14px;">Security</h3>
-          <p class="small">
-            <strong>Access status:</strong>
-            <span id="diagAccessStatus">Locked</span>
-          </p>
-          <button id="btnShowAccessPanel" class="btn btn-secondary" style="margin-top:6px;">Enter / update access code</button>
-          <p class="small" style="margin-top:6px;">Required for loading the shared CSV from the repo.</p>
-        </div>
-
-        <!-- Shared CSV path -->
-        <div class="card" style="margin-top:8px;">
-          <h3 style="margin:0 0 6px 0; font-size:14px;">Shared CSV path</h3>
-          <p class="small">Remote CSV used when you tap “Load shared file”. Leave blank to use the default Parts.csv next to the app.</p>
-          <input id="csvPathInput" type="text" class="bc-input" placeholder="https://.../Parts.csv">
-          <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
-            <button id="btnResetCsvPath" class="btn btn-ghost">Reset to default</button>
-            <button id="btnSaveCsvPath" class="btn btn-primary">Save path</button>
-          </div>
         </div>
 
         <!-- Maintenance -->
@@ -445,25 +424,15 @@
     </div>
   </main>
 
-  <!-- Access code overlay -->
-  <div id="accessOverlay" style="position:fixed; inset:0; background:rgba(0,0,0,0.35); display:none; align-items:center; justify-content:center; z-index:9998;">
-    <div class="card" style="max-width:320px; width:90%; box-shadow:0 10px 30px rgba(0,0,0,0.35);">
-      <h3 style="margin:0 0 6px 0; font-size:16px;">Access code</h3>
-      <p class="small">Enter the 2025 access PIN to unlock shared parts data.</p>
-      <input id="accessInput" type="password" class="bc-input" placeholder="Access code">
-      <div style="margin-top:10px; display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap;">
-        <button id="btnAccessCancel" class="btn btn-ghost">Cancel</button>
-        <button id="btnAccessSubmit" class="btn btn-primary">Unlock</button>
-      </div>
-    </div>
-  </div>
-
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <script src="app.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/fire-parts-lookup/sw.js', { scope: '/fire-parts-lookup/' })
-        .catch(() => {});
+      // Relative path, default scope = current folder
+      navigator.serviceWorker.register('sw.js')
+        .catch((err) => {
+          console.error('Service worker registration failed', err);
+        });
     }
   </script>
 </body>
