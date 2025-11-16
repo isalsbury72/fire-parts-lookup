@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Fire Parts Lookup v5.3.6</title>
+  <title>Fire Parts Lookup v5.3.7</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
 
   <link rel="manifest" href="manifest.json">
@@ -36,7 +36,7 @@
     .hint { font-size:12px; color:#555; margin-top:6px; }
 
     /* Tabs */
-    .tabs { display:flex; gap:6px; margin-bottom:10px; }
+    .tabs { display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap; }
     .tab-btn { flex:1; padding:8px 10px; border-radius:999px; border:1px solid #d1d5db; background:#fff; cursor:pointer; font-size:13px; }
 
     table { width:100%; border-collapse:collapse; margin-top:12px; }
@@ -85,30 +85,79 @@
       .action-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
 
-    /* Home dashboard buttons */
-    .tool-grid {
+    /* Home page quick buttons */
+    .home-grid {
       display:grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap:12px;
+      gap:10px;
       margin-top:8px;
     }
-    .tool-card {
+    @media (max-width: 520px) {
+      .home-grid { grid-template-columns: minmax(0, 1fr); }
+    }
+    .home-card-btn {
       border-radius:14px;
       border:1px solid #d1d5db;
       padding:12px;
       background:#f9fafb;
-      cursor:pointer;
       display:flex;
       flex-direction:column;
+      align-items:flex-start;
       gap:4px;
+      cursor:pointer;
     }
-    .tool-card-title {
-      font-size:14px;
-      font-weight:600;
-    }
-    .tool-card-desc {
+    .home-card-btn .title { font-size:14px; font-weight:600; }
+    .home-card-btn .desc { font-size:12px; color:#6b7280; }
+    .home-card-btn .icon { font-size:18px; }
+
+    /* Battery page chips */
+    .chip-row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+    .chip {
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+      padding:4px 8px;
+      border-radius:999px;
+      border:1px solid #e5e7eb;
+      background:#f9fafb;
       font-size:12px;
-      color:#6b7280;
+    }
+    .chip-label { font-size:11px; color:#4b5563; }
+    .chip-input {
+      border:none;
+      background:transparent;
+      width:60px;
+      text-align:right;
+      font-size:13px;
+      outline:none;
+      color:#111827;
+    }
+    .chip-input::placeholder {
+      color:#9ca3af;
+    }
+
+    .result-wrap {
+      margin-top:6px;
+      display:flex;
+      flex-wrap:wrap;
+      align-items:center;
+      gap:10px;
+    }
+    .result-chip {
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:6px 14px;
+      border-radius:999px;
+      background:#f59e0b;
+      color:#fff;
+      font-weight:600;
+      font-size:16px;
+      box-shadow:0 1px 4px rgba(0,0,0,0.15);
+    }
+    .result-label {
+      font-size:12px;
+      color:#4b5563;
     }
 
     @keyframes authFadeIn { from { opacity:0; transform:translateY(-2px); } to { opacity:1; transform:translateY(0); } }
@@ -122,7 +171,7 @@
       <div class="small">Offline-friendly parts and quote helper</div>
     </div>
     <div class="ver">
-      v5.3.6
+      v5.3.7
       <span id="authBanner" class="auth-pill" style="display:inline-block;">Authorised users only</span>
     </div>
   </header>
@@ -133,24 +182,27 @@
       <button id="tabHome" class="tab-btn">Home</button>
       <button id="tabParts" class="tab-btn">Parts</button>
       <button id="tabQuote" class="tab-btn">Quote</button>
+      <button id="tabBattery" class="tab-btn">Battery</button>
       <button id="tabSettings" class="tab-btn">Settings</button>
     </div>
 
-    <!-- Home dashboard -->
+    <!-- Home page -->
     <div id="homePage">
       <div class="card">
-        <h2 style="margin-top:0; font-size:16px;">Tools</h2>
-        <p class="small">Choose where you want to go.</p>
+        <h2 style="margin-top:0; font-size:16px;">Home</h2>
+        <p class="small">Choose where you want to start.</p>
 
-        <div class="tool-grid">
-          <button id="btnGoParts" class="tool-card">
-            <div class="tool-card-title">🔧 Fire Parts lookup</div>
-            <div class="tool-card-desc">Search parts, build quotes and cases.</div>
+        <div class="home-grid">
+          <button id="btnHomeParts" class="home-card-btn">
+            <div class="icon">🧯</div>
+            <div class="title">Fire Parts lookup</div>
+            <div class="desc">Search parts, build quotes and Email POs.</div>
           </button>
 
-          <button id="btnGoBattery" class="tool-card">
-            <div class="tool-card-title">🔋 Battery calculation</div>
-            <div class="tool-card-desc">Quick standby / alarm load sizing.</div>
+          <button id="btnHomeBattery" class="home-card-btn">
+            <div class="icon">🔋</div>
+            <div class="title">Battery capacity calculator</div>
+            <div class="desc">Quick calc using standby and alarm loads.</div>
           </button>
         </div>
       </div>
@@ -159,7 +211,7 @@
     <!-- Parts page -->
     <div id="partsPage" style="display:none;">
       <div class="card">
-        <h2 style="margin-top:0, font-size:16px;">Parts lookup</h2>
+        <h2 style="margin-top:0; font-size:16px;">Parts lookup</h2>
 
         <div class="row" style="margin-bottom:8px;">
           <input id="q" type="search" placeholder="Search supplier, type, description or part number…">
@@ -201,60 +253,6 @@
           </thead>
           <tbody><!-- filled by app.js --></tbody>
         </table>
-      </div>
-    </div>
-
-    <!-- Battery calculation page -->
-    <div id="batteryPage" style="display:none;">
-      <div class="card">
-        <h2 style="margin-top:0; font-size:16px;">Battery calculation</h2>
-        <p class="small">
-          Formula: C = L × [ (Iq × Tq) + Fc × (Ia × Ta) ]
-        </p>
-
-        <div class="card" style="margin-top:8px;">
-          <h3 style="margin:0 0 6px 0; font-size:14px;">Inputs</h3>
-
-          <div class="row" style="margin-bottom:8px;">
-            <div style="flex:1; min-width:140px;">
-              <label class="small" for="battIq">Iq – Total quiescent current (A)</label><br>
-              <input id="battIq" class="bc-input" type="number" step="0.01" min="0" placeholder="e.g. 0.15">
-            </div>
-            <div style="flex:1; min-width:140px;">
-              <label class="small" for="battIa">Ia – Total alarm current (A)</label><br>
-              <input id="battIa" class="bc-input" type="number" step="0.01" min="0" placeholder="e.g. 0.8">
-            </div>
-          </div>
-
-          <div class="row" style="margin-bottom:8px;">
-            <div style="flex:1; min-width:140px;">
-              <label class="small" for="battTq">Tq – Quiescent standby time (hours)</label><br>
-              <input id="battTq" class="bc-input" type="number" step="0.5" min="0" placeholder="e.g. 24">
-            </div>
-            <div style="flex:1; min-width:140px;">
-              <label class="small" for="battTa">Ta – Alarm load time (hours)</label><br>
-              <input id="battTa" class="bc-input" type="number" step="0.1" min="0" placeholder="e.g. 0.5">
-            </div>
-          </div>
-
-          <div class="row" style="margin-bottom:8px;">
-            <div style="flex:1; min-width:140px;">
-              <label class="small" for="battL">L – Compensation factor</label><br>
-              <input id="battL" class="bc-input" type="number" step="0.05" min="0" placeholder="e.g. 1.25">
-            </div>
-            <div style="flex:1; min-width:140px;">
-              <label class="small" for="battFc">Fc – Capacity derating factor</label><br>
-              <input id="battFc" class="bc-input" type="number" step="1" min="0" placeholder="e.g. 1">
-            </div>
-          </div>
-
-          <div style="margin-top:8px; display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap;">
-            <button id="btnBattReset" class="btn btn-secondary">Reset</button>
-            <button id="btnBattCalc" class="btn btn-primary">Calculate</button>
-          </div>
-
-          <p id="battResult" class="small" style="margin-top:10px;">Result will appear here.</p>
-        </div>
       </div>
     </div>
 
@@ -352,6 +350,67 @@
       </div>
     </div>
 
+    <!-- Battery page -->
+    <div id="batteryPage" style="display:none;">
+      <div class="card">
+        <h2 style="margin-top:0; font-size:16px;">Battery capacity calculator</h2>
+        <p class="small">
+          C = L × [ (Iq × Tq) + Fc × (Ia × Ta) ]<br>
+          Quick tool for fire panel standby and alarm loads.
+        </p>
+
+        <div class="card" style="margin-top:8px;">
+          <h3 style="margin:0 0 6px 0; font-size:14px;">Inputs</h3>
+
+          <div class="chip-row">
+            <span class="chip">
+              <span class="chip-label">Iq (A quiescent)</span>
+              <input id="batIq" class="chip-input" type="number" step="0.01" placeholder="0.00" value="0">
+            </span>
+            <span class="chip">
+              <span class="chip-label">Ia (A alarm)</span>
+              <input id="batIa" class="chip-input" type="number" step="0.01" placeholder="0.00" value="0">
+            </span>
+          </div>
+
+          <div class="chip-row" style="margin-top:8px;">
+            <span class="chip">
+              <span class="chip-label">Ta (h alarm time)</span>
+              <input id="batTa" class="chip-input" type="number" step="0.1" placeholder="0.5" value="0.5">
+            </span>
+            <span class="chip">
+              <span class="chip-label">Fc (derating)</span>
+              <input id="batFc" class="chip-input" type="number" step="0.1" placeholder="2" value="2">
+            </span>
+            <span class="chip">
+              <span class="chip-label">L (comp factor)</span>
+              <input id="batL" class="chip-input" type="number" step="0.01" placeholder="1.25" value="1.25">
+            </span>
+          </div>
+
+          <div style="margin-top:10px;">
+            <span class="small">Standby time Tq (hours)</span><br>
+            <div class="row" style="margin-top:4px; gap:8px;">
+              <button id="batBtnTq24" class="btn btn-secondary">Tq 24 h</button>
+              <button id="batBtnTq72" class="btn btn-secondary">Tq 72 h</button>
+              <span id="batTqDisplay" class="chip"><span class="chip-label">Tq: 24 h</span></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:10px;">
+          <h3 style="margin:0 0 6px 0; font-size:14px;">Required capacity</h3>
+          <div class="result-wrap">
+            <div class="result-chip">
+              <span>🔋</span>
+              <span id="batResult">0.00 Ah</span>
+            </div>
+            <span class="result-label">Recommended minimum battery capacity (Ah).</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Settings / Diagnostics page -->
     <div id="settingsPage" style="display:none;">
       <div class="card">
@@ -361,9 +420,9 @@
         <!-- Software versions bubble -->
         <div class="card" style="margin-top:8px;">
           <h3 style="margin:0 0 6px 0; font-size:14px;">Software versions</h3>
-          <p class="small"><strong>App version:</strong> <span>v5.3.6</span></p>
-          <p class="small"><strong>Index.html version:</strong> <span id="diagIdxVersion">v5.3.6</span></p>
-          <p class="small"><strong>Service Worker version:</strong> <span id="diagSwVersion">fpl-v5-3-6</span></p>
+          <p class="small"><strong>App version:</strong> <span>v5.3.7</span></p>
+          <p class="small"><strong>Index.html version:</strong> <span id="diagIdxVersion">v5.3.7</span></p>
+          <p class="small"><strong>Service Worker version:</strong> <span id="diagSwVersion">fpl-v5-3-7</span></p>
         </div>
 
         <!-- Data & status bubble -->
@@ -525,7 +584,7 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <script src="app.js?v=5.3.6"></script>
+  <script src="app.js?v=5.3.7"></script>
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js')
