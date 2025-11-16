@@ -260,10 +260,14 @@ const els = {
   btnDiagClearAll: document.getElementById('btnDiagClearAll'),
   btnDiagCopy: document.getElementById('btnDiagCopy'),
 
-  // Version info in Settings (step 2)
+  // Version info in Settings
   diagVerApp: document.getElementById('diagVerApp'),
   diagVerHtml: document.getElementById('diagVerHtml'),
-  diagVerSw: document.getElementById('diagVerSw')
+  diagVerSw: document.getElementById('diagVerSw'),
+
+  // Parts page CSV info
+  partsCsvSource: document.getElementById('partsCsvSource'),
+  partsCsvLastLoaded: document.getElementById('partsCsvLastLoaded')
 };
 
 /* ---------- Parts page ---------- */
@@ -942,6 +946,14 @@ function renderDiagnostics() {
   if (els.diagVerApp) els.diagVerApp.textContent = ver;
   if (els.diagVerHtml) els.diagVerHtml.textContent = ver;
   if (els.diagVerSw) els.diagVerSw.textContent = ver;
+
+  // Parts page CSV summary
+  if (els.partsCsvSource) {
+    els.partsCsvSource.textContent = state.csvMeta.source || 'None loaded';
+  }
+  if (els.partsCsvLastLoaded) {
+    els.partsCsvLastLoaded.textContent = formatLastLoaded(state.csvMeta.loadedAt);
+  }
 }
 
 function buildDebugInfo() {
