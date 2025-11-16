@@ -1,14 +1,11 @@
-/* Fire Parts Lookup v5.3.5
+/* Fire Parts Lookup v5.3.4
    - Quote and build case saved/restored from localStorage
    - CSV metadata (source, last loaded) tracked for diagnostics
    - Settings/Diagnostics tab + Copy debug info
    - Scroll-to-top simplified (better on mobile)
-   - Diagnostics now show app.js, HTML and SW cache versions
 */
 
-const APP_VERSION = '5.3.5';
-const HTML_VERSION = '5.3.5';
-const SW_CACHE_VERSION = 'fpl-v5-3-5';
+const APP_VERSION = '5.3.4';
 
 const state = {
   rows: [],
@@ -262,9 +259,11 @@ const els = {
   diagSwStatus: document.getElementById('diagSwStatus'),
   btnDiagClearAll: document.getElementById('btnDiagClearAll'),
   btnDiagCopy: document.getElementById('btnDiagCopy'),
-  diagAppVersion: document.getElementById('diagAppVersion'),
-  diagHtmlVersion: document.getElementById('diagHtmlVersion'),
-  diagSwCache: document.getElementById('diagSwCache')
+
+  // Version info in Settings (step 2)
+  diagVerApp: document.getElementById('diagVerApp'),
+  diagVerHtml: document.getElementById('diagVerHtml'),
+  diagVerSw: document.getElementById('diagVerSw')
 };
 
 /* ---------- Parts page ---------- */
@@ -875,6 +874,38 @@ if (els.btnClearQuote) els.btnClearQuote.addEventListener('click', () => {
   }
 });
 
+/* Manual add button */
+
+if (els.manualAddBtn) els.manualAddBtn.addEventListener('click', () => {
+  if (!manualInputsValid()) {
+    toast('Fill supplier, description, part number and price.', false);
+    return;
+  }
+  const sup = els.manualSupplier.value.trim();
+  const desc = els.manualDescription.value.trim();
+  const pn = els.manualPart.value.trim();
+  const priceEach = parseFloat((els.manualPrice.value || '').toString().replace(/[^0-9.]/g, '')) || 0;
+  const qty = Math.max(1, parseInt(els.manualQty.value, 10) || 1);
+
+  state.quote.push({
+    SUPPLIER: sup,
+    DESCRIPTION: desc,
+    PARTNUMBER: pn,
+    PRICE: priceEach,
+    qty
+  });
+  saveQuote();
+  renderQuote();
+
+  els.manualSupplier.value = '';
+  els.manualDescription.value = '';
+  els.manualPart.value = '';
+  els.manualPrice.value = '';
+  els.manualQty.value = '1';
+  setManualBtnEnabled(false);
+  toast('Manual item added.', true);
+});
+
 /* ---------- Diagnostics + debug export ---------- */
 
 function renderDiagnostics() {
@@ -905,15 +936,12 @@ function renderDiagnostics() {
       els.diagSwStatus.textContent = 'Registered / waiting';
     }
   }
-  if (els.diagAppVersion) {
-    els.diagAppVersion.textContent = APP_VERSION;
-  }
-  if (els.diagHtmlVersion) {
-    els.diagHtmlVersion.textContent = HTML_VERSION;
-  }
-  if (els.diagSwCache) {
-    els.diagSwCache.textContent = SW_CACHE_VERSION;
-  }
+
+  // Version info
+  const ver = 'v' + APP_VERSION;
+  if (els.diagVerApp) els.diagVerApp.textContent = ver;
+  if (els.diagVerHtml) els.diagVerHtml.textContent = ver;
+  if (els.diagVerSw) els.diagVerSw.textContent = ver;
 }
 
 function buildDebugInfo() {
@@ -923,8 +951,6 @@ function buildDebugInfo() {
 
   const info = {
     version: APP_VERSION,
-    htmlVersion: HTML_VERSION,
-    swCacheVersion: SW_CACHE_VERSION,
     timestamp: new Date().toISOString(),
     csvMeta: state.csvMeta,
     rowsCount: state.rows.length,
