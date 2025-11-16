@@ -6,6 +6,8 @@
 */
 
 const APP_VERSION = '5.3.4';
+const INDEX_VERSION = '5.3.4';       // Keep in sync with index.html title/header
+const SW_CACHE_VERSION = 'fpl-v5-3-4'; // Keep in sync with CACHE in sw.js
 
 const state = {
   rows: [],
@@ -250,30 +252,19 @@ const els = {
   btnCopyNC3: document.getElementById('btnCopyNC3'),
   btnCopyNE3: document.getElementById('btnCopyNE3'),
 
-  // Version + diagnostics
-  uiVersion: document.getElementById('uiVersion'),
-  diagAppVersion: document.getElementById('diagAppVersion'),
+  // Diagnostics
+  diagAppJsVer: document.getElementById('diagAppJsVer'),
+  diagIndexVer: document.getElementById('diagIndexVer'),
+  diagSwVer: document.getElementById('diagSwVer'),
   diagCsvSource: document.getElementById('diagCsvSource'),
   diagLastLoaded: document.getElementById('diagLastLoaded'),
   diagPartsRows: document.getElementById('diagPartsRows'),
   diagQuoteItems: document.getElementById('diagQuoteItems'),
   diagRoutine: document.getElementById('diagRoutine'),
   diagSwStatus: document.getElementById('diagSwStatus'),
-  diagSwCache: document.getElementById('diagSwCache'),
   btnDiagClearAll: document.getElementById('btnDiagClearAll'),
   btnDiagCopy: document.getElementById('btnDiagCopy')
 };
-
-/* Listen for service worker info messages */
-
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.addEventListener('message', event => {
-    if (!event.data || event.data.type !== 'SW_INFO') return;
-    if (els.diagSwCache) {
-      els.diagSwCache.textContent = event.data.cache || 'Unknown';
-    }
-  });
-}
 
 /* ---------- Parts page ---------- */
 
@@ -883,17 +874,50 @@ if (els.btnClearQuote) els.btnClearQuote.addEventListener('click', () => {
   }
 });
 
+/* Manual add button */
+
+if (els.manualAddBtn) els.manualAddBtn.addEventListener('click', () => {
+  if (!manualInputsValid()) {
+    toast('Fill supplier, description, part number and price.', false);
+    return;
+  }
+  const sup = els.manualSupplier.value.trim();
+  const desc = els.manualDescription.value.trim();
+  const pn = els.manualPart.value.trim();
+  const priceEach = parseFloat((els.manualPrice.value || '').toString().replace(/[^0-9.]/g, '')) || 0;
+  const qty = Math.max(1, parseInt(els.manualQty.value, 10) || 1);
+
+  state.quote.push({
+    SUPPLIER: sup,
+    DESCRIPTION: desc,
+    PARTNUMBER: pn,
+    PRICE: priceEach,
+    qty
+  });
+  saveQuote();
+  renderQuote();
+
+  els.manualSupplier.value = '';
+  els.manualDescription.value = '';
+  els.manualPart.value = '';
+  els.manualPrice.value = '';
+  els.manualQty.value = '1';
+  setManualBtnEnabled(false);
+  toast('Manual item added.', true);
+});
+
 /* ---------- Diagnostics + debug export ---------- */
 
 function renderDiagnostics() {
-  // Version display
-  if (els.diagAppVersion) {
-    els.diagAppVersion.textContent = 'v' + APP_VERSION;
+  if (els.diagAppJsVer) {
+    els.diagAppJsVer.textContent = 'v' + APP_VERSION;
   }
-  if (els.uiVersion) {
-    els.uiVersion.textContent = 'v' + APP_VERSION;
+  if (els.diagIndexVer) {
+    els.diagIndexVer.textContent = 'v' + INDEX_VERSION;
   }
-
+  if (els.diagSwVer) {
+    els.diagSwVer.textContent = SW_CACHE_VERSION;
+  }
   if (els.diagCsvSource) {
     els.diagCsvSource.textContent = state.csvMeta.source || 'None loaded';
   }
@@ -921,13 +945,6 @@ function renderDiagnostics() {
       els.diagSwStatus.textContent = 'Registered / waiting';
     }
   }
-
-  // Ask service worker for its cache name
-  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-    try {
-      navigator.serviceWorker.controller.postMessage({ type: 'GET_SW_INFO' });
-    } catch {}
-  }
 }
 
 function buildDebugInfo() {
@@ -937,6 +954,8 @@ function buildDebugInfo() {
 
   const info = {
     version: APP_VERSION,
+    indexVersion: INDEX_VERSION,
+    swCacheVersion: SW_CACHE_VERSION,
     timestamp: new Date().toISOString(),
     csvMeta: state.csvMeta,
     rowsCount: state.rows.length,
