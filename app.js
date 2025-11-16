@@ -3,6 +3,7 @@
    - CSV metadata (source, last loaded) tracked for diagnostics
    - Settings/Diagnostics tab + Copy debug info
    - Scroll-to-top simplified (better on mobile)
+   - Custom access-code modal (replaces browser prompt)
 */
 
 const APP_VERSION = '5.3.4';
@@ -38,6 +39,8 @@ const LS_KEYS = {
   BUILDCASE: 'buildcase_state_v1',
   ACCESS: 'hasAccess'
 };
+
+let accessPromise = null;
 
 function toast(msg, ok = false) {
   const t = document.createElement('div');
@@ -398,8 +401,158 @@ if (cachedCsv) {
 
 /* ---------- Loaders ---------- */
 
+async function ensureAccess() {
+  const ok = localStorage.getItem(LS_KEYS.ACCESS);
+  if (ok === 'yes') return true;
+
+  if (accessPromise) return accessPromise;
+
+  accessPromise = new Promise(resolve => {
+    const overlay = document.createElement('div');
+    Object.assign(overlay.style, {
+      position: 'fixed',
+      inset: '0',
+      background: 'rgba(0,0,0,0.35)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: '10000'
+    });
+
+    const box = document.createElement('div');
+    Object.assign(box.style, {
+      background: '#ffffff',
+      padding: '16px 18px',
+      borderRadius: '12px',
+      boxShadow: '0 10px 30px rgba(0,0,0,0.25)',
+      maxWidth: '320px',
+      width: '90%',
+      fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif',
+      fontSize: '14px'
+    });
+
+    const title = document.createElement('h2');
+    title.textContent = 'Authorised access';
+    Object.assign(title.style, {
+      margin: '0 0 8px 0',
+      fontSize: '16px'
+    });
+
+    const msg = document.createElement('p');
+    msg.textContent = 'Enter access code to load the shared parts list.';
+    Object.assign(msg.style, {
+      margin: '0 0 10px 0',
+      fontSize: '13px',
+      color: '#4b5563'
+    });
+
+    const input = document.createElement('input');
+    input.type = 'password';
+    input.placeholder = 'Access code';
+    input.autocomplete = 'off';
+    Object.assign(input.style, {
+      width: '100%',
+      padding: '8px 10px',
+      borderRadius: '8px',
+      border: '1px solid #d1d5db',
+      fontSize: '14px',
+      marginBottom: '10px',
+      boxSizing: 'border-box'
+    });
+
+    const btnRow = document.createElement('div');
+    Object.assign(btnRow.style, {
+      display: 'flex',
+      justifyContent: 'flex-end',
+      gap: '8px',
+      marginTop: '4px'
+    });
+
+    const btnCancel = document.createElement('button');
+    btnCancel.textContent = 'Cancel';
+    Object.assign(btnCancel.style, {
+      padding: '6px 10px',
+      borderRadius: '8px',
+      border: '1px solid #d1d5db',
+      background: '#ffffff',
+      cursor: 'pointer',
+      fontSize: '13px'
+    });
+
+    const btnOk = document.createElement('button');
+    btnOk.textContent = 'Unlock';
+    Object.assign(btnOk.style, {
+      padding: '6px 10px',
+      borderRadius: '8px',
+      border: '1px solid #16a34a',
+      background: '#ecfdf5',
+      color: '#166534',
+      cursor: 'pointer',
+      fontSize: '13px',
+      fontWeight: '600'
+    });
+
+    btnRow.appendChild(btnCancel);
+    btnRow.appendChild(btnOk);
+
+    box.appendChild(title);
+    box.appendChild(msg);
+    box.appendChild(input);
+    box.appendChild(btnRow);
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+
+    function close(result) {
+      if (overlay.parentNode) {
+        overlay.parentNode.removeChild(overlay);
+      }
+      accessPromise = null;
+      resolve(result);
+    }
+
+    btnCancel.addEventListener('click', () => {
+      toast('Access cancelled.', false);
+      close(false);
+    });
+
+    btnOk.addEventListener('click', () => {
+      const val = (input.value || '').trim();
+      if (val === ACCESS_CODE) {
+        localStorage.setItem(LS_KEYS.ACCESS, 'yes');
+        toast('Access granted.', true);
+        close(true);
+      } else {
+        toast('Access denied.', false);
+        input.value = '';
+        input.focus();
+      }
+    });
+
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        btnOk.click();
+      } else if (e.key === 'Escape') {
+        btnCancel.click();
+      }
+    });
+
+    overlay.addEventListener('click', e => {
+      if (e.target === overlay) {
+        btnCancel.click();
+      }
+    });
+
+    setTimeout(() => {
+      input.focus();
+    }, 50);
+  });
+
+  return accessPromise;
+}
+
 async function loadSharedFromRepo() {
-  if (!ensureAccess()) return;
+  const ok = await ensureAccess();
+  if (!ok) return;
   try {
     const res = await fetch('Parts.csv', { cache: 'no-cache' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -424,19 +577,6 @@ if (els.csv) els.csv.addEventListener('change', e => {
   };
   r.readAsText(f);
 });
-
-function ensureAccess() {
-  const ok = localStorage.getItem(LS_KEYS.ACCESS);
-  if (ok === 'yes') return true;
-  const code = prompt('Enter access code:');
-  if (code === ACCESS_CODE) {
-    localStorage.setItem(LS_KEYS.ACCESS, 'yes');
-    toast('Access granted.', true);
-    return true;
-  }
-  toast('Access denied.', false);
-  return false;
-}
 
 if (els.loadShared) els.loadShared.addEventListener('click', loadSharedFromRepo);
 
