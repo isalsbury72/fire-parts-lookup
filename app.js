@@ -303,10 +303,38 @@ function renderParts() {
 /* Apply debounce to search input */
 if (els.q) els.q.addEventListener('input', debounce(renderParts));
 
-/* ---------- Rest of original code remains unchanged ---------- */
-// (Quote rendering, build case, copy helpers, etc.)
+/* ---------- Diagnostics ---------- */
+function renderDiagnostics() {
+  if (els.diagCsvSource) {
+    els.diagCsvSource.textContent = state.csvMeta.source || 'None loaded';
+  }
+  if (els.diagLastLoaded) {
+    els.diagLastLoaded.textContent = formatLastLoaded(state.csvMeta.loadedAt);
+  }
+  if (els.diagPartsRows) {
+    els.diagPartsRows.textContent = state.rows.length.toString();
+  }
+  if (els.diagQuoteItems) {
+    els.diagQuoteItems.textContent = state.quote.length.toString();
+  }
+  if (els.diagRoutine) {
+    let txt = 'Not set';
+    if (state.buildcase.routineVisit === 'yes') txt = 'Yes';
+    else if (state.buildcase.routineVisit === 'no') txt = 'No';
+    els.diagRoutine.textContent = txt;
+  }
+  if (els.diagSwStatus) {
+    if (!('serviceWorker' in navigator)) {
+      els.diagSwStatus.textContent = 'Not supported';
+    } else if (navigator.serviceWorker.controller) {
+      els.diagSwStatus.textContent = 'Active';
+    } else {
+      els.diagSwStatus.textContent = 'Registered / waiting';
+    }
+  }
+}
 
-/* ---------- Start ---------- */
+/* ---------- Startup ---------- */
 const cachedCsv = localStorage.getItem(LS_KEYS.CSV);
 loadSavedState();
 if (cachedCsv) {
@@ -314,10 +342,12 @@ if (cachedCsv) {
     parseCSV(cachedCsv);
   } catch {}
 }
+
 function start() {
   renderParts();
   renderQuote();
   updateAddToQuoteState();
   showPartsPage();
 }
+
 start();
