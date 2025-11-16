@@ -1,13 +1,14 @@
-/* Fire Parts Lookup v5.3.4
+/* Fire Parts Lookup v5.3.5
    - Quote and build case saved/restored from localStorage
    - CSV metadata (source, last loaded) tracked for diagnostics
    - Settings/Diagnostics tab + Copy debug info
    - Scroll-to-top simplified (better on mobile)
+   - Diagnostics now show app.js, HTML and SW cache versions
 */
 
-const APP_VERSION = '5.3.4';
-const INDEX_VERSION = '5.3.4';       // Keep in sync with index.html title/header
-const SW_CACHE_VERSION = 'fpl-v5-3-4'; // Keep in sync with CACHE in sw.js
+const APP_VERSION = '5.3.5';
+const HTML_VERSION = '5.3.5';
+const SW_CACHE_VERSION = 'fpl-v5-3-5';
 
 const state = {
   rows: [],
@@ -253,9 +254,6 @@ const els = {
   btnCopyNE3: document.getElementById('btnCopyNE3'),
 
   // Diagnostics
-  diagAppJsVer: document.getElementById('diagAppJsVer'),
-  diagIndexVer: document.getElementById('diagIndexVer'),
-  diagSwVer: document.getElementById('diagSwVer'),
   diagCsvSource: document.getElementById('diagCsvSource'),
   diagLastLoaded: document.getElementById('diagLastLoaded'),
   diagPartsRows: document.getElementById('diagPartsRows'),
@@ -263,7 +261,10 @@ const els = {
   diagRoutine: document.getElementById('diagRoutine'),
   diagSwStatus: document.getElementById('diagSwStatus'),
   btnDiagClearAll: document.getElementById('btnDiagClearAll'),
-  btnDiagCopy: document.getElementById('btnDiagCopy')
+  btnDiagCopy: document.getElementById('btnDiagCopy'),
+  diagAppVersion: document.getElementById('diagAppVersion'),
+  diagHtmlVersion: document.getElementById('diagHtmlVersion'),
+  diagSwCache: document.getElementById('diagSwCache')
 };
 
 /* ---------- Parts page ---------- */
@@ -874,50 +875,9 @@ if (els.btnClearQuote) els.btnClearQuote.addEventListener('click', () => {
   }
 });
 
-/* Manual add button */
-
-if (els.manualAddBtn) els.manualAddBtn.addEventListener('click', () => {
-  if (!manualInputsValid()) {
-    toast('Fill supplier, description, part number and price.', false);
-    return;
-  }
-  const sup = els.manualSupplier.value.trim();
-  const desc = els.manualDescription.value.trim();
-  const pn = els.manualPart.value.trim();
-  const priceEach = parseFloat((els.manualPrice.value || '').toString().replace(/[^0-9.]/g, '')) || 0;
-  const qty = Math.max(1, parseInt(els.manualQty.value, 10) || 1);
-
-  state.quote.push({
-    SUPPLIER: sup,
-    DESCRIPTION: desc,
-    PARTNUMBER: pn,
-    PRICE: priceEach,
-    qty
-  });
-  saveQuote();
-  renderQuote();
-
-  els.manualSupplier.value = '';
-  els.manualDescription.value = '';
-  els.manualPart.value = '';
-  els.manualPrice.value = '';
-  els.manualQty.value = '1';
-  setManualBtnEnabled(false);
-  toast('Manual item added.', true);
-});
-
 /* ---------- Diagnostics + debug export ---------- */
 
 function renderDiagnostics() {
-  if (els.diagAppJsVer) {
-    els.diagAppJsVer.textContent = 'v' + APP_VERSION;
-  }
-  if (els.diagIndexVer) {
-    els.diagIndexVer.textContent = 'v' + INDEX_VERSION;
-  }
-  if (els.diagSwVer) {
-    els.diagSwVer.textContent = SW_CACHE_VERSION;
-  }
   if (els.diagCsvSource) {
     els.diagCsvSource.textContent = state.csvMeta.source || 'None loaded';
   }
@@ -945,6 +905,15 @@ function renderDiagnostics() {
       els.diagSwStatus.textContent = 'Registered / waiting';
     }
   }
+  if (els.diagAppVersion) {
+    els.diagAppVersion.textContent = APP_VERSION;
+  }
+  if (els.diagHtmlVersion) {
+    els.diagHtmlVersion.textContent = HTML_VERSION;
+  }
+  if (els.diagSwCache) {
+    els.diagSwCache.textContent = SW_CACHE_VERSION;
+  }
 }
 
 function buildDebugInfo() {
@@ -954,7 +923,7 @@ function buildDebugInfo() {
 
   const info = {
     version: APP_VERSION,
-    indexVersion: INDEX_VERSION,
+    htmlVersion: HTML_VERSION,
     swCacheVersion: SW_CACHE_VERSION,
     timestamp: new Date().toISOString(),
     csvMeta: state.csvMeta,
