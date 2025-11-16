@@ -1,4 +1,4 @@
-	// sw.js
+// sw.js
 const CACHE = 'fpl-v5-3-4';
 
 const ASSETS = [
@@ -27,6 +27,13 @@ self.addEventListener('activate', e => {
       )
     ).then(() => self.clients.claim())
   );
+});
+
+/* Reply with cache info when asked */
+
+self.addEventListener('message', event => {
+  if (!event.data || event.data.type !== 'GET_SW_INFO') return;
+  event.source.postMessage({ type: 'SW_INFO', cache: CACHE });
 });
 
 self.addEventListener('fetch', e => {
