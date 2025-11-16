@@ -1,10 +1,10 @@
 // sw.js
-const CACHE = 'fpl-v5-3-6';
+const CACHE = 'fpl-v5-3-7';
 
 const ASSETS = [
   './',
   './index.html',
-  './app.js?v=5.3.6',
+  './app.js?v=5.3.7',
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
@@ -33,30 +33,17 @@ self.addEventListener('fetch', e => {
   const req = e.request;
   const url = new URL(req.url);
 
-  const isNavigate =
+  const isHTML =
     req.mode === 'navigate' ||
     (req.headers.get('accept') || '').includes('text/html');
 
-  const isApp =
+  const isAppJs =
+    url.pathname.endsWith('/app.js') ||
     url.pathname.endsWith('app.js') ||
     url.searchParams.has('v');
 
-  // Navigation: network first, fall back to cached index.html
-  if (isNavigate) {
-    e.respondWith(
-      fetch(req)
-        .then(resp => {
-          const copy = resp.clone();
-          caches.open(CACHE).then(c => c.put('./index.html', copy));
-          return resp;
-        })
-        .catch(() => caches.match('./index.html'))
-    );
-    return;
-  }
-
-  // app.js: network first
-  if (isApp) {
+  // Network first for HTML + app.js so updates appear quickly
+  if (isHTML || isAppJs) {
     e.respondWith(
       fetch(req)
         .then(resp => {
@@ -64,12 +51,16 @@ self.addEventListener('fetch', e => {
           caches.open(CACHE).then(c => c.put(req, copy));
           return resp;
         })
-        .catch(() => caches.match(req))
+        .catch(() =>
+          // Proper navigation fallback: always try cached index.html
+          caches.match('./index.html')
+            .then(r => r || caches.match('index.html') || caches.match('./'))
+        )
     );
     return;
   }
 
-  // Everything else: cache first
+  // Cache first for everything else
   e.respondWith(
     caches.match(req).then(r => r || fetch(req))
   );
