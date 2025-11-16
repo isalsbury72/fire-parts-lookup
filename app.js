@@ -51,7 +51,7 @@ function toast(msg, ok = false) {
     borderRadius: '8px',
     background: '#fff',
     border: `1px solid ${ok ? '#10b981' : '#f59e0b'}`,
-    boxShadow: '0 1px 6px rgba(0,0,0,0.15)`,
+    boxShadow: '0 1px 6px rgba(0,0,0,0.15)',
     zIndex: '9999',
     fontSize: '14px'
   });
