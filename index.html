@@ -125,7 +125,10 @@
           <button id="clearCache" class="btn btn-secondary">Clear data</button>
         </div>
 
-        <div class="hint">Showing <span id="count">0</span> items.</div>
+        <div class="hint">
+          Showing <span id="count">0</span> items.<br>
+          <span id="partsCsvSummary">CSV: None loaded</span>
+        </div>
 
         <div style="display:flex; align-items:center; gap:8px; margin-top:8px;">
           <div class="copycell" id="copyArea" style="flex:1;"></div>
@@ -254,10 +257,17 @@
         <h2 style="margin-top:0; font-size:16px;">Settings and diagnostics</h2>
         <p class="small">Quick health check of your Fire Parts app and data.</p>
 
+        <!-- Software versions bubble -->
         <div class="card" style="margin-top:8px;">
+          <h3 style="margin:0 0 6px 0; font-size:14px;">Software versions</h3>
           <p class="small"><strong>App version:</strong> <span>v5.3.4</span></p>
           <p class="small"><strong>Index.html version:</strong> <span id="diagIdxVersion">v5.3.4</span></p>
           <p class="small"><strong>Service Worker version:</strong> <span id="diagSwVersion">fpl-v5-3-4</span></p>
+        </div>
+
+        <!-- Data & status bubble -->
+        <div class="card" style="margin-top:8px;">
+          <h3 style="margin:0 0 6px 0; font-size:14px;">Data and status</h3>
           <p class="small"><strong>CSV source:</strong> <span id="diagCsvSource">None loaded</span></p>
           <p class="small"><strong>Last CSV loaded:</strong> <span id="diagLastLoaded">—</span></p>
           <p class="small"><strong>Parts rows loaded:</strong> <span id="diagPartsRows">0</span></p>
@@ -266,6 +276,7 @@
           <p class="small"><strong>Service worker:</strong> <span id="diagSwStatus">Checking…</span></p>
         </div>
 
+        <!-- Maintenance -->
         <div class="card" style="margin-top:8px;">
           <h3 style="margin:0 0 6px 0; font-size:14px;">Maintenance</h3>
           <p class="small">If things look odd, you can clear all local data and reload CSV.</p>
@@ -273,6 +284,7 @@
           <p class="small" style="margin-top:6px; color:#b91c1c;">This removes cached CSV, saved quotes, build case state, and access flag. It does not touch your CSV file on OneDrive or GitHub.</p>
         </div>
 
+        <!-- Debug export -->
         <div class="card" style="margin-top:8px;">
           <h3 style="margin:0 0 6px 0; font-size:14px;">Export debug info</h3>
           <p class="small">Copies a snapshot of app state (version, CSV metadata, quote counts etc.) so you can paste it into an email or chat.</p>
