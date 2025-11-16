@@ -1,11 +1,12 @@
-/* Fire Parts Lookup v5.3.5
+/* Fire Parts Lookup v5.3.6
+   - Home dashboard with tools
+   - Battery calculation page
    - Quote and build case saved/restored from localStorage
    - CSV metadata (source, last loaded) tracked for diagnostics
    - Settings/Diagnostics tab + Copy debug info
-   - Scroll-to-top simplified (better on mobile)
 */
 
-const APP_VERSION = '5.3.5';
+const APP_VERSION = '5.3.6';
 
 const state = {
   rows: [],
@@ -183,6 +184,25 @@ function loadSavedState() {
 /* DOM refs */
 
 const els = {
+  // Home + navigation
+  homePage: document.getElementById('homePage'),
+  batteryPage: document.getElementById('batteryPage'),
+  partsPage: document.getElementById('partsPage'),
+  quotePage: document.getElementById('quotePage'),
+  settingsPage: document.getElementById('settingsPage'),
+  buildcase1Page: document.getElementById('buildcase1Page'),
+  buildcase2Page: document.getElementById('buildcase2Page'),
+  buildcase3Page: document.getElementById('buildcase3Page'),
+
+  tabHome: document.getElementById('tabHome'),
+  tabParts: document.getElementById('tabParts'),
+  tabQuote: document.getElementById('tabQuote'),
+  tabSettings: document.getElementById('tabSettings'),
+
+  btnGoParts: document.getElementById('btnGoParts'),
+  btnGoBattery: document.getElementById('btnGoBattery'),
+
+  // Parts
   q: document.getElementById('q'),
   csv: document.getElementById('csv'),
   tbl: document.getElementById('tbl')?.querySelector('tbody'),
@@ -192,18 +212,8 @@ const els = {
   copyPartLine: document.getElementById('copyPartLine'),
   clearCache: document.getElementById('clearCache'),
   loadShared: document.getElementById('loadShared'),
-  partsPage: document.getElementById('partsPage'),
 
-  quotePage: document.getElementById('quotePage'),
-  settingsPage: document.getElementById('settingsPage'),
-  buildcase1Page: document.getElementById('buildcase1Page'),
-  buildcase2Page: document.getElementById('buildcase2Page'),
-  buildcase3Page: document.getElementById('buildcase3Page'),
-
-  tabParts: document.getElementById('tabParts'),
-  tabQuote: document.getElementById('tabQuote'),
-  tabSettings: document.getElementById('tabSettings'),
-
+  // Quote
   addToQuote: document.getElementById('addToQuote'),
   copyQuote: document.getElementById('copyQuote'),
   copyQuoteRaw: document.getElementById('copyQuoteRaw'),
@@ -215,6 +225,7 @@ const els = {
   quoteTableBody: document.querySelector('#quoteTable tbody'),
   quoteSummary: document.getElementById('quoteSummary'),
 
+  // Manual quote item
   manualToggle: document.getElementById('manualToggle'),
   manualSection: document.getElementById('manualSection'),
   manualSupplier: document.getElementById('manualSupplier'),
@@ -224,6 +235,7 @@ const els = {
   manualQty: document.getElementById('manualQty'),
   manualAddBtn: document.getElementById('manualAddBtn'),
 
+  // Build case nav
   btnBackToQuote: document.getElementById('btnBackToQuote'),
   btnToBuild2: document.getElementById('btnToBuild2'),
   btnBackToBuild1: document.getElementById('btnBackToBuild1'),
@@ -231,6 +243,7 @@ const els = {
   btnBackToBuild2: document.getElementById('btnBackToBuild2'),
   btnBackToQuoteFrom3: document.getElementById('btnBackToQuoteFrom3'),
 
+  // Build case fields
   notesCustomer: document.getElementById('notesCustomer'),
   notesEstimator: document.getElementById('notesEstimator'),
   bc1ItemsCount: document.getElementById('bc1ItemsCount'),
@@ -250,6 +263,17 @@ const els = {
 
   btnCopyNC3: document.getElementById('btnCopyNC3'),
   btnCopyNE3: document.getElementById('btnCopyNE3'),
+
+  // Battery calc
+  battIq: document.getElementById('battIq'),
+  battIa: document.getElementById('battIa'),
+  battTq: document.getElementById('battTq'),
+  battTa: document.getElementById('battTa'),
+  battL: document.getElementById('battL'),
+  battFc: document.getElementById('battFc'),
+  btnBattCalc: document.getElementById('btnBattCalc'),
+  btnBattReset: document.getElementById('btnBattReset'),
+  battResult: document.getElementById('battResult'),
 
   // Diagnostics
   diagCsvSource: document.getElementById('diagCsvSource'),
@@ -692,13 +716,11 @@ function buildLabourSummary() {
     linesAfter.push(`${nights} x Overnight accommodation`);
   }
 
-  // Only add routine-visit line if a choice is made
   if (state.buildcase.routineVisit === 'yes') {
     linesAfter.push('Can be completed on routine visit');
   } else if (state.buildcase.routineVisit === 'no') {
     linesAfter.push('Not intended to be completed on routine visit');
   }
-  // If null, add nothing here.
 
   const out = [];
   out.push(...linesMain);
@@ -724,7 +746,7 @@ function buildCaseStep1Fill() {
 /* Page switching */
 
 function selectTab(tab) {
-  const tabs = [els.tabParts, els.tabQuote, els.tabSettings];
+  const tabs = [els.tabHome, els.tabParts, els.tabQuote, els.tabSettings];
   tabs.forEach(b => {
     if (!b) return;
     if (b === tab) {
@@ -737,43 +759,56 @@ function selectTab(tab) {
   });
 }
 
-function showPartsPage() {
-  if (els.partsPage) els.partsPage.style.display = 'block';
+function hideAllPages() {
+  if (els.homePage) els.homePage.style.display = 'none';
+  if (els.partsPage) els.partsPage.style.display = 'none';
+  if (els.batteryPage) els.batteryPage.style.display = 'none';
   if (els.quotePage) els.quotePage.style.display = 'none';
   if (els.settingsPage) els.settingsPage.style.display = 'none';
   if (els.buildcase1Page) els.buildcase1Page.style.display = 'none';
   if (els.buildcase2Page) els.buildcase2Page.style.display = 'none';
   if (els.buildcase3Page) els.buildcase3Page.style.display = 'none';
+}
+
+function showHomePage() {
+  hideAllPages();
+  if (els.homePage) els.homePage.style.display = 'block';
+  selectTab(els.tabHome);
+  renderDiagnostics();
+}
+
+function showPartsPage() {
+  hideAllPages();
+  if (els.partsPage) els.partsPage.style.display = 'block';
   selectTab(els.tabParts);
   renderDiagnostics();
 }
+
+function showBatteryPage() {
+  hideAllPages();
+  if (els.batteryPage) els.batteryPage.style.display = 'block';
+  // Battery lives under the Home “area” conceptually, but we’ll leave Home tab selected
+  selectTab(els.tabHome);
+  renderDiagnostics();
+}
+
 function showQuotePage() {
-  if (els.partsPage) els.partsPage.style.display = 'none';
+  hideAllPages();
   if (els.quotePage) els.quotePage.style.display = 'block';
-  if (els.settingsPage) els.settingsPage.style.display = 'none';
-  if (els.buildcase1Page) els.buildcase1Page.style.display = 'none';
-  if (els.buildcase2Page) els.buildcase2Page.style.display = 'none';
-  if (els.buildcase3Page) els.buildcase3Page.style.display = 'none';
   selectTab(els.tabQuote);
   renderDiagnostics();
 }
+
 function showSettingsPage() {
-  if (els.partsPage) els.partsPage.style.display = 'none';
-  if (els.quotePage) els.quotePage.style.display = 'none';
+  hideAllPages();
   if (els.settingsPage) els.settingsPage.style.display = 'block';
-  if (els.buildcase1Page) els.buildcase1Page.style.display = 'none';
-  if (els.buildcase2Page) els.buildcase2Page.style.display = 'none';
-  if (els.buildcase3Page) els.buildcase3Page.style.display = 'none';
   selectTab(els.tabSettings);
   renderDiagnostics();
 }
+
 function showBuild1() {
-  if (els.partsPage) els.partsPage.style.display = 'none';
-  if (els.quotePage) els.quotePage.style.display = 'none';
-  if (els.settingsPage) els.settingsPage.style.display = 'none';
+  hideAllPages();
   if (els.buildcase1Page) els.buildcase1Page.style.display = 'block';
-  if (els.buildcase2Page) els.buildcase2Page.style.display = 'none';
-  if (els.buildcase3Page) els.buildcase3Page.style.display = 'none';
   selectTab(els.tabQuote);
 
   els.notesCustomer.value = state.buildcase.notesCustomer || '';
@@ -786,17 +821,16 @@ function showBuild1() {
   renderDiagnostics();
 }
 function showBuild2() {
-  if (els.partsPage) els.partsPage.style.display = 'none';
-  if (els.quotePage) els.quotePage.style.display = 'none';
-  if (els.settingsPage) els.settingsPage.style.display = 'none';
-  if (els.buildcase1Page) els.buildcase1Page.style.display = 'none';
+  hideAllPages();
   if (els.buildcase2Page) els.buildcase2Page.style.display = 'block';
-  if (els.buildcase3Page) els.buildcase3Page.style.display = 'none';
   selectTab(els.tabQuote);
 
-  // Restore radio state from buildcase
-  els.routineYes.checked = state.buildcase.routineVisit === 'yes';
-  els.routineNo.checked = state.buildcase.routineVisit === 'no';
+  if (state.buildcase.routineVisit === 'yes') els.routineYes.checked = true;
+  else if (state.buildcase.routineVisit === 'no') els.routineNo.checked = true;
+  else {
+    els.routineYes.checked = false;
+    els.routineNo.checked = false;
+  }
 
   els.accomNights.value = state.buildcase.accomNights || '';
   els.labourHoursNormal.value = state.buildcase.labourHoursNormal || '';
@@ -809,11 +843,7 @@ function showBuild2() {
   renderDiagnostics();
 }
 function showBuild3() {
-  if (els.partsPage) els.partsPage.style.display = 'none';
-  if (els.quotePage) els.quotePage.style.display = 'none';
-  if (els.settingsPage) els.settingsPage.style.display = 'none';
-  if (els.buildcase1Page) els.buildcase1Page.style.display = 'none';
-  if (els.buildcase2Page) els.buildcase2Page.style.display = 'none';
+  hideAllPages();
   if (els.buildcase3Page) els.buildcase3Page.style.display = 'block';
   selectTab(els.tabQuote);
 
@@ -826,43 +856,17 @@ function showBuild3() {
   renderDiagnostics();
 }
 
-/* Routine-visit toggle: allow unchecking Yes/No by tapping again */
-
-function setupRoutineToggle() {
-  if (!els.routineYes || !els.routineNo) return;
-
-  const attach = (input, value) => {
-    input.addEventListener('click', () => {
-      if (state.buildcase.routineVisit === value) {
-        // Same value clicked again → clear both
-        els.routineYes.checked = false;
-        els.routineNo.checked = false;
-        state.buildcase.routineVisit = null;
-      } else {
-        // New value selected
-        state.buildcase.routineVisit = value;
-        if (value === 'yes') {
-          els.routineYes.checked = true;
-          els.routineNo.checked = false;
-        } else {
-          els.routineNo.checked = true;
-          els.routineYes.checked = false;
-        }
-      }
-      saveBuildcase();
-      renderDiagnostics();
-    });
-  };
-
-  attach(els.routineYes, 'yes');
-  attach(els.routineNo, 'no');
-}
-
 /* Tab click handlers */
 
+if (els.tabHome) els.tabHome.addEventListener('click', showHomePage);
 if (els.tabParts) els.tabParts.addEventListener('click', showPartsPage);
 if (els.tabQuote) els.tabQuote.addEventListener('click', showQuotePage);
 if (els.tabSettings) els.tabSettings.addEventListener('click', showSettingsPage);
+
+/* Home tool buttons */
+
+if (els.btnGoParts) els.btnGoParts.addEventListener('click', showPartsPage);
+if (els.btnGoBattery) els.btnGoBattery.addEventListener('click', showBatteryPage);
 
 /* Build case navigation */
 
@@ -879,12 +883,13 @@ if (els.btnToBuild2) els.btnToBuild2.addEventListener('click', () => {
   showBuild2();
 });
 if (els.btnToBuild3) els.btnToBuild3.addEventListener('click', () => {
-  // Routine choice is already tracked by setupRoutineToggle,
-  // but keep this as a safety net in case radios are manipulated directly.
-  state.buildcase.routineVisit = els.routineYes?.checked
-    ? 'yes'
-    : (els.routineNo?.checked ? 'no' : null);
-
+  if (els.routineYes?.checked) {
+    state.buildcase.routineVisit = 'yes';
+  } else if (els.routineNo?.checked) {
+    state.buildcase.routineVisit = 'no';
+  } else {
+    state.buildcase.routineVisit = null;
+  }
   state.buildcase.accomNights = (els.accomNights?.value || '').trim();
   state.buildcase.labourHoursNormal = (els.labourHoursNormal?.value || '').trim();
   state.buildcase.numTechsNormal = (els.numTechsNormal?.value || '').trim();
@@ -949,6 +954,53 @@ if (els.manualAddBtn) els.manualAddBtn.addEventListener('click', () => {
   setManualBtnEnabled(false);
   toast('Manual item added.', true);
 });
+
+/* ---------- Battery calculation ---------- */
+
+function resetBatteryForm() {
+  if (els.battIq) els.battIq.value = '';
+  if (els.battIa) els.battIa.value = '';
+  if (els.battTq) els.battTq.value = '';
+  if (els.battTa) els.battTa.value = '';
+  if (els.battL) els.battL.value = '';
+  if (els.battFc) els.battFc.value = '';
+  if (els.battResult) els.battResult.textContent = 'Result will appear here.';
+}
+
+function calcBattery() {
+  if (!els.battResult) return;
+
+  const Iq = toNum(els.battIq?.value, NaN);
+  const Ia = toNum(els.battIa?.value, NaN);
+  const Tq = toNum(els.battTq?.value, NaN);
+  const Ta = toNum(els.battTa?.value, NaN);
+  const L  = toNum(els.battL?.value, NaN);
+  const Fc = toNum(els.battFc?.value, NaN);
+
+  if (
+    Number.isNaN(Iq) ||
+    Number.isNaN(Ia) ||
+    Number.isNaN(Tq) ||
+    Number.isNaN(Ta) ||
+    Number.isNaN(L) ||
+    Number.isNaN(Fc)
+  ) {
+    els.battResult.textContent = 'Please fill in all fields with numbers.';
+    return;
+  }
+
+  const C = L * ((Iq * Tq) + (Fc * (Ia * Ta)));
+  if (C <= 0) {
+    els.battResult.textContent = 'Check inputs – result is zero or negative.';
+    return;
+  }
+
+  const rounded = Math.round(C * 10) / 10;
+  els.battResult.textContent = `Required battery capacity: ${rounded} Ah`;
+}
+
+if (els.btnBattCalc) els.btnBattCalc.addEventListener('click', calcBattery);
+if (els.btnBattReset) els.btnBattReset.addEventListener('click', resetBatteryForm);
 
 /* ---------- Diagnostics + debug export ---------- */
 
@@ -1016,8 +1068,8 @@ function start() {
   renderParts();
   renderQuote();
   updateAddToQuoteState();
-  setupRoutineToggle();
-  showPartsPage();
+  // Default to Home dashboard
+  showHomePage();
 }
 
 start();
