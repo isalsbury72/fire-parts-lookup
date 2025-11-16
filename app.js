@@ -1,11 +1,11 @@
-/* Fire Parts Lookup v5.3.4
+/* Fire Parts Lookup v5.3.5
    - Quote and build case saved/restored from localStorage
    - CSV metadata (source, last loaded) tracked for diagnostics
    - Settings/Diagnostics tab + Copy debug info
    - Scroll-to-top simplified (better on mobile)
 */
 
-const APP_VERSION = '5.3.4';
+const APP_VERSION = '5.3.5';
 
 const state = {
   rows: [],
@@ -30,15 +30,13 @@ const state = {
 };
 
 const ACCESS_CODE = 'FP2025';
-const DEFAULT_SHARED_CSV_PATH = 'Parts.csv';
 
 const LS_KEYS = {
   CSV: 'parts_csv',
   CSV_META: 'csv_meta_v1',
   QUOTE: 'quote_data_v1',
   BUILDCASE: 'buildcase_state_v1',
-  ACCESS: 'hasAccess',
-  CSV_PATH: 'csv_path_v1'
+  ACCESS: 'hasAccess'
 };
 
 function toast(msg, ok = false) {
@@ -53,7 +51,7 @@ function toast(msg, ok = false) {
     borderRadius: '8px',
     background: '#fff',
     border: `1px solid ${ok ? '#10b981' : '#f59e0b'}`,
-    boxShadow: '0 1px 6px rgba(0,0,0,0.15)',
+    boxShadow: '0 1px 6px rgba(0,0,0,0.15)`,
     zIndex: '9999',
     fontSize: '14px'
   });
@@ -261,150 +259,8 @@ const els = {
   diagRoutine: document.getElementById('diagRoutine'),
   diagSwStatus: document.getElementById('diagSwStatus'),
   btnDiagClearAll: document.getElementById('btnDiagClearAll'),
-  btnDiagCopy: document.getElementById('btnDiagCopy'),
-
-  // Security / access UI
-  diagAccessStatus: document.getElementById('diagAccessStatus'),
-  btnShowAccessPanel: document.getElementById('btnShowAccessPanel'),
-  accessOverlay: document.getElementById('accessOverlay'),
-  accessInput: document.getElementById('accessInput'),
-  btnAccessCancel: document.getElementById('btnAccessCancel'),
-  btnAccessSubmit: document.getElementById('btnAccessSubmit'),
-
-  // Shared CSV path UI
-  csvPathInput: document.getElementById('csvPathInput'),
-  btnSaveCsvPath: document.getElementById('btnSaveCsvPath'),
-  btnResetCsvPath: document.getElementById('btnResetCsvPath')
+  btnDiagCopy: document.getElementById('btnDiagCopy')
 };
-
-/* ---------- Access / security helpers ---------- */
-
-function updateAccessStatus() {
-  const unlocked = localStorage.getItem(LS_KEYS.ACCESS) === 'yes';
-  if (els.diagAccessStatus) {
-    els.diagAccessStatus.textContent = unlocked ? 'Unlocked' : 'Locked';
-  }
-}
-
-function showAccessOverlay() {
-  if (!els.accessOverlay) return;
-  els.accessOverlay.style.display = 'flex';
-  if (els.accessInput) {
-    els.accessInput.value = '';
-    setTimeout(() => els.accessInput.focus(), 20);
-  }
-}
-
-function hideAccessOverlay() {
-  if (!els.accessOverlay) return;
-  els.accessOverlay.style.display = 'none';
-}
-
-function handleAccessSubmit() {
-  if (!els.accessInput) return;
-  const code = (els.accessInput.value || '').trim();
-  if (!code) {
-    toast('Enter access code.', false);
-    return;
-  }
-  if (code === ACCESS_CODE) {
-    try {
-      localStorage.setItem(LS_KEYS.ACCESS, 'yes');
-    } catch {}
-    toast('Access granted.', true);
-    hideAccessOverlay();
-    updateAccessStatus();
-  } else {
-    toast('Access denied.', false);
-    els.accessInput.select();
-  }
-}
-
-function ensureAccess() {
-  const ok = localStorage.getItem(LS_KEYS.ACCESS);
-  if (ok === 'yes') return true;
-  showAccessOverlay();
-  toast('Access code required.', false);
-  updateAccessStatus();
-  return false;
-}
-
-/* Wire access UI events */
-
-if (els.btnShowAccessPanel) {
-  els.btnShowAccessPanel.addEventListener('click', () => {
-    showAccessOverlay();
-  });
-}
-if (els.btnAccessCancel) {
-  els.btnAccessCancel.addEventListener('click', () => {
-    hideAccessOverlay();
-  });
-}
-if (els.btnAccessSubmit) {
-  els.btnAccessSubmit.addEventListener('click', handleAccessSubmit);
-}
-if (els.accessInput) {
-  els.accessInput.addEventListener('keydown', e => {
-    if (e.key === 'Enter') {
-      handleAccessSubmit();
-    } else if (e.key === 'Escape') {
-      e.preventDefault();
-      hideAccessOverlay();
-    }
-  });
-}
-
-/* ---------- Shared CSV path helpers ---------- */
-
-function getSharedCsvPath() {
-  try {
-    const saved = localStorage.getItem(LS_KEYS.CSV_PATH);
-    if (saved && saved.trim().length > 0) {
-      return saved.trim();
-    }
-  } catch {}
-  return DEFAULT_SHARED_CSV_PATH;
-}
-
-function syncCsvPathInput() {
-  if (!els.csvPathInput) return;
-  els.csvPathInput.value = getSharedCsvPath();
-}
-
-function saveCsvPathFromInput() {
-  if (!els.csvPathInput) return;
-  const raw = (els.csvPathInput.value || '').trim();
-  if (!raw) {
-    try {
-      localStorage.removeItem(LS_KEYS.CSV_PATH);
-    } catch {}
-    els.csvPathInput.value = getSharedCsvPath();
-    toast('Using default shared CSV path.', true);
-    return;
-  }
-  try {
-    localStorage.setItem(LS_KEYS.CSV_PATH, raw);
-  } catch {}
-  toast('Saved shared CSV path.', true);
-}
-
-/* Wire CSV path UI events */
-
-if (els.btnSaveCsvPath) {
-  els.btnSaveCsvPath.addEventListener('click', () => {
-    saveCsvPathFromInput();
-  });
-}
-if (els.btnResetCsvPath) {
-  els.btnResetCsvPath.addEventListener('click', () => {
-    try {
-      localStorage.removeItem(LS_KEYS.CSV_PATH);
-    } catch {}
-    syncCsvPathInput();
-    toast('Reset to default shared path.', true);
-  });
-}
 
 /* ---------- Parts page ---------- */
 
@@ -544,18 +400,16 @@ if (cachedCsv) {
 
 async function loadSharedFromRepo() {
   if (!ensureAccess()) return;
-  const path = getSharedCsvPath();
   try {
-    const res = await fetch(path, { cache: 'no-cache' });
+    const res = await fetch('Parts.csv', { cache: 'no-cache' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const text = await res.text();
     localStorage.setItem(LS_KEYS.CSV, text);
-    const label = path === DEFAULT_SHARED_CSV_PATH ? 'GitHub Parts.csv' : 'Remote CSV';
-    parseCSV(text, label);
-    toast('Loaded shared CSV from remote path.', true);
+    parseCSV(text, 'GitHub Parts.csv');
+    toast('Loaded shared CSV from repo.', true);
   } catch (err) {
     console.error(err);
-    toast('Error loading shared CSV from remote path', false);
+    toast('Error loading shared CSV from repo', false);
   }
 }
 
@@ -571,7 +425,18 @@ if (els.csv) els.csv.addEventListener('change', e => {
   r.readAsText(f);
 });
 
-/* Clear data */
+function ensureAccess() {
+  const ok = localStorage.getItem(LS_KEYS.ACCESS);
+  if (ok === 'yes') return true;
+  const code = prompt('Enter access code:');
+  if (code === ACCESS_CODE) {
+    localStorage.setItem(LS_KEYS.ACCESS, 'yes');
+    toast('Access granted.', true);
+    return true;
+  }
+  toast('Access denied.', false);
+  return false;
+}
 
 if (els.loadShared) els.loadShared.addEventListener('click', loadSharedFromRepo);
 
@@ -1002,6 +867,51 @@ if (els.btnCopyNE3) els.btnCopyNE3.addEventListener('click', () => {
   copyText((els.notesEstimator3?.value || '').trim(), 'Copied estimator notes.');
 });
 
+/* Clear quote */
+
+if (els.btnClearQuote) els.btnClearQuote.addEventListener('click', () => {
+  if (!state.quote.length) return;
+  if (confirm('Clear all items?')) {
+    state.quote = [];
+    saveQuote();
+    renderQuote();
+    toast('Quote cleared.', true);
+    showPartsPage();
+  }
+});
+
+/* Manual add button */
+
+if (els.manualAddBtn) els.manualAddBtn.addEventListener('click', () => {
+  if (!manualInputsValid()) {
+    toast('Fill supplier, description, part number and price.', false);
+    return;
+  }
+  const sup = els.manualSupplier.value.trim();
+  const desc = els.manualDescription.value.trim();
+  const pn = els.manualPart.value.trim();
+  const priceEach = parseFloat((els.manualPrice.value || '').toString().replace(/[^0-9.]/g, '')) || 0;
+  const qty = Math.max(1, parseInt(els.manualQty.value, 10) || 1);
+
+  state.quote.push({
+    SUPPLIER: sup,
+    DESCRIPTION: desc,
+    PARTNUMBER: pn,
+    PRICE: priceEach,
+    qty
+  });
+  saveQuote();
+  renderQuote();
+
+  els.manualSupplier.value = '';
+  els.manualDescription.value = '';
+  els.manualPart.value = '';
+  els.manualPrice.value = '';
+  els.manualQty.value = '1';
+  setManualBtnEnabled(false);
+  toast('Manual item added.', true);
+});
+
 /* ---------- Diagnostics + debug export ---------- */
 
 function renderDiagnostics() {
@@ -1032,7 +942,6 @@ function renderDiagnostics() {
       els.diagSwStatus.textContent = 'Registered / waiting';
     }
   }
-  updateAccessStatus();
 }
 
 function buildDebugInfo() {
@@ -1051,8 +960,6 @@ function buildDebugInfo() {
     buildcase: state.buildcase,
     routineVisit: state.buildcase.routineVisit,
     serviceWorker: swStatus,
-    accessUnlocked: localStorage.getItem(LS_KEYS.ACCESS) === 'yes',
-    sharedCsvPath: getSharedCsvPath(),
     userAgent: navigator.userAgent
   };
   return JSON.stringify(info, null, 2);
@@ -1071,8 +978,6 @@ function start() {
   renderParts();
   renderQuote();
   updateAddToQuoteState();
-  updateAccessStatus();
-  syncCsvPathInput();
   showPartsPage();
 }
 
