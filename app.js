@@ -692,13 +692,13 @@ function buildLabourSummary() {
     linesAfter.push(`${nights} x Overnight accommodation`);
   }
 
-  // *** Changed logic here ***
+  // Only add routine-visit line if a choice is made
   if (state.buildcase.routineVisit === 'yes') {
     linesAfter.push('Can be completed on routine visit');
   } else if (state.buildcase.routineVisit === 'no') {
     linesAfter.push('Not intended to be completed on routine visit');
   }
-  // If neither radio is chosen, we push nothing and leave this blank.
+  // If null, add nothing here.
 
   const out = [];
   out.push(...linesMain);
@@ -794,8 +794,9 @@ function showBuild2() {
   if (els.buildcase3Page) els.buildcase3Page.style.display = 'none';
   selectTab(els.tabQuote);
 
-  if (state.buildcase.routineVisit === 'yes') els.routineYes.checked = true;
-  else if (state.buildcase.routineVisit === 'no') els.routineNo.checked = true;
+  // Restore radio state from buildcase
+  els.routineYes.checked = state.buildcase.routineVisit === 'yes';
+  els.routineNo.checked = state.buildcase.routineVisit === 'no';
 
   els.accomNights.value = state.buildcase.accomNights || '';
   els.labourHoursNormal.value = state.buildcase.labourHoursNormal || '';
@@ -825,6 +826,38 @@ function showBuild3() {
   renderDiagnostics();
 }
 
+/* Routine-visit toggle: allow unchecking Yes/No by tapping again */
+
+function setupRoutineToggle() {
+  if (!els.routineYes || !els.routineNo) return;
+
+  const attach = (input, value) => {
+    input.addEventListener('click', () => {
+      if (state.buildcase.routineVisit === value) {
+        // Same value clicked again → clear both
+        els.routineYes.checked = false;
+        els.routineNo.checked = false;
+        state.buildcase.routineVisit = null;
+      } else {
+        // New value selected
+        state.buildcase.routineVisit = value;
+        if (value === 'yes') {
+          els.routineYes.checked = true;
+          els.routineNo.checked = false;
+        } else {
+          els.routineNo.checked = true;
+          els.routineYes.checked = false;
+        }
+      }
+      saveBuildcase();
+      renderDiagnostics();
+    });
+  };
+
+  attach(els.routineYes, 'yes');
+  attach(els.routineNo, 'no');
+}
+
 /* Tab click handlers */
 
 if (els.tabParts) els.tabParts.addEventListener('click', showPartsPage);
@@ -846,9 +879,12 @@ if (els.btnToBuild2) els.btnToBuild2.addEventListener('click', () => {
   showBuild2();
 });
 if (els.btnToBuild3) els.btnToBuild3.addEventListener('click', () => {
+  // Routine choice is already tracked by setupRoutineToggle,
+  // but keep this as a safety net in case radios are manipulated directly.
   state.buildcase.routineVisit = els.routineYes?.checked
     ? 'yes'
     : (els.routineNo?.checked ? 'no' : null);
+
   state.buildcase.accomNights = (els.accomNights?.value || '').trim();
   state.buildcase.labourHoursNormal = (els.labourHoursNormal?.value || '').trim();
   state.buildcase.numTechsNormal = (els.numTechsNormal?.value || '').trim();
@@ -980,6 +1016,7 @@ function start() {
   renderParts();
   renderQuote();
   updateAddToQuoteState();
+  setupRoutineToggle();
   showPartsPage();
 }
 
