@@ -187,6 +187,7 @@ const els = {
   csv: document.getElementById('csv'),
   tbl: document.getElementById('tbl')?.querySelector('tbody'),
   count: document.getElementById('count'),
+  partsCsvSummary: document.getElementById('partsCsvSummary'),
   copyArea: document.getElementById('copyArea'),
   copyPartLine: document.getElementById('copyPartLine'),
   clearCache: document.getElementById('clearCache'),
@@ -258,16 +259,7 @@ const els = {
   diagRoutine: document.getElementById('diagRoutine'),
   diagSwStatus: document.getElementById('diagSwStatus'),
   btnDiagClearAll: document.getElementById('btnDiagClearAll'),
-  btnDiagCopy: document.getElementById('btnDiagCopy'),
-
-  // Version info in Settings
-  diagVerApp: document.getElementById('diagVerApp'),
-  diagVerHtml: document.getElementById('diagVerHtml'),
-  diagVerSw: document.getElementById('diagVerSw'),
-
-  // Parts page CSV info
-  partsCsvSource: document.getElementById('partsCsvSource'),
-  partsCsvLastLoaded: document.getElementById('partsCsvLastLoaded')
+  btnDiagCopy: document.getElementById('btnDiagCopy')
 };
 
 /* ---------- Parts page ---------- */
@@ -300,7 +292,17 @@ function renderParts() {
     });
     body.appendChild(tr);
   });
+
   if (els.count) els.count.textContent = rows.length;
+
+  if (els.partsCsvSummary) {
+    const src = state.csvMeta.source || 'None loaded';
+    const when = state.csvMeta.loadedAt ? formatLastLoaded(state.csvMeta.loadedAt) : null;
+    els.partsCsvSummary.textContent = when
+      ? `CSV: ${src} • Last loaded: ${when}`
+      : `CSV: ${src}`;
+  }
+
   renderDiagnostics();
 }
 
@@ -939,20 +941,6 @@ function renderDiagnostics() {
     } else {
       els.diagSwStatus.textContent = 'Registered / waiting';
     }
-  }
-
-  // Version info
-  const ver = 'v' + APP_VERSION;
-  if (els.diagVerApp) els.diagVerApp.textContent = ver;
-  if (els.diagVerHtml) els.diagVerHtml.textContent = ver;
-  if (els.diagVerSw) els.diagVerSw.textContent = ver;
-
-  // Parts page CSV summary
-  if (els.partsCsvSource) {
-    els.partsCsvSource.textContent = state.csvMeta.source || 'None loaded';
-  }
-  if (els.partsCsvLastLoaded) {
-    els.partsCsvLastLoaded.textContent = formatLastLoaded(state.csvMeta.loadedAt);
   }
 }
 
