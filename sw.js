@@ -1,14 +1,14 @@
 // sw.js
-const CACHE = 'fpl-v5-3-4';
+const CACHE = 'fpl-v5-3-5';
 
 const ASSETS = [
-  '/fire-parts-lookup/',
-  '/fire-parts-lookup/index.html',
-  '/fire-parts-lookup/app.js?v=5.3.4',
-  '/fire-parts-lookup/manifest.json',
-  '/fire-parts-lookup/icon-192.png',
-  '/fire-parts-lookup/icon-512.png',
-  '/fire-parts-lookup/Parts.csv'
+  './',
+  './index.html',
+  './app.js?v=5.3.5',
+  './manifest.json',
+  './icon-192.png',
+  './icon-512.png',
+  './Parts.csv'
 ];
 
 self.addEventListener('install', e => {
@@ -46,7 +46,15 @@ self.addEventListener('fetch', e => {
           caches.open(CACHE).then(c => c.put(e.request, copy));
           return resp;
         })
-        .catch(() => caches.match(e.request))
+        .catch(() => {
+          // Proper navigation fallback: if HTML navigation fails,
+          // serve the cached index.html explicitly
+          if (isHTML) {
+            return caches.match('./index.html');
+          }
+          // For app.js (or other versioned bundle), fall back to its own cache entry
+          return caches.match(e.request);
+        })
     );
     return;
   }
