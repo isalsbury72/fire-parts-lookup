@@ -30,13 +30,15 @@ const state = {
 };
 
 const ACCESS_CODE = 'FP2025';
+const DEFAULT_SHARED_CSV_PATH = 'Parts.csv';
 
 const LS_KEYS = {
   CSV: 'parts_csv',
   CSV_META: 'csv_meta_v1',
   QUOTE: 'quote_data_v1',
   BUILDCASE: 'buildcase_state_v1',
-  ACCESS: 'hasAccess'
+  ACCESS: 'hasAccess',
+  CSV_PATH: 'csv_path_v1'
 };
 
 function toast(msg, ok = false) {
@@ -267,7 +269,12 @@ const els = {
   accessOverlay: document.getElementById('accessOverlay'),
   accessInput: document.getElementById('accessInput'),
   btnAccessCancel: document.getElementById('btnAccessCancel'),
-  btnAccessSubmit: document.getElementById('btnAccessSubmit')
+  btnAccessSubmit: document.getElementById('btnAccessSubmit'),
+
+  // Shared CSV path UI
+  csvPathInput: document.getElementById('csvPathInput'),
+  btnSaveCsvPath: document.getElementById('btnSaveCsvPath'),
+  btnResetCsvPath: document.getElementById('btnResetCsvPath')
 };
 
 /* ---------- Access / security helpers ---------- */
@@ -345,6 +352,57 @@ if (els.accessInput) {
       e.preventDefault();
       hideAccessOverlay();
     }
+  });
+}
+
+/* ---------- Shared CSV path helpers ---------- */
+
+function getSharedCsvPath() {
+  try {
+    const saved = localStorage.getItem(LS_KEYS.CSV_PATH);
+    if (saved && saved.trim().length > 0) {
+      return saved.trim();
+    }
+  } catch {}
+  return DEFAULT_SHARED_CSV_PATH;
+}
+
+function syncCsvPathInput() {
+  if (!els.csvPathInput) return;
+  els.csvPathInput.value = getSharedCsvPath();
+}
+
+function saveCsvPathFromInput() {
+  if (!els.csvPathInput) return;
+  const raw = (els.csvPathInput.value || '').trim();
+  if (!raw) {
+    try {
+      localStorage.removeItem(LS_KEYS.CSV_PATH);
+    } catch {}
+    els.csvPathInput.value = getSharedCsvPath();
+    toast('Using default shared CSV path.', true);
+    return;
+  }
+  try {
+    localStorage.setItem(LS_KEYS.CSV_PATH, raw);
+  } catch {}
+  toast('Saved shared CSV path.', true);
+}
+
+/* Wire CSV path UI events */
+
+if (els.btnSaveCsvPath) {
+  els.btnSaveCsvPath.addEventListener('click', () => {
+    saveCsvPathFromInput();
+  });
+}
+if (els.btnResetCsvPath) {
+  els.btnResetCsvPath.addEventListener('click', () => {
+    try {
+      localStorage.removeItem(LS_KEYS.CSV_PATH);
+    } catch {}
+    syncCsvPathInput();
+    toast('Reset to default shared path.', true);
   });
 }
 
@@ -486,16 +544,18 @@ if (cachedCsv) {
 
 async function loadSharedFromRepo() {
   if (!ensureAccess()) return;
+  const path = getSharedCsvPath();
   try {
-    const res = await fetch('Parts.csv', { cache: 'no-cache' });
+    const res = await fetch(path, { cache: 'no-cache' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const text = await res.text();
     localStorage.setItem(LS_KEYS.CSV, text);
-    parseCSV(text, 'GitHub Parts.csv');
-    toast('Loaded shared CSV from repo.', true);
+    const label = path === DEFAULT_SHARED_CSV_PATH ? 'GitHub Parts.csv' : 'Remote CSV';
+    parseCSV(text, label);
+    toast('Loaded shared CSV from remote path.', true);
   } catch (err) {
     console.error(err);
-    toast('Error loading shared CSV from repo', false);
+    toast('Error loading shared CSV from remote path', false);
   }
 }
 
@@ -992,6 +1052,7 @@ function buildDebugInfo() {
     routineVisit: state.buildcase.routineVisit,
     serviceWorker: swStatus,
     accessUnlocked: localStorage.getItem(LS_KEYS.ACCESS) === 'yes',
+    sharedCsvPath: getSharedCsvPath(),
     userAgent: navigator.userAgent
   };
   return JSON.stringify(info, null, 2);
@@ -1011,6 +1072,7 @@ function start() {
   renderQuote();
   updateAddToQuoteState();
   updateAccessStatus();
+  syncCsvPathInput();
   showPartsPage();
 }
 
