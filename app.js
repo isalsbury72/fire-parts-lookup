@@ -1,15 +1,12 @@
-/* Fire Parts Lookup v5.3.7
-   - Home page with quick navigation
-   - Battery capacity calculator page
+/* Fire Parts Lookup v5.3.8
+   - Home page with navigation to Parts and Battery calc
+   - Battery calc page: bubble fields, 24/72 h Tq buttons only, age factor and required capacity
    - Quote and build case saved/restored from localStorage
    - CSV metadata (source, last loaded) tracked for diagnostics
    - Settings/Diagnostics tab + Copy debug info
 */
 
-const APP_VERSION = '5.3.7';
-const DEFAULT_L = 1.25;
-const DEFAULT_TA = 0.5;
-const DEFAULT_FC = 2;
+const APP_VERSION = '5.3.8';
 
 const state = {
   rows: [],
@@ -30,6 +27,9 @@ const state = {
   csvMeta: {
     source: 'None loaded',
     loadedAt: null
+  },
+  battery: {
+    tqHours: 24 // 24 or 72, controlled only by buttons
   }
 };
 
@@ -54,7 +54,7 @@ function toast(msg, ok = false) {
     padding: '10px 14px',
     borderRadius: '8px',
     background: '#fff',
-    border: '1px solid ' + (ok ? '#10b981' : '#f59e0b'),
+    border: `1px solid ${ok ? '#10b981' : '#f59e0b'}`,
     boxShadow: '0 1px 6px rgba(0,0,0,0.15)',
     zIndex: '9999',
     fontSize: '14px'
@@ -187,7 +187,7 @@ function loadSavedState() {
 /* DOM refs */
 
 const els = {
-  // Pages
+  // General pages
   homePage: document.getElementById('homePage'),
   partsPage: document.getElementById('partsPage'),
   quotePage: document.getElementById('quotePage'),
@@ -201,12 +201,11 @@ const els = {
   tabHome: document.getElementById('tabHome'),
   tabParts: document.getElementById('tabParts'),
   tabQuote: document.getElementById('tabQuote'),
-  tabBattery: document.getElementById('tabBattery'),
   tabSettings: document.getElementById('tabSettings'),
 
   // Home buttons
-  homePartsBtn: document.getElementById('btnHomeParts'),
-  homeBatteryBtn: document.getElementById('btnHomeBattery'),
+  btnHomeParts: document.getElementById('btnHomeParts'),
+  btnHomeBattery: document.getElementById('btnHomeBattery'),
 
   // Parts
   q: document.getElementById('q'),
@@ -240,7 +239,7 @@ const els = {
   manualQty: document.getElementById('manualQty'),
   manualAddBtn: document.getElementById('manualAddBtn'),
 
-  // Build case navigation
+  // Buildcase nav
   btnBackToQuote: document.getElementById('btnBackToQuote'),
   btnToBuild2: document.getElementById('btnToBuild2'),
   btnBackToBuild1: document.getElementById('btnBackToBuild1'),
@@ -248,7 +247,7 @@ const els = {
   btnBackToBuild2: document.getElementById('btnBackToBuild2'),
   btnBackToQuoteFrom3: document.getElementById('btnBackToQuoteFrom3'),
 
-  // Build case fields
+  // Buildcase fields
   notesCustomer: document.getElementById('notesCustomer'),
   notesEstimator: document.getElementById('notesEstimator'),
   bc1ItemsCount: document.getElementById('bc1ItemsCount'),
@@ -279,16 +278,18 @@ const els = {
   btnDiagClearAll: document.getElementById('btnDiagClearAll'),
   btnDiagCopy: document.getElementById('btnDiagCopy'),
 
-  // Battery calculator
+  // Battery inputs & display
   batIq: document.getElementById('batIq'),
   batIa: document.getElementById('batIa'),
   batTa: document.getElementById('batTa'),
   batFc: document.getElementById('batFc'),
-  batL: document.getElementById('batL'),
   batTqDisplay: document.getElementById('batTqDisplay'),
-  batBtnTq24: document.getElementById('batBtnTq24'),
-  batBtnTq72: document.getElementById('batBtnTq72'),
-  batResult: document.getElementById('batResult')
+  batCalcCap: document.getElementById('batCalcCap'),
+  batAgeFactor: document.getElementById('batAgeFactor'),
+  batRequiredCap: document.getElementById('batRequiredCap'),
+  btnTq24: document.getElementById('btnTq24'),
+  btnTq72: document.getElementById('btnTq72'),
+  btnBatteryBackHome: document.getElementById('btnBatteryBackHome')
 };
 
 /* ---------- Parts page ---------- */
@@ -322,7 +323,7 @@ function renderParts() {
     body.appendChild(tr);
   });
 
-  if (els.count) els.count.textContent = rows.length.toString();
+  if (els.count) els.count.textContent = rows.length;
 
   if (els.partsCsvSummary) {
     const src = state.csvMeta.source || 'None loaded';
@@ -751,7 +752,7 @@ function buildCaseStep1Fill() {
 /* Page switching */
 
 function selectTab(tab) {
-  const tabs = [els.tabHome, els.tabParts, els.tabQuote, els.tabBattery, els.tabSettings];
+  const tabs = [els.tabHome, els.tabParts, els.tabQuote, els.tabSettings];
   tabs.forEach(b => {
     if (!b) return;
     if (b === tab) {
@@ -781,24 +782,28 @@ function showHomePage() {
   selectTab(els.tabHome);
   renderDiagnostics();
 }
+
 function showPartsPage() {
   hideAllPages();
   if (els.partsPage) els.partsPage.style.display = 'block';
   selectTab(els.tabParts);
   renderDiagnostics();
 }
+
 function showQuotePage() {
   hideAllPages();
   if (els.quotePage) els.quotePage.style.display = 'block';
   selectTab(els.tabQuote);
   renderDiagnostics();
 }
+
 function showSettingsPage() {
   hideAllPages();
   if (els.settingsPage) els.settingsPage.style.display = 'block';
   selectTab(els.tabSettings);
   renderDiagnostics();
 }
+
 function showBuild1() {
   hideAllPages();
   if (els.buildcase1Page) els.buildcase1Page.style.display = 'block';
@@ -813,16 +818,22 @@ function showBuild1() {
   els.bc1ItemsCount.textContent = `Items: ${state.quote.length}`;
   renderDiagnostics();
 }
+
 function showBuild2() {
   hideAllPages();
   if (els.buildcase2Page) els.buildcase2Page.style.display = 'block';
   selectTab(els.tabQuote);
 
-  if (state.buildcase.routineVisit === 'yes') els.routineYes.checked = true;
-  else if (state.buildcase.routineVisit === 'no') els.routineNo.checked = true;
-  else {
-    if (els.routineYes) els.routineYes.checked = false;
-    if (els.routineNo) els.routineNo.checked = false;
+  if (state.buildcase.routineVisit === 'yes') {
+    els.routineYes.checked = true;
+    els.routineNo.checked = false;
+  } else if (state.buildcase.routineVisit === 'no') {
+    els.routineYes.checked = false;
+    els.routineNo.checked = true;
+  } else {
+    // allow "no selection" if user cleared it
+    els.routineYes.checked = false;
+    els.routineNo.checked = false;
   }
 
   els.accomNights.value = state.buildcase.accomNights || '';
@@ -835,6 +846,7 @@ function showBuild2() {
 
   renderDiagnostics();
 }
+
 function showBuild3() {
   hideAllPages();
   if (els.buildcase3Page) els.buildcase3Page.style.display = 'block';
@@ -849,11 +861,15 @@ function showBuild3() {
   renderDiagnostics();
 }
 
+/* Battery page nav */
+
 function showBatteryPage() {
   hideAllPages();
   if (els.batteryPage) els.batteryPage.style.display = 'block';
-  selectTab(els.tabBattery);
-  computeBattery();
+  // Keep Home tab highlighted, as battery is under that area
+  selectTab(els.tabHome);
+  initBatteryDefaults();
+  recalcBattery();
   renderDiagnostics();
 }
 
@@ -862,13 +878,12 @@ function showBatteryPage() {
 if (els.tabHome) els.tabHome.addEventListener('click', showHomePage);
 if (els.tabParts) els.tabParts.addEventListener('click', showPartsPage);
 if (els.tabQuote) els.tabQuote.addEventListener('click', showQuotePage);
-if (els.tabBattery) els.tabBattery.addEventListener('click', showBatteryPage);
 if (els.tabSettings) els.tabSettings.addEventListener('click', showSettingsPage);
 
-/* Home page quick nav */
+/* Home buttons */
 
-if (els.homePartsBtn) els.homePartsBtn.addEventListener('click', showPartsPage);
-if (els.homeBatteryBtn) els.homeBatteryBtn.addEventListener('click', showBatteryPage);
+if (els.btnHomeParts) els.btnHomeParts.addEventListener('click', showPartsPage);
+if (els.btnHomeBattery) els.btnHomeBattery.addEventListener('click', showBatteryPage);
 
 /* Build case navigation */
 
@@ -885,6 +900,7 @@ if (els.btnToBuild2) els.btnToBuild2.addEventListener('click', () => {
   showBuild2();
 });
 if (els.btnToBuild3) els.btnToBuild3.addEventListener('click', () => {
+  // routine visit can be "yes", "no", or null if neither chosen
   state.buildcase.routineVisit = els.routineYes?.checked
     ? 'yes'
     : (els.routineNo?.checked ? 'no' : null);
@@ -898,37 +914,6 @@ if (els.btnToBuild3) els.btnToBuild3.addEventListener('click', () => {
   saveBuildcase();
   showBuild3();
 });
-
-/* Routine visit radios: allow unselect by clicking again */
-
-if (els.routineYes) {
-  els.routineYes.addEventListener('click', e => {
-    if (state.buildcase.routineVisit === 'yes') {
-      e.preventDefault();
-      els.routineYes.checked = false;
-      state.buildcase.routineVisit = null;
-    } else {
-      state.buildcase.routineVisit = 'yes';
-      if (els.routineNo) els.routineNo.checked = false;
-    }
-    saveBuildcase();
-    renderDiagnostics();
-  });
-}
-if (els.routineNo) {
-  els.routineNo.addEventListener('click', e => {
-    if (state.buildcase.routineVisit === 'no') {
-      e.preventDefault();
-      els.routineNo.checked = false;
-      state.buildcase.routineVisit = null;
-    } else {
-      state.buildcase.routineVisit = 'no';
-      if (els.routineYes) els.routineYes.checked = false;
-    }
-    saveBuildcase();
-    renderDiagnostics();
-  });
-}
 
 /* Step 3 copy */
 
@@ -952,79 +937,89 @@ if (els.btnClearQuote) els.btnClearQuote.addEventListener('click', () => {
   }
 });
 
+/* Manual add button */
+
+if (els.manualAddBtn) els.manualAddBtn.addEventListener('click', () => {
+  if (!manualInputsValid()) {
+    toast('Fill supplier, description, part number and price.', false);
+    return;
+  }
+  const sup = els.manualSupplier.value.trim();
+  const desc = els.manualDescription.value.trim();
+  const pn = els.manualPart.value.trim();
+  const priceEach = parseFloat((els.manualPrice.value || '').toString().replace(/[^0-9.]/g, '')) || 0;
+  const qty = Math.max(1, parseInt(els.manualQty.value, 10) || 1);
+
+  state.quote.push({
+    SUPPLIER: sup,
+    DESCRIPTION: desc,
+    PARTNUMBER: pn,
+    PRICE: priceEach,
+    qty
+  });
+  saveQuote();
+  renderQuote();
+
+  els.manualSupplier.value = '';
+  els.manualDescription.value = '';
+  els.manualPart.value = '';
+  els.manualPrice.value = '';
+  els.manualQty.value = '1';
+  setManualBtnEnabled(false);
+  toast('Manual item added.', true);
+});
+
 /* ---------- Battery calculator ---------- */
 
-let batteryTq = 24;
+function initBatteryDefaults() {
+  if (els.batTa && !els.batTa.value) els.batTa.value = '0.5';
+  if (els.batFc && !els.batFc.value) els.batFc.value = '2';
+  if (els.batTqDisplay) els.batTqDisplay.textContent = `${state.battery.tqHours} h`;
 
-function parseNumInput(el, defVal) {
-  const n = parseFloat((el?.value || '').toString());
-  return Number.isNaN(n) ? defVal : n;
-}
-
-function updateTqButtons() {
-  if (els.batTqDisplay) {
-    els.batTqDisplay.textContent = 'Tq: ' + batteryTq + ' h';
-  }
-  if (els.batBtnTq24) {
-    if (batteryTq === 24) {
-      els.batBtnTq24.classList.add('btn-primary');
-      els.batBtnTq24.classList.remove('btn-secondary');
-    } else {
-      els.batBtnTq24.classList.remove('btn-primary');
-      els.batBtnTq24.classList.add('btn-secondary');
-    }
-  }
-  if (els.batBtnTq72) {
-    if (batteryTq === 72) {
-      els.batBtnTq72.classList.add('btn-primary');
-      els.batBtnTq72.classList.remove('btn-secondary');
-    } else {
-      els.batBtnTq72.classList.remove('btn-primary');
-      els.batBtnTq72.classList.add('btn-secondary');
-    }
+  // Highlight the active Tq button
+  if (els.btnTq24 && els.btnTq72) {
+    els.btnTq24.classList.toggle('tq-btn-active', state.battery.tqHours === 24);
+    els.btnTq72.classList.toggle('tq-btn-active', state.battery.tqHours === 72);
   }
 }
 
-function computeBattery() {
-  if (!els.batResult) return;
-  const Iq = parseNumInput(els.batIq, 0);
-  const Ia = parseNumInput(els.batIa, 0);
-  const Ta = parseNumInput(els.batTa, DEFAULT_TA);
-  const Fc = parseNumInput(els.batFc, DEFAULT_FC);
-  const L = parseNumInput(els.batL, DEFAULT_L);
+function recalcBattery() {
+  if (!els.batCalcCap || !els.batAgeFactor || !els.batRequiredCap) return;
 
-  const sum = (Iq * batteryTq) + Fc * (Ia * Ta);
-  const C = L * sum;
-  const val = Number.isFinite(C) ? C.toFixed(2) : '0.00';
+  const Iq = parseFloat((els.batIq?.value || '').toString()) || 0;
+  const Ia = parseFloat((els.batIa?.value || '').toString()) || 0;
+  const Ta = parseFloat((els.batTa?.value || '').toString()) || 0;
+  const Fc = parseFloat((els.batFc?.value || '').toString()) || 0;
+  const Tq = state.battery.tqHours || 0;
 
-  els.batResult.textContent = val + ' Ah';
+  if (els.batTqDisplay) els.batTqDisplay.textContent = `${Tq.toFixed(0)} h`;
+
+  const base = (Iq * Tq) + Fc * (Ia * Ta);       // 20 hr capacity before age
+  const aged = base * 1.25;                      // Age factor x1.25
+  const required = aged > 0 ? Math.ceil(aged) : 0;
+
+  els.batCalcCap.textContent = `${base.toFixed(2)} Ah`;
+  els.batAgeFactor.textContent = `${aged.toFixed(2)} Ah`;
+  els.batRequiredCap.textContent = `${required} Ah`;
 }
 
-function initBatteryCalc() {
-  batteryTq = 24;
-  updateTqButtons();
-  computeBattery();
+if (els.batIq) els.batIq.addEventListener('input', recalcBattery);
+if (els.batIa) els.batIa.addEventListener('input', recalcBattery);
+if (els.batTa) els.batTa.addEventListener('input', recalcBattery);
+if (els.batFc) els.batFc.addEventListener('input', recalcBattery);
 
-  ['batIq','batIa','batTa','batFc','batL'].forEach(id => {
-    const el = els[id];
-    if (el) el.addEventListener('input', computeBattery);
-  });
+if (els.btnTq24) els.btnTq24.addEventListener('click', () => {
+  state.battery.tqHours = 24;
+  initBatteryDefaults();
+  recalcBattery();
+});
+if (els.btnTq72) els.btnTq72.addEventListener('click', () => {
+  state.battery.tqHours = 72;
+  initBatteryDefaults();
+  recalcBattery();
+});
 
-  if (els.batBtnTq24) {
-    els.batBtnTq24.addEventListener('click', () => {
-      batteryTq = 24;
-      updateTqButtons();
-      computeBattery();
-    });
-  }
-  if (els.batBtnTq72) {
-    els.batBtnTq72.addEventListener('click', () => {
-      batteryTq = 72;
-      updateTqButtons();
-      computeBattery();
-    });
-  }
-}
+if (els.btnBatteryBackHome) els.btnBatteryBackHome.addEventListener('click', showHomePage);
 
 /* ---------- Diagnostics + debug export ---------- */
 
@@ -1073,6 +1068,7 @@ function buildDebugInfo() {
     quoteSuppliers: [...new Set(state.quote.map(q => q.SUPPLIER))],
     buildcase: state.buildcase,
     routineVisit: state.buildcase.routineVisit,
+    battery: state.battery,
     serviceWorker: swStatus,
     userAgent: navigator.userAgent
   };
@@ -1092,8 +1088,9 @@ function start() {
   renderParts();
   renderQuote();
   updateAddToQuoteState();
-  initBatteryCalc();
   showHomePage();
+  initBatteryDefaults();
+  recalcBattery();
 }
 
 start();
