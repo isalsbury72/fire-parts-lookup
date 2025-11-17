@@ -1,12 +1,14 @@
-/* Fire Parts Lookup v5.3.8
+/* Fire Parts Lookup v5.3.9
    - Quote and build case saved/restored from localStorage
    - CSV metadata (source, last loaded) tracked for diagnostics
    - Settings/Diagnostics tab + Copy debug info
-   - Scroll-to-top simplified (better on mobile)
    - Home page + battery calculator page
 */
 
-const APP_VERSION = '5.3.8';
+const APP_VERSION = '5.3.9';
+
+const TA_FIXED = 0.5;  // hours, not editable
+const FC_FIXED = 2;    // capacity derating factor in formula
 
 const state = {
   rows: [],
@@ -196,9 +198,8 @@ const els = {
   batteryPage: document.getElementById('batteryPage'),
   battIq: document.getElementById('battIq'),
   battIa: document.getElementById('battIa'),
-  battTa: document.getElementById('battTa'),
-  battFc: document.getElementById('battFc'),
   battTqDisplay: document.getElementById('battTqDisplay'),
+  battTaDisplay: document.getElementById('battTaDisplay'),
   battBtnTq24: document.getElementById('battBtnTq24'),
   battBtnTq72: document.getElementById('battBtnTq72'),
   battCap20: document.getElementById('battCap20'),
@@ -722,7 +723,7 @@ function buildLabourSummary() {
     linesAfter.push('Can be completed on routine visit');
   } else if (state.buildcase.routineVisit === 'no') {
     linesAfter.push('Not intended to be completed on routine visit');
-  } // if null, leave blank
+  }
 
   const out = [];
   out.push(...linesMain);
@@ -881,7 +882,6 @@ if (els.btnToBuild2) els.btnToBuild2.addEventListener('click', () => {
   showBuild2();
 });
 if (els.btnToBuild3) els.btnToBuild3.addEventListener('click', () => {
-  // routineVisit handled by radio click handler, but ensure we persist latest values too
   state.buildcase.accomNights = (els.accomNights?.value || '').trim();
   state.buildcase.labourHoursNormal = (els.labourHoursNormal?.value || '').trim();
   state.buildcase.numTechsNormal = (els.numTechsNormal?.value || '').trim();
@@ -990,9 +990,9 @@ function recalcBattery() {
 
   const Iq = numOrZero(els.battIq?.value);
   const Ia = numOrZero(els.battIa?.value);
-  const Ta = numOrZero(els.battTa?.value || '0.5');
-  const Fc = numOrZero(els.battFc?.value || '2');
   const Tq = state.battery.Tq || 24;
+  const Ta = TA_FIXED;
+  const Fc = FC_FIXED;
 
   const cap20 = (Iq * Tq) + (Fc * Ia * Ta);
   const ageCap = cap20 * 1.25;
@@ -1001,6 +1001,7 @@ function recalcBattery() {
   const fmt = v => v.toFixed(2);
 
   if (els.battTqDisplay) els.battTqDisplay.textContent = `${Tq} h`;
+  if (els.battTaDisplay) els.battTaDisplay.textContent = `${Ta} h`;
   els.battCap20.textContent = `${fmt(cap20)} Ah`;
   els.battAgeCap.textContent = `${fmt(ageCap)} Ah`;
   els.battRequired.textContent = `${fmt(required)} Ah`;
@@ -1021,11 +1022,9 @@ function setTq(hours) {
 }
 
 function initBattery() {
-  if (els.battTa && !els.battTa.value) els.battTa.value = '0.5';
-  if (els.battFc && !els.battFc.value) els.battFc.value = '2';
   setTq(24);
 
-  ['battIq', 'battIa', 'battTa', 'battFc'].forEach(id => {
+  ['battIq', 'battIa'].forEach(id => {
     const input = els[id];
     if (input) input.addEventListener('input', recalcBattery);
   });
@@ -1066,8 +1065,8 @@ function renderDiagnostics() {
       els.diagSwStatus.textContent = 'Registered / waiting';
     }
   }
-  if (els.diagIdxVersion) els.diagIdxVersion.textContent = 'v5.3.8';
-  if (els.diagSwVersion) els.diagSwVersion.textContent = 'fpl-v5-3-8';
+  if (els.diagIdxVersion) els.diagIdxVersion.textContent = 'v5.3.9';
+  if (els.diagSwVersion) els.diagSwVersion.textContent = 'fpl-v5-3-9';
 }
 
 function buildDebugInfo() {
