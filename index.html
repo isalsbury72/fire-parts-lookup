@@ -5,7 +5,6 @@
   <title>Fire Parts Lookup v5.3.8</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
 
-  <!-- Relative paths so it works from any folder / GitHub pages base -->
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon-192.png">
   <meta name="theme-color" content="#3b82f6">
@@ -86,114 +85,149 @@
       .action-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
 
-    /* Home page buttons */
+    /* Home page */
     .home-grid {
       display:grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap:10px;
-      margin-top:10px;
     }
-    @media (max-width: 520px) {
-      .home-grid { grid-template-columns: minmax(0, 1fr); }
-    }
-    .home-btn {
-      height:72px;
+    .home-tile {
       border-radius:14px;
       border:1px solid #d1d5db;
-      background:#ffffff;
+      padding:10px;
+      background:#f9fafb;
       display:flex;
       flex-direction:column;
       align-items:flex-start;
       justify-content:center;
-      padding:8px 12px;
+      min-height:80px;
       cursor:pointer;
     }
-    .home-btn.primary {
-      border-color:#2563eb;
-      background:#eff6ff;
-      color:#1d4ed8;
-    }
-    .home-btn-title {
-      font-size:14px;
-      font-weight:600;
-      margin-bottom:2px;
-    }
-    .home-btn-caption {
-      font-size:12px;
-      color:#6b7280;
+    .home-tile-title { font-size:14px; font-weight:600; margin-bottom:4px; }
+    .home-tile-caption { font-size:12px; color:#6b7280; }
+
+    @media (max-width: 480px) {
+      .home-grid { grid-template-columns: 1fr; }
     }
 
-    /* Battery page field cards */
-    .field-card {
-      border-radius:12px;
-      border:1px solid #e5e7eb;
-      padding:8px 10px;
-      margin-top:8px;
-      background:#f9fafb;
-    }
-    .field-card-label {
-      font-size:12px;
-      color:#4b5563;
-      margin-bottom:4px;
-    }
-    .field-bubble {
-      border-radius:999px;
-      border:1px solid #d1d5db;
-      padding:6px 10px;
-      min-height:32px;
+    /* Battery calculator */
+    .batt-wrap {
       display:flex;
-      align-items:center;
-      justify-content:space-between;
-      background:#ffffff;
+      flex-direction:column;
       gap:6px;
     }
-    .field-card:focus-within .field-bubble {
-      border-color:#2563eb;
-      background:#eff6ff;
-      box-shadow:0 0 0 1px rgba(37,99,235,0.35);
+    .batt-row {
+      display:flex;
+      align-items:center;
+      gap:6px;
     }
-    .bubble-input {
+    .batt-label-pill,
+    .batt-input-pill {
+      border-radius:999px;
+      padding:4px 10px;
+      background:#f9fafb;
+      border:1px solid #e5e7eb;
+      font-size:12px;
+      line-height:1.3;
+    }
+    .batt-label-pill {
+      flex:1 1 auto;
+      min-width:0;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .batt-input-pill {
+      flex:0 0 auto;
+      min-width:80px;
+      max-width:120px;
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+    }
+    .batt-input-pill input {
+      width:100%;
       border:none;
       outline:none;
       background:transparent;
-      width:100%;
-      font-size:14px;
+      font-size:12px;
       text-align:right;
     }
-    .field-unit {
-      font-size:12px;
-      color:#6b7280;
-      white-space:nowrap;
+    .batt-input-pill span {
+      width:100%;
+      text-align:right;
+      font-variant-numeric: tabular-nums;
     }
-    .field-value {
-      font-size:14px;
+    .batt-input-pill:focus-within {
+      border-color:#2563eb;
+      box-shadow:0 0 0 2px rgba(37,99,235,0.25);
+      background:#eff6ff;
     }
-    .field-value-strong {
-      font-size:14px;
+    .batt-cap-pill {
+      font-variant-numeric: tabular-nums;
+    }
+    .batt-required-pill {
+      border-radius:999px;
+      padding:6px 12px;
+      background:#f97316;
+      border:1px solid #ea580c;
+      color:#fff;
+      font-size:13px;
       font-weight:600;
+      display:inline-flex;
+      align-items:center;
+      justify-content:flex-end;
+      min-width:120px;
+      font-variant-numeric: tabular-nums;
     }
-    .field-bubble-result {
-      background:#f9fafb;
-    }
-    .field-bubble-required {
-      background:#ecfdf5;
-      border-color:#16a34a;
-    }
-    .field-required {
-      font-size:18px;
-      font-weight:700;
-    }
-
-    .tq-buttons-row {
+    .batt-required-row {
       display:flex;
-      gap:8px;
-      margin-top:8px;
-      flex-wrap:wrap;
+      align-items:center;
+      justify-content:space-between;
+      gap:6px;
+      margin-top:4px;
     }
-    .tq-btn-active {
+    .batt-tq-buttons {
+      display:flex;
+      gap:6px;
+      margin-top:4px;
+    }
+    .batt-tq-btn {
+      flex:1;
+      border-radius:999px;
+      border:1px solid #d1d5db;
+      background:#f9fafb;
+      padding:4px 8px;
+      font-size:11px;
+      cursor:pointer;
+    }
+    .batt-tq-btn.active {
       border-color:#2563eb;
       background:#eff6ff;
       color:#1d4ed8;
+      font-weight:600;
+    }
+
+    @media (max-width: 480px) {
+      .batt-row {
+        gap:4px;
+      }
+      .batt-label-pill {
+        font-size:11px;
+      }
+      .batt-input-pill {
+        min-width:70px;
+        max-width:110px;
+        padding:3px 8px;
+      }
+      .batt-input-pill input {
+        font-size:11px;
+      }
+      .batt-required-pill {
+        font-size:12px;
+        padding:5px 10px;
+        min-width:110px;
+      }
     }
 
     @keyframes authFadeIn { from { opacity:0; transform:translateY(-2px); } to { opacity:1; transform:translateY(0); } }
@@ -213,9 +247,8 @@
   </header>
 
   <main>
-    <!-- Tabs -->
+    <!-- Tabs (for core app) -->
     <div class="tabs">
-      <button id="tabHome" class="tab-btn">Home</button>
       <button id="tabParts" class="tab-btn">Parts</button>
       <button id="tabQuote" class="tab-btn">Quote</button>
       <button id="tabSettings" class="tab-btn">Settings</button>
@@ -225,17 +258,96 @@
     <div id="homePage">
       <div class="card">
         <h2 style="margin-top:0; font-size:16px;">Home</h2>
-        <p class="small">Choose what you want to work on.</p>
-
+        <p class="small" style="margin-bottom:10px;">Choose an area to jump into.</p>
         <div class="home-grid">
-          <button id="btnHomeParts" class="home-btn primary">
-            <div class="home-btn-title">Fire Parts lookup</div>
-            <div class="home-btn-caption">Search parts and build quotes</div>
+          <button id="btnHomeParts" class="home-tile">
+            <div class="home-tile-title">Fire Parts lookup</div>
+            <div class="home-tile-caption">Search parts, build quotes and cases.</div>
           </button>
-          <button id="btnHomeBattery" class="home-btn">
-            <div class="home-btn-title">Battery capacity calculator</div>
-            <div class="home-btn-caption">Quick 20 hr sizing with age factor</div>
+          <button id="btnHomeBattery" class="home-tile">
+            <div class="home-tile-title">Battery calculator</div>
+            <div class="home-tile-caption">Quick capacity estimate for jobs.</div>
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Battery calculator page -->
+    <div id="batteryPage" style="display:none;">
+      <div class="card">
+        <h2 style="margin-top:0; font-size:16px;">Battery calculator</h2>
+        <p class="small">Simple 20&nbsp;hour capacity estimate using standby and alarm loads.</p>
+
+        <div class="batt-wrap">
+          <!-- Iq -->
+          <div class="batt-row">
+            <div class="batt-label-pill">Quiescent current (Iq)</div>
+            <div class="batt-input-pill">
+              <input id="battIq" type="number" step="0.01" inputmode="decimal" placeholder="0.00">
+            </div>
+          </div>
+
+          <!-- Ia -->
+          <div class="batt-row">
+            <div class="batt-label-pill">Alarm mode current (Ia)</div>
+            <div class="batt-input-pill">
+              <input id="battIa" type="number" step="0.01" inputmode="decimal" placeholder="0.00">
+            </div>
+          </div>
+
+          <!-- Ta -->
+          <div class="batt-row">
+            <div class="batt-label-pill">Alarm mode standby time (Ta, hours)</div>
+            <div class="batt-input-pill">
+              <input id="battTa" type="number" step="0.1" inputmode="decimal" placeholder="0.5">
+            </div>
+          </div>
+
+          <!-- Fc -->
+          <div class="batt-row">
+            <div class="batt-label-pill">Capacity derating factor (Fc)</div>
+            <div class="batt-input-pill">
+              <input id="battFc" type="number" step="0.1" inputmode="decimal" placeholder="2.0">
+            </div>
+          </div>
+
+          <!-- Tq display -->
+          <div class="batt-row" style="margin-top:4px;">
+            <div class="batt-label-pill">Required quiescent standby time (Tq)</div>
+            <div class="batt-input-pill">
+              <span id="battTqDisplay">24 h</span>
+            </div>
+          </div>
+
+          <!-- Tq buttons -->
+          <div class="batt-tq-buttons">
+            <button id="battBtnTq24" class="batt-tq-btn active">Tq 24 h</button>
+            <button id="battBtnTq72" class="batt-tq-btn">Tq 72 h</button>
+          </div>
+
+          <!-- Calculated 20 hr capacity -->
+          <div class="batt-row" style="margin-top:6px;">
+            <div class="batt-label-pill">Calculated 20&nbsp;hour capacity</div>
+            <div class="batt-input-pill batt-cap-pill">
+              <span id="battCap20">0.00 Ah</span>
+            </div>
+          </div>
+
+          <!-- Age factor result -->
+          <div class="batt-row">
+            <div class="batt-label-pill">Age factor (capacity × 1.25)</div>
+            <div class="batt-input-pill batt-cap-pill">
+              <span id="battAgeCap">0.00 Ah</span>
+            </div>
+          </div>
+
+          <!-- Required capacity (orange) -->
+          <div class="batt-required-row">
+            <div class="batt-label-pill" style="flex:1;">Required capacity</div>
+            <div class="batt-required-pill">
+              <span id="battRequired">0.00 Ah</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -382,92 +494,6 @@
       </div>
     </div>
 
-    <!-- Battery calculator page -->
-    <div id="batteryPage" style="display:none;">
-      <div class="card">
-        <h2 style="margin-top:0; font-size:16px;">Battery capacity calculator</h2>
-        <p class="small">C = L[(Iq × Tq) + Fc × (Ia × Ta)] — 20 hr capacity with an age factor.</p>
-
-        <!-- Quiescent current -->
-        <div class="field-card">
-          <div class="field-card-label">Quiescent current (Iq)</div>
-          <div class="field-bubble">
-            <input id="batIq" type="number" step="0.01" min="0" class="bubble-input" placeholder="0.00">
-            <span class="field-unit">A</span>
-          </div>
-        </div>
-
-        <!-- Alarm mode current -->
-        <div class="field-card">
-          <div class="field-card-label">Alarm mode current (Ia)</div>
-          <div class="field-bubble">
-            <input id="batIa" type="number" step="0.01" min="0" class="bubble-input" placeholder="0.00">
-            <span class="field-unit">A</span>
-          </div>
-        </div>
-
-        <!-- Quiescent standby time (Tq) - set by buttons only -->
-        <div class="field-card">
-          <div class="field-card-label">Quiescent standby time (Tq)</div>
-          <div class="field-bubble">
-            <span id="batTqDisplay" class="field-value">24 h</span>
-          </div>
-        </div>
-
-        <!-- Tq buttons -->
-        <div class="tq-buttons-row">
-          <button id="btnTq24" class="btn btn-secondary">Tq 24 h</button>
-          <button id="btnTq72" class="btn btn-secondary">Tq 72 h</button>
-        </div>
-
-        <!-- Alarm mode standby time (Ta) -->
-        <div class="field-card">
-          <div class="field-card-label">Alarm mode standby time (Ta)</div>
-          <div class="field-bubble">
-            <input id="batTa" type="number" step="0.01" min="0" class="bubble-input" placeholder="0.50">
-            <span class="field-unit">h</span>
-          </div>
-        </div>
-
-        <!-- Derating factor (Fc) -->
-        <div class="field-card">
-          <div class="field-card-label">Capacity derating factor (Fc)</div>
-          <div class="field-bubble">
-            <input id="batFc" type="number" step="0.1" min="0" class="bubble-input" placeholder="2.0">
-            <span class="field-unit">×</span>
-          </div>
-        </div>
-
-        <!-- Calculated 20 hr capacity (before age) -->
-        <div class="field-card">
-          <div class="field-card-label">Calculated 20 hr capacity</div>
-          <div class="field-bubble field-bubble-result">
-            <span id="batCalcCap" class="field-value-strong">0.00 Ah</span>
-          </div>
-        </div>
-
-        <!-- Age factor -->
-        <div class="field-card">
-          <div class="field-card-label">Age factor (×1.25)</div>
-          <div class="field-bubble field-bubble-result">
-            <span id="batAgeFactor" class="field-value-strong">0.00 Ah</span>
-          </div>
-        </div>
-
-        <!-- Required capacity -->
-        <div class="field-card">
-          <div class="field-card-label">Required capacity</div>
-          <div class="field-bubble field-bubble-required">
-            <span id="batRequiredCap" class="field-required">0 Ah</span>
-          </div>
-        </div>
-
-        <div style="margin-top:12px; display:flex; justify-content:flex-start;">
-          <button id="btnBatteryBackHome" class="btn btn-ghost">Back to Home</button>
-        </div>
-      </div>
-    </div>
-
     <!-- Settings / Diagnostics page -->
     <div id="settingsPage" style="display:none;">
       <div class="card">
@@ -477,9 +503,9 @@
         <!-- Software versions bubble -->
         <div class="card" style="margin-top:8px;">
           <h3 style="margin:0 0 6px 0; font-size:14px;">Software versions</h3>
-          <p class="small"><strong>App version:</strong> <span>v5.3.8</span></p>
+          <p class="small"><strong>App version (app.js):</strong> <span>v5.3.8</span></p>
           <p class="small"><strong>Index.html version:</strong> <span id="diagIdxVersion">v5.3.8</span></p>
-          <p class="small"><strong>Service Worker version:</strong> <span id="diagSwVersion">fpl-v5-3-8</span></p>
+          <p class="small"><strong>Service worker cache:</strong> <span id="diagSwVersion">fpl-v5-3-8</span></p>
         </div>
 
         <!-- Data & status bubble -->
@@ -641,7 +667,7 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <script src="app.js?v=5.3.8"></script>
+  <script src="app.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js')
