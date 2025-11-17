@@ -3,12 +3,12 @@ const CACHE = 'fpl-v5-3-8';
 
 const ASSETS = [
   './',
-  'index.html',
-  'app.js?v=5.3.8',
-  'manifest.json',
-  'icon-192.png',
-  'icon-512.png',
-  'Parts.csv'
+  './index.html',
+  './app.js?v=5.3.8',
+  './manifest.json',
+  './icon-192.png',
+  './icon-512.png',
+  './Parts.csv'
 ];
 
 self.addEventListener('install', e => {
@@ -35,13 +35,14 @@ self.addEventListener('fetch', e => {
   const isHTML =
     e.request.mode === 'navigate' ||
     accept.includes('text/html');
-  const isApp =
+
+  const isAppJs =
     url.pathname.endsWith('/app.js') ||
     url.pathname.endsWith('app.js') ||
     url.searchParams.has('v');
 
-  // Network first for HTML + app.js so updates appear quickly
-  if (isHTML || isApp) {
+  // Network-first for HTML and app.js, with explicit index.html fallback
+  if (isHTML || isAppJs) {
     e.respondWith(
       fetch(e.request)
         .then(resp => {
@@ -49,24 +50,18 @@ self.addEventListener('fetch', e => {
           caches.open(CACHE).then(c => c.put(e.request, copy));
           return resp;
         })
-        .catch(async () => {
-          if (isHTML) {
-            // Proper navigation fallback: always try cached index.html
-            const cachedIndex =
-              (await caches.match('index.html')) ||
-              (await caches.match('./'));
-            if (cachedIndex) return cachedIndex;
-          }
-          const cached = await caches.match(e.request);
-          if (cached) return cached;
-          // Last resort: try index.html again
-          return (await caches.match('index.html')) || Response.error();
-        })
+        .catch(() =>
+          caches.match(e.request).then(hit => {
+            if (hit) return hit;
+            // Navigation fallback to cached index.html if available
+            return caches.match('./index.html');
+          })
+        )
     );
     return;
   }
 
-  // Cache first for everything else
+  // Cache-first for everything else
   e.respondWith(
     caches.match(e.request).then(r => r || fetch(e.request))
   );
