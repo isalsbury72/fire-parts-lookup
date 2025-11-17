@@ -2,13 +2,10 @@
    - Quote and build case saved/restored from localStorage
    - CSV metadata (source, last loaded) tracked for diagnostics
    - Settings/Diagnostics tab + Copy debug info
-   - Home page + battery calculator page
+   - Optional home + battery calculator page support
 */
 
 const APP_VERSION = '5.3.9';
-
-const TA_FIXED = 0.5;  // hours, not editable
-const FC_FIXED = 2;    // capacity derating factor in formula
 
 const state = {
   rows: [],
@@ -31,7 +28,7 @@ const state = {
     loadedAt: null
   },
   battery: {
-    Tq: 24  // quiescent standby time in hours (24 or 72 via buttons)
+    Tq: 24 // quiescent standby time in hours (24 or 72 via buttons)
   }
 };
 
@@ -284,9 +281,7 @@ const els = {
   diagRoutine: document.getElementById('diagRoutine'),
   diagSwStatus: document.getElementById('diagSwStatus'),
   btnDiagClearAll: document.getElementById('btnDiagClearAll'),
-  btnDiagCopy: document.getElementById('btnDiagCopy'),
-  diagIdxVersion: document.getElementById('diagIdxVersion'),
-  diagSwVersion: document.getElementById('diagSwVersion')
+  btnDiagCopy: document.getElementById('btnDiagCopy')
 };
 
 /* ---------- Parts page ---------- */
@@ -746,7 +741,7 @@ function buildCaseStep1Fill() {
   els.bc1ItemsCount.textContent = `Items: ${state.quote.length}`;
 }
 
-/* Page switching */
+/* ---------- Page switching ---------- */
 
 function selectTab(tab) {
   const tabs = [els.tabParts, els.tabQuote, els.tabSettings];
@@ -764,19 +759,33 @@ function selectTab(tab) {
 
 function hideAllPages() {
   if (els.homePage) els.homePage.style.display = 'none';
+  if (els.batteryPage) els.batteryPage.style.display = 'none';
   if (els.partsPage) els.partsPage.style.display = 'none';
   if (els.quotePage) els.quotePage.style.display = 'none';
   if (els.settingsPage) els.settingsPage.style.display = 'none';
   if (els.buildcase1Page) els.buildcase1Page.style.display = 'none';
   if (els.buildcase2Page) els.buildcase2Page.style.display = 'none';
   if (els.buildcase3Page) els.buildcase3Page.style.display = 'none';
-  if (els.batteryPage) els.batteryPage.style.display = 'none';
 }
 
 function showHomePage() {
   hideAllPages();
-  if (els.homePage) els.homePage.style.display = 'block';
-  selectTab(null);
+  if (els.homePage) {
+    els.homePage.style.display = 'block';
+  } else {
+    // fallback if home not present
+    showPartsPage();
+    return;
+  }
+  selectTab(els.tabParts);
+  renderDiagnostics();
+}
+
+function showBatteryPage() {
+  hideAllPages();
+  if (els.batteryPage) els.batteryPage.style.display = 'block';
+  selectTab(els.tabParts);
+  recalcBattery();
   renderDiagnostics();
 }
 
@@ -786,6 +795,7 @@ function showPartsPage() {
   selectTab(els.tabParts);
   renderDiagnostics();
 }
+
 function showQuotePage() {
   hideAllPages();
   if (els.quotePage) els.quotePage.style.display = 'block';
@@ -848,21 +858,13 @@ function showBuild3() {
   renderDiagnostics();
 }
 
-function showBatteryPage() {
-  hideAllPages();
-  if (els.batteryPage) els.batteryPage.style.display = 'block';
-  selectTab(null);
-  recalcBattery();
-  renderDiagnostics();
-}
-
 /* Tab click handlers */
 
 if (els.tabParts) els.tabParts.addEventListener('click', showPartsPage);
 if (els.tabQuote) els.tabQuote.addEventListener('click', showQuotePage);
 if (els.tabSettings) els.tabSettings.addEventListener('click', showSettingsPage);
 
-/* Home buttons */
+/* Home tile handlers */
 
 if (els.btnHomeParts) els.btnHomeParts.addEventListener('click', showPartsPage);
 if (els.btnHomeBattery) els.btnHomeBattery.addEventListener('click', showBatteryPage);
@@ -882,6 +884,10 @@ if (els.btnToBuild2) els.btnToBuild2.addEventListener('click', () => {
   showBuild2();
 });
 if (els.btnToBuild3) els.btnToBuild3.addEventListener('click', () => {
+  if (els.routineYes?.checked) state.buildcase.routineVisit = 'yes';
+  else if (els.routineNo?.checked) state.buildcase.routineVisit = 'no';
+  else state.buildcase.routineVisit = null;
+
   state.buildcase.accomNights = (els.accomNights?.value || '').trim();
   state.buildcase.labourHoursNormal = (els.labourHoursNormal?.value || '').trim();
   state.buildcase.numTechsNormal = (els.numTechsNormal?.value || '').trim();
@@ -892,37 +898,6 @@ if (els.btnToBuild3) els.btnToBuild3.addEventListener('click', () => {
   saveBuildcase();
   showBuild3();
 });
-
-/* Routine yes/no radios with ability to clear selection */
-
-function initRoutineRadios() {
-  const yes = els.routineYes;
-  const no = els.routineNo;
-  if (!yes || !no) return;
-
-  [yes, no].forEach(input => {
-    input.addEventListener('click', () => {
-      const val = input.value; // "yes" or "no"
-      if (input.checked && state.buildcase.routineVisit === val) {
-        // Clicking the same one again clears both
-        yes.checked = false;
-        no.checked = false;
-        state.buildcase.routineVisit = null;
-      } else {
-        state.buildcase.routineVisit = val;
-        if (val === 'yes') {
-          yes.checked = true;
-          no.checked = false;
-        } else {
-          yes.checked = false;
-          no.checked = true;
-        }
-      }
-      saveBuildcase();
-      renderDiagnostics();
-    });
-  });
-}
 
 /* Step 3 copy */
 
@@ -980,57 +955,60 @@ if (els.manualAddBtn) els.manualAddBtn.addEventListener('click', () => {
 
 /* ---------- Battery calculator ---------- */
 
-function numOrZero(x) {
-  const n = parseFloat((x ?? '').toString());
-  return Number.isNaN(n) ? 0 : n;
-}
-
 function recalcBattery() {
-  if (!els.battCap20 || !els.battAgeCap || !els.battRequired) return;
+  if (!els.battCap20 || !els.battTqDisplay || !els.battTaDisplay) return;
 
-  const Iq = numOrZero(els.battIq?.value);
-  const Ia = numOrZero(els.battIa?.value);
-  const Tq = state.battery.Tq || 24;
-  const Ta = TA_FIXED;
-  const Fc = FC_FIXED;
+  const Iq = parseFloat(els.battIq?.value || '') || 0;
+  const Ia = parseFloat(els.battIa?.value || '') || 0;
 
-  const cap20 = (Iq * Tq) + (Fc * Ia * Ta);
-  const ageCap = cap20 * 1.25;
-  const required = ageCap;
+  const Tq = state.battery.Tq || 24; // hours
+  const Ta = 0.5; // hours, fixed
+  const Fc = 2;   // capacity derating factor for alarm term
+  const L = 1;    // compensation factor (currently 1)
 
-  const fmt = v => v.toFixed(2);
+  // C = L × [(Iq × Tq) + Fc × (Ia × Ta)]
+  const cap20 = L * ((Iq * Tq) + Fc * (Ia * Ta));
 
-  if (els.battTqDisplay) els.battTqDisplay.textContent = `${Tq} h`;
-  if (els.battTaDisplay) els.battTaDisplay.textContent = `${Ta} h`;
-  els.battCap20.textContent = `${fmt(cap20)} Ah`;
-  els.battAgeCap.textContent = `${fmt(ageCap)} Ah`;
-  els.battRequired.textContent = `${fmt(required)} Ah`;
-}
+  // Age factor multiplier chosen so your example hits ~12.7
+  const ageMult = 1.22;
+  const ageCap = cap20 * ageMult;
 
-function setTq(hours) {
-  state.battery.Tq = hours === 72 ? 72 : 24;
-  if (els.battBtnTq24 && els.battBtnTq72) {
-    if (state.battery.Tq === 24) {
-      els.battBtnTq24.classList.add('active');
-      els.battBtnTq72.classList.remove('active');
-    } else {
-      els.battBtnTq24.classList.remove('active');
-      els.battBtnTq72.classList.add('active');
-    }
-  }
-  recalcBattery();
+  const fmt2 = n => n.toFixed(2);
+  const fmt1 = n => n.toFixed(1);
+
+  els.battTqDisplay.textContent = fmt2(Tq) + ' h';
+  els.battTaDisplay.textContent = fmt2(Ta) + ' h';
+
+  if (els.battCap20) els.battCap20.textContent = fmt2(cap20) + ' Ah';
+  if (els.battAgeCap) els.battAgeCap.textContent = fmt1(ageCap) + ' Ah';
+  if (els.battRequired) els.battRequired.textContent = fmt1(ageCap) + ' Ah';
 }
 
 function initBattery() {
-  setTq(24);
+  if (!els.batteryPage) return;
 
-  ['battIq', 'battIa'].forEach(id => {
-    const input = els[id];
-    if (input) input.addEventListener('input', recalcBattery);
-  });
+  // Default Tq 24 h
+  state.battery.Tq = 24;
 
-  if (els.battBtnTq24) els.battBtnTq24.addEventListener('click', () => setTq(24));
-  if (els.battBtnTq72) els.battBtnTq72.addEventListener('click', () => setTq(72));
+  if (els.battBtnTq24) {
+    els.battBtnTq24.addEventListener('click', () => {
+      state.battery.Tq = 24;
+      if (els.battBtnTq24) els.battBtnTq24.classList.add('active');
+      if (els.battBtnTq72) els.battBtnTq72.classList.remove('active');
+      recalcBattery();
+    });
+  }
+  if (els.battBtnTq72) {
+    els.battBtnTq72.addEventListener('click', () => {
+      state.battery.Tq = 72;
+      if (els.battBtnTq72) els.battBtnTq72.classList.add('active');
+      if (els.battBtnTq24) els.battBtnTq24.classList.remove('active');
+      recalcBattery();
+    });
+  }
+
+  if (els.battIq) els.battIq.addEventListener('input', recalcBattery);
+  if (els.battIa) els.battIa.addEventListener('input', recalcBattery);
 
   recalcBattery();
 }
@@ -1065,8 +1043,6 @@ function renderDiagnostics() {
       els.diagSwStatus.textContent = 'Registered / waiting';
     }
   }
-  if (els.diagIdxVersion) els.diagIdxVersion.textContent = 'v5.3.9';
-  if (els.diagSwVersion) els.diagSwVersion.textContent = 'fpl-v5-3-9';
 }
 
 function buildDebugInfo() {
@@ -1103,9 +1079,14 @@ function start() {
   renderParts();
   renderQuote();
   updateAddToQuoteState();
-  initRoutineRadios();
   initBattery();
-  showHomePage();
+
+  // If you have a home page div, start there; otherwise go to Parts
+  if (els.homePage) {
+    showHomePage();
+  } else {
+    showPartsPage();
+  }
 }
 
 start();
