@@ -1,10 +1,10 @@
 // sw.js
-const CACHE = 'fpl-v5-3-8';
+const CACHE = 'fpl-v5-3-9';
 
 const ASSETS = [
   './',
   './index.html',
-  './app.js?v=5.3.8',
+  './app.js?v=5.3.9',
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
