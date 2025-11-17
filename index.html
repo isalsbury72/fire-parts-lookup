@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Fire Parts Lookup v5.3.8</title>
+  <title>Fire Parts Lookup v5.3.9</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
 
   <link rel="manifest" href="manifest.json">
@@ -119,16 +119,18 @@
     .batt-row {
       display:flex;
       align-items:center;
+      justify-content:space-between;
       gap:6px;
     }
     .batt-label-pill,
-    .batt-input-pill {
+    .batt-input-pill,
+    .batt-required-pill {
       border-radius:999px;
-      padding:4px 10px;
-      background:#f9fafb;
-      border:1px solid #e5e7eb;
+      padding:6px 12px;
       font-size:12px;
       line-height:1.3;
+      border:1px solid #e5e7eb;
+      background:#f9fafb;
     }
     .batt-label-pill {
       flex:1 1 auto;
@@ -139,11 +141,12 @@
     }
     .batt-input-pill {
       flex:0 0 auto;
-      min-width:80px;
-      max-width:120px;
+      min-width:120px;
+      max-width:140px;
       display:flex;
       align-items:center;
       justify-content:flex-end;
+      font-variant-numeric: tabular-nums;
     }
     .batt-input-pill input {
       width:100%;
@@ -152,6 +155,7 @@
       background:transparent;
       font-size:12px;
       text-align:right;
+      font-variant-numeric: tabular-nums;
     }
     .batt-input-pill span {
       width:100%;
@@ -163,21 +167,15 @@
       box-shadow:0 0 0 2px rgba(37,99,235,0.25);
       background:#eff6ff;
     }
-    .batt-cap-pill {
-      font-variant-numeric: tabular-nums;
-    }
     .batt-required-pill {
-      border-radius:999px;
-      padding:6px 12px;
+      min-width:140px;
       background:#f97316;
-      border:1px solid #ea580c;
+      border-color:#ea580c;
       color:#fff;
-      font-size:13px;
       font-weight:600;
-      display:inline-flex;
+      display:flex;
       align-items:center;
       justify-content:flex-end;
-      min-width:120px;
       font-variant-numeric: tabular-nums;
     }
     .batt-required-row {
@@ -190,14 +188,14 @@
     .batt-tq-buttons {
       display:flex;
       gap:6px;
-      margin-top:4px;
+      margin-top:6px;
     }
     .batt-tq-btn {
       flex:1;
       border-radius:999px;
       border:1px solid #d1d5db;
       background:#f9fafb;
-      padding:4px 8px;
+      padding:6px 10px;
       font-size:11px;
       cursor:pointer;
     }
@@ -209,24 +207,20 @@
     }
 
     @media (max-width: 480px) {
-      .batt-row {
-        gap:4px;
+      .batt-input-pill {
+        min-width:110px;
+        max-width:130px;
+        padding:5px 10px;
       }
       .batt-label-pill {
         font-size:11px;
-      }
-      .batt-input-pill {
-        min-width:70px;
-        max-width:110px;
-        padding:3px 8px;
       }
       .batt-input-pill input {
         font-size:11px;
       }
       .batt-required-pill {
+        min-width:130px;
         font-size:12px;
-        padding:5px 10px;
-        min-width:110px;
       }
     }
 
@@ -241,7 +235,7 @@
       <div class="small">Offline-friendly parts and quote helper</div>
     </div>
     <div class="ver">
-      v5.3.8
+      v5.3.9
       <span id="authBanner" class="auth-pill" style="display:inline-block;">Authorised users only</span>
     </div>
   </header>
@@ -295,48 +289,34 @@
             </div>
           </div>
 
-          <!-- Ta -->
-          <div class="batt-row">
-            <div class="batt-label-pill">Alarm mode standby time (Ta, hours)</div>
-            <div class="batt-input-pill">
-              <input id="battTa" type="number" step="0.1" inputmode="decimal" placeholder="0.5">
-            </div>
-          </div>
-
-          <!-- Fc -->
-          <div class="batt-row">
-            <div class="batt-label-pill">Capacity derating factor (Fc)</div>
-            <div class="batt-input-pill">
-              <input id="battFc" type="number" step="0.1" inputmode="decimal" placeholder="2.0">
-            </div>
-          </div>
-
           <!-- Tq display -->
-          <div class="batt-row" style="margin-top:4px;">
-            <div class="batt-label-pill">Required quiescent standby time (Tq)</div>
+          <div class="batt-row">
+            <div class="batt-label-pill">Required quiescent time (Tq)</div>
             <div class="batt-input-pill">
               <span id="battTqDisplay">24 h</span>
             </div>
           </div>
 
-          <!-- Tq buttons -->
-          <div class="batt-tq-buttons">
-            <button id="battBtnTq24" class="batt-tq-btn active">Tq 24 h</button>
-            <button id="battBtnTq72" class="batt-tq-btn">Tq 72 h</button>
+          <!-- Ta fixed -->
+          <div class="batt-row">
+            <div class="batt-label-pill">Required alarm mode standby time (Ta)</div>
+            <div class="batt-input-pill">
+              <span id="battTaDisplay">0.5 h</span>
+            </div>
           </div>
 
           <!-- Calculated 20 hr capacity -->
-          <div class="batt-row" style="margin-top:6px;">
+          <div class="batt-row" style="margin-top:4px;">
             <div class="batt-label-pill">Calculated 20&nbsp;hour capacity</div>
-            <div class="batt-input-pill batt-cap-pill">
+            <div class="batt-input-pill">
               <span id="battCap20">0.00 Ah</span>
             </div>
           </div>
 
-          <!-- Age factor result -->
+          <!-- Age factor -->
           <div class="batt-row">
             <div class="batt-label-pill">Age factor (capacity × 1.25)</div>
-            <div class="batt-input-pill batt-cap-pill">
+            <div class="batt-input-pill">
               <span id="battAgeCap">0.00 Ah</span>
             </div>
           </div>
@@ -347,6 +327,12 @@
             <div class="batt-required-pill">
               <span id="battRequired">0.00 Ah</span>
             </div>
+          </div>
+
+          <!-- Tq buttons below final result -->
+          <div class="batt-tq-buttons">
+            <button id="battBtnTq24" class="batt-tq-btn active">Tq 24 h</button>
+            <button id="battBtnTq72" class="batt-tq-btn">Tq 72 h</button>
           </div>
         </div>
       </div>
@@ -401,7 +387,7 @@
     </div>
 
     <!-- Quote page -->
-    <div id="quotePage" style="display:none;">
+    <div id="quotePage" style="display:none%;">
       <div class="card">
         <h2 style="margin-top:0; font-size:16px;">Quote items</h2>
         <p class="small">Parts you add from the Parts tab will appear here. You can also add a manual line below.</p>
@@ -503,9 +489,9 @@
         <!-- Software versions bubble -->
         <div class="card" style="margin-top:8px;">
           <h3 style="margin:0 0 6px 0; font-size:14px;">Software versions</h3>
-          <p class="small"><strong>App version (app.js):</strong> <span>v5.3.8</span></p>
-          <p class="small"><strong>Index.html version:</strong> <span id="diagIdxVersion">v5.3.8</span></p>
-          <p class="small"><strong>Service worker cache:</strong> <span id="diagSwVersion">fpl-v5-3-8</span></p>
+          <p class="small"><strong>App version (app.js):</strong> <span>v5.3.9</span></p>
+          <p class="small"><strong>Index.html version:</strong> <span id="diagIdxVersion">v5.3.9</span></p>
+          <p class="small"><strong>Service worker cache:</strong> <span id="diagSwVersion">fpl-v5-3-9</span></p>
         </div>
 
         <!-- Data & status bubble -->
