@@ -1,14 +1,14 @@
 // sw.js
-const CACHE = 'fpl-v5-3-7';
+const CACHE = 'fpl-v5-3-8';
 
 const ASSETS = [
   './',
-  './index.html',
-  './app.js?v=5.3.7',
-  './manifest.json',
-  './icon-192.png',
-  './icon-512.png',
-  './Parts.csv'
+  'index.html',
+  'app.js?v=5.3.8',
+  'manifest.json',
+  'icon-192.png',
+  'icon-512.png',
+  'Parts.csv'
 ];
 
 self.addEventListener('install', e => {
@@ -30,38 +30,44 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  const req = e.request;
-  const url = new URL(req.url);
-
+  const url = new URL(e.request.url);
+  const accept = e.request.headers.get('accept') || '';
   const isHTML =
-    req.mode === 'navigate' ||
-    (req.headers.get('accept') || '').includes('text/html');
-
-  const isAppJs =
+    e.request.mode === 'navigate' ||
+    accept.includes('text/html');
+  const isApp =
     url.pathname.endsWith('/app.js') ||
     url.pathname.endsWith('app.js') ||
     url.searchParams.has('v');
 
   // Network first for HTML + app.js so updates appear quickly
-  if (isHTML || isAppJs) {
+  if (isHTML || isApp) {
     e.respondWith(
-      fetch(req)
+      fetch(e.request)
         .then(resp => {
           const copy = resp.clone();
-          caches.open(CACHE).then(c => c.put(req, copy));
+          caches.open(CACHE).then(c => c.put(e.request, copy));
           return resp;
         })
-        .catch(() =>
-          // Proper navigation fallback: always try cached index.html
-          caches.match('./index.html')
-            .then(r => r || caches.match('index.html') || caches.match('./'))
-        )
+        .catch(async () => {
+          if (isHTML) {
+            // Proper navigation fallback: always try cached index.html
+            const cachedIndex =
+              (await caches.match('index.html')) ||
+              (await caches.match('./'));
+            if (cachedIndex) return cachedIndex;
+          }
+          const cached = await caches.match(e.request);
+          if (cached) return cached;
+          // Last resort: try index.html again
+          return (await caches.match('index.html')) || Response.error();
+        })
     );
     return;
   }
 
   // Cache first for everything else
   e.respondWith(
-    caches.match(req).then(r => r || fetch(req))
+    caches.match(e.request).then(r => r || fetch(e.request))
   );
 });
