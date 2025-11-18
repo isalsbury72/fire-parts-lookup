@@ -970,7 +970,7 @@ function recalcBattery() {
   const cap20 = L * ((Iq * Tq) + Fc * (Ia * Ta));
 
   // Age factor multiplier chosen so your example hits ~12.7
-  const ageMult = 1.22;
+  const ageMult = 1.25;
   const ageCap = cap20 * ageMult;
 
   const fmt2 = n => n.toFixed(2);
