@@ -1114,7 +1114,7 @@ function renderDiagnostics() {
     els.diagIdxVersion.textContent = 'v5.3.9';
   }
   if (els.diagSwVersion) {
-    els.diagSwVersion.textContent = 'fpl-v5-3-7';
+    els.diagSwVersion.textContent = 'fpl-v5-3-9';
   }
 }
 
