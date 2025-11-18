@@ -2,240 +2,260 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Fire Tools Suite v5.3.8</title>
+  <title>Fire Parts Lookup v5.3.8</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
+
+  <!-- Everything now uses relative paths -->
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon-192.png">
-  <meta name="theme-color" content="#1d4ed8">
+  <meta name="theme-color" content="#3b82f6">
 
   <style>
     body {
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       margin: 0;
-      background: #f4f4f4;
+      background: #fafafa;
       color: #111;
     }
+
     header {
-      background: #1d4ed8;
+      position: sticky;
+      top: 0;
+      background: #3b82f6;
       color: #fff;
-      padding: 14px 20px;
+      padding: 10px 16px;
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 12px;
+      z-index: 10;
     }
-    header img { width: 36px; height: 36px; border-radius: 8px; }
-    h1 { margin: 0; font-size: 20px; }
+
+    header img {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+    }
+
+    h1 {
+      font-size: 18px;
+      margin: 0;
+    }
+
     .ver {
       margin-left: auto;
       background: #fff;
       color: #1d4ed8;
-      padding: 4px 10px;
-      border-radius: 999px;
       font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 999px;
       font-size: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
     }
 
-    main { padding: 20px; max-width: 900px; margin: 0 auto; }
+    main {
+      padding: 12px 16px 80px;
+      max-width: 960px;
+      margin: 0 auto;
+    }
 
-    /* HOME BUTTONS */
+    .card {
+      background: #fff;
+      border: 1px solid #eee;
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+      margin-bottom: 12px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid #d1d5db;
+      background: #fff;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 8px 6px;
+      border-bottom: 1px solid #eee;
+      font-size: 13px;
+      vertical-align: top;
+    }
+
+    th {
+      position: sticky;
+      top: 64px;
+      background: #fafafa;
+      z-index: 5;
+    }
+
+    .small {
+      font-size: 12px;
+      color: #6b7280;
+    }
+
+    /* Home screen */
     .home-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 16px;
-      margin-top: 20px;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap: 14px;
+      margin-top: 12px;
     }
+
     .home-btn {
-      background: #fff;
       padding: 20px;
-      border-radius: 14px;
+      background: #fff;
       border: 1px solid #ddd;
+      border-radius: 14px;
       text-align: center;
       font-size: 16px;
       cursor: pointer;
-      transition: 0.15s;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-    }
-    .home-btn:hover {
-      background: #eff6ff;
-      border-color: #1d4ed8;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
 
-    /* PAGE FRAMES */
-    .page { display: none; }
-    .active { display: block; }
-
-    /* BATTERY CALC STYLE */
-    .calc-card {
-      background: #fff;
-      border-radius: 14px;
-      padding: 16px;
-      margin-bottom: 16px;
-      border: 1px solid #ddd;
-    }
-    .calc-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 14px;
-    }
-    .calc-label { font-size: 14px; font-weight: 600; }
-    .calc-pill {
-      padding: 6px 14px;
-      min-width: 90px;
-      text-align: right;
-      font-size: 16px;
-      border-radius: 10px;
-      border: 1px solid #ccc;
-      background: #f9fafb;
-    }
-    .calc-pill:focus {
-      outline: 2px solid #1d4ed8;
-      background: #eef2ff;
-    }
-    .big-pill {
-      background: #fff4e6;
-      border-color: #f97316;
-      color: #b45309;
-      font-weight: 700;
-      padding: 10px 16px;
-      font-size: 18px;
-    }
-
-    .tq-buttons { display: flex; gap: 10px; margin-top: 10px; }
-    .tq-btn {
-      flex: 1;
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px solid #1d4ed8;
-      background: #eff6ff;
-      cursor: pointer;
-      font-weight: 600;
-    }
-    .tq-btn:hover { background: #dbeafe; }
-
-    /* PARTS REDIRECT BUTTON */
-    .nav-back {
-      background: #e5e7eb;
-      padding: 8px 12px;
-      border-radius: 8px;
-      margin-bottom: 12px;
-      display: inline-block;
-      cursor: pointer;
-    }
   </style>
 </head>
 
 <body>
-<header>
-  <img src="icon-192.png" alt="icon">
-  <h1>Fire Tools Suite</h1>
-  <div class="ver">v5.3.8</div>
-</header>
-
-<main>
-
-  <!-- HOME PAGE -->
-  <div id="homePage" class="page active">
-    <h2>Welcome</h2>
-    <p>Select a tool to begin.</p>
-
-    <div class="home-grid">
-      <div class="home-btn" id="btnGoParts">🔥 Fire Parts Lookup</div>
-      <div class="home-btn" id="btnGoBattery">🔋 Battery Calculator</div>
-    </div>
-  </div>
-
-  <!-- PARTS PAGE (external app) -->
-  <div id="partsPage" class="page">
-    <div class="nav-back" id="backHome1">← Back</div>
-    <iframe src="parts.html" style="width:100%; height:80vh; border:none;"></iframe>
-  </div>
-
-  <!-- BATTERY CALCULATOR -->
-  <div id="batteryPage" class="page">
-
-    <div class="nav-back" id="backHome2">← Back</div>
-
-    <h2>Battery Capacity Calculator</h2>
-
-    <div class="calc-card">
-
-      <!-- IQ -->
-      <div class="calc-row">
-        <div class="calc-label">Quiescent Current (Iq)</div>
-        <input id="iq" type="number" step="0.01" class="calc-pill" value="0.00">
-      </div>
-
-      <!-- IA -->
-      <div class="calc-row">
-        <div class="calc-label">Alarm Mode Current (Ia)</div>
-        <input id="ia" type="number" step="0.01" class="calc-pill" value="0.00">
-      </div>
-
-      <!-- REQUIRED Q TIME -->
-      <div class="calc-row">
-        <div class="calc-label">Required Quiescent Time (Tq)</div>
-        <input id="tq" type="number" class="calc-pill" value="24" readonly>
-      </div>
-
-      <!-- REQUIRED ALARM TIME -->
-      <div class="calc-row">
-        <div class="calc-label">Alarm Mode Standby Time (Ta)</div>
-        <input id="ta" type="number" class="calc-pill" value="0.5" readonly>
-      </div>
-
-      <!-- CALCULATED 20HR CAP -->
-      <div class="calc-row">
-        <div class="calc-label">Calculated 20 Hr Capacity</div>
-        <div id="cap20" class="calc-pill big-pill">0.00</div>
-      </div>
-
-      <!-- AGE FACTOR -->
-      <div class="calc-row">
-        <div class="calc-label">Age Factor (×1.25)</div>
-        <div id="ageCap" class="calc-pill big-pill">0.00</div>
-      </div>
-
-      <!-- REQUIRED FINAL CAP -->
-      <div class="calc-row">
-        <div class="calc-label">Required Capacity</div>
-        <div id="reqCap" class="calc-pill big-pill" style="background:#ffedd5;border-color:#fb923c;color:#c2410c;">0.00</div>
-      </div>
-
-      <!-- TQ BUTTONS AT BOTTOM -->
-      <div class="tq-buttons">
-        <div class="tq-btn" id="btnTq24">Tq = 24h</div>
-        <div class="tq-btn" id="btnTq72">Tq = 72h</div>
-      </div>
-
+  <header>
+    <img src="icon-192.png" alt="Fire Parts">
+    <div>
+      <h1>Fire Parts Lookup</h1>
+      <div class="small">Offline-friendly parts and tools</div>
     </div>
 
-  </div>
+    <div class="ver">
+      v5.3.8
+    </div>
+  </header>
 
-</main>
+  <main>
 
-<script src="battery.js?v=5.3.8"></script>
-<script>
-  // Simple navigation
-  const home = document.getElementById('homePage');
-  const parts = document.getElementById('partsPage');
-  const batt = document.getElementById('batteryPage');
+    <!-- HOME PAGE -->
+    <div id="homePage">
+      <h2 style="margin:0 0 10px 0;">Choose a tool</h2>
 
-  document.getElementById('btnGoParts').onclick = () => {
-    home.classList.remove('active');
-    parts.classList.add('active');
-  };
-  document.getElementById('btnGoBattery').onclick = () => {
-    home.classList.remove('active');
-    batt.classList.add('active');
-  };
-  document.getElementById('backHome1').onclick =
-  document.getElementById('backHome2').onclick = () => {
-    parts.classList.remove('active');
-    batt.classList.remove('active');
-    home.classList.add('active');
-  };
-</script>
+      <div class="home-grid">
+        <div id="btnHomeParts" class="home-btn">Fire Parts</div>
+        <div id="btnHomeBattery" class="home-btn">Battery Calc</div>
+      </div>
+    </div>
+
+    <!-- PARTS PAGE -->
+    <div id="partsPage" style="display:none;">
+      <div class="tabs">
+        <button id="tabParts" class="tab-btn">Parts</button>
+        <button id="tabSettings" class="tab-btn">Settings</button>
+      </div>
+
+      <div class="card">
+        <h2 style="margin-top:0; font-size:16px;">Parts lookup</h2>
+
+        <input
+          id="q"
+          type="search"
+          placeholder="Search supplier, type, description or part number…"
+          style="width:100%; padding:10px; border-radius:10px; border:2px solid #3b82f6; margin-bottom:8px;"
+        >
+
+        <label for="csv" class="btn">Load local CSV</label>
+        <input id="csv" type="file" accept=".csv">
+
+        <button id="loadShared" class="btn">Load shared CSV</button>
+        <button id="clearCache" class="btn">Clear data</button>
+
+        <p class="small" id="partsSummary">Showing 0 items.</p>
+
+        <table id="tbl">
+          <thead>
+            <tr>
+              <th>Supplier</th>
+              <th>Type</th>
+              <th>Description</th>
+              <th>Part #</th>
+              <th>Price</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- BATTERY CALC PAGE -->
+    <div id="batteryPage" style="display:none;">
+      <h2 style="margin-top:0;">Battery Calculator</h2>
+
+      <div class="card">
+        <label>Quiescent Current (Iq)</label>
+        <input id="batIq" type="number" step="0.01" class="bc-input">
+      </div>
+
+      <div class="card">
+        <label>Alarm Mode Current (Ia)</label>
+        <input id="batIa" type="number" step="0.01" class="bc-input">
+      </div>
+
+      <div class="card">
+        <label>Quiescent Time (Tq)</label>
+        <div style="display:flex; gap:10px;">
+          <button id="tq24" class="btn">24h</button>
+          <button id="tq72" class="btn">72h</button>
+        </div>
+        <p class="small">Current: <span id="tqValue">24</span> hours</p>
+      </div>
+
+      <div class="card">
+        <label>Calculated 20h Capacity</label>
+        <p><strong><span id="cap20">0.00</span> Ah</strong></p>
+      </div>
+
+      <div class="card">
+        <label>Age Factor (×1.25)</label>
+        <p><strong><span id="capAge">0.00</span> Ah</strong></p>
+      </div>
+
+      <div class="card" style="background:#ffe7c2;">
+        <label>Required Capacity</label>
+        <p><strong><span id="capFinal">0.00</span> Ah</strong></p>
+      </div>
+
+    </div>
+
+    <!-- SETTINGS PAGE -->
+    <div id="settingsPage" style="display:none;">
+      <h2>Settings</h2>
+      <div class="card">
+        <p>Version: v5.3.8</p>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="app.js?v=5.3.8"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js')
+        .catch(err => console.warn('SW registration failed', err));
+    }
+  </script>
 
 </body>
 </html>
