@@ -191,6 +191,10 @@ const els = {
   btnHomeParts: document.getElementById('btnHomeParts'),
   btnHomeBattery: document.getElementById('btnHomeBattery'),
 
+     // Home tiles
+  btnHomeParts: document.getElementById('btnHomeParts'),
+  btnHomeBattery: document.getElementById('btnHomeBattery'),
+
   // Battery
   batteryPage: document.getElementById('batteryPage'),
   battIq: document.getElementById('battIq'),
@@ -276,6 +280,10 @@ const els = {
      // Home navigation buttons
   goHomeFromParts: document.getElementById('goHomeFromParts'),
   goHomeFromQuote: document.getElementById('goHomeFromQuote'),
+  goHomeFromBattery: document.getElementById('goHomeFromBattery'),
+
+     // Back-to-home buttons on pages
+  goHomeFromParts: document.getElementById('goHomeFromParts'),
   goHomeFromBattery: document.getElementById('goHomeFromBattery'),
 
   // Diagnostics
@@ -877,6 +885,22 @@ function showBuild3() {
 if (els.tabParts) els.tabParts.addEventListener('click', showPartsPage);
 if (els.tabQuote) els.tabQuote.addEventListener('click', showQuotePage);
 if (els.tabSettings) els.tabSettings.addEventListener('click', showSettingsPage);
+
+// Home page tiles
+if (els.btnHomeParts) {
+  els.btnHomeParts.addEventListener('click', showPartsPage);
+}
+if (els.btnHomeBattery) {
+  els.btnHomeBattery.addEventListener('click', showBatteryPage);
+}
+
+// Back to Home buttons on Parts / Battery pages
+if (els.goHomeFromParts) {
+  els.goHomeFromParts.addEventListener('click', showHomePage);
+}
+if (els.goHomeFromBattery) {
+  els.goHomeFromBattery.addEventListener('click', showHomePage);
+}
 
 /* Home tile handlers */
 
