@@ -812,6 +812,15 @@ function showPartsPage() {
   renderDiagnostics();
 }
 
+// Simple global nav helper so HTML buttons can call these directly
+window.appNav = {
+  home:    showHomePage,
+  parts:   showPartsPage,
+  quote:   showQuotePage,
+  battery: showBatteryPage,
+  settings: showSettingsPage
+};
+
 function showQuotePage() {
   hideAllPages();
   if (els.quotePage) els.quotePage.style.display = 'block';
@@ -873,16 +882,6 @@ function showBuild3() {
   els.bc3ItemsCount.textContent = `Items: ${state.quote.length}`;
   renderDiagnostics();
 }
-
-// Simple global nav helper so HTML buttons can call these directly
-window.appNav = {
-  home:    showHomePage,
-  parts:   showPartsPage,
-  quote:   showQuotePage,
-  battery: showBatteryPage,
-  settings: showSettingsPage
-};
-
 
 /* Tab click handlers */
 
