@@ -850,15 +850,6 @@ function showBuild2() {
     if (els.routineNo) els.routineNo.checked = false;
   }
 
-   // Simple global nav helper so HTML buttons can call these directly
-window.appNav = {
-  home:   showHomePage,
-  parts:  showPartsPage,
-  quote:  showQuotePage,
-  battery: showBatteryPage,
-  settings: showSettingsPage
-};
-
   els.accomNights.value = state.buildcase.accomNights || '';
   els.labourHoursNormal.value = state.buildcase.labourHoursNormal || '';
   els.numTechsNormal.value = state.buildcase.numTechsNormal || '';
@@ -882,6 +873,16 @@ function showBuild3() {
   els.bc3ItemsCount.textContent = `Items: ${state.quote.length}`;
   renderDiagnostics();
 }
+
+// Simple global nav helper so HTML buttons can call these directly
+window.appNav = {
+  home:    showHomePage,
+  parts:   showPartsPage,
+  quote:   showQuotePage,
+  battery: showBatteryPage,
+  settings: showSettingsPage
+};
+
 
 /* Tab click handlers */
 
