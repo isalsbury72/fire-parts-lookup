@@ -612,7 +612,7 @@ if (els.copyQuote) els.copyQuote.addEventListener('click', () => {
   const lines = state.quote.map(i => {
     const qty = i.qty || 1;
     total += i.PRICE * qty;
-    return `${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each (${i.SUPPLIER} price list)`;
+    return `${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each (${i.SUPPLIER} price)`;
   });
   lines.push('', 'Total: ' + fmtPrice(total));
   copyText(lines.join('\n'), 'Quote copied.');
