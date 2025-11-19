@@ -273,6 +273,11 @@ const els = {
   btnCopyNC3: document.getElementById('btnCopyNC3'),
   btnCopyNE3: document.getElementById('btnCopyNE3'),
 
+     // Home navigation buttons
+  goHomeFromParts: document.getElementById('goHomeFromParts'),
+  goHomeFromQuote: document.getElementById('goHomeFromQuote'),
+  goHomeFromBattery: document.getElementById('goHomeFromBattery'),
+
   // Diagnostics
   diagCsvSource: document.getElementById('diagCsvSource'),
   diagLastLoaded: document.getElementById('diagLastLoaded'),
