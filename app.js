@@ -218,6 +218,9 @@ const els = {
   clearCache: document.getElementById('clearCache'),
   loadShared: document.getElementById('loadShared'),
   partsPage: document.getElementById('partsPage'),
+     partsPage: document.getElementById('partsPage'),
+  goHomeFromParts: document.getElementById('goHomeFromParts'),
+
 
   // Quote + build case pages
   quotePage: document.getElementById('quotePage'),
@@ -893,6 +896,15 @@ if (els.btnHomeParts) {
 if (els.btnHomeBattery) {
   els.btnHomeBattery.addEventListener('click', showBatteryPage);
 }
+
+// From Parts back to Home
+if (els.goHomeFromParts) {
+  els.goHomeFromParts.addEventListener('click', (e) => {
+    e.preventDefault();
+    showHomePage();
+  });
+}
+
 
 // Back to Home buttons on Parts / Battery pages
 if (els.goHomeFromParts) {
