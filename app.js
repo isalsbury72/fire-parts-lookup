@@ -623,7 +623,7 @@ if (els.copyQuoteRaw) els.copyQuoteRaw.addEventListener('click', () => {
   if (!state.quote.length) return toast('No items to copy.', false);
   const lines = state.quote.map(i => {
     const qty = i.qty || 1;
-    return `${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each (${i.SUPPLIER} price list)`;
+    return `${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each (${i.SUPPLIER} price)`;
   });
   copyText(lines.join('\n'), 'Items copied.');
 });
@@ -671,7 +671,7 @@ if (els.copyQuoteEmail) els.copyQuoteEmail.addEventListener('click', () => {
 function buildItemsOnlyLines() {
   return state.quote.map(i => {
     const qty = i.qty || 1;
-    return `${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each (${i.SUPPLIER} price list)`;
+    return `${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each (${i.SUPPLIER} price)`;
   });
 }
 function toNum(x, d = 0) {
