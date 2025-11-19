@@ -254,24 +254,31 @@
         <h2 style="margin-top:0; font-size:16px;">Home</h2>
         <p class="small" style="margin-bottom:10px;">Choose an area to jump into.</p>
         <div class="home-grid">
-          <button id="btnHomeParts" class="home-tile">
-            <div class="home-tile-title">Fire Parts lookup</div>
-            <div class="home-tile-caption">Search parts, build quotes and cases.</div>
-          </button>
-          <button id="btnHomeBattery" class="home-tile">
-            <div class="home-tile-title">Battery calculator</div>
-            <div class="home-tile-caption">Quick capacity estimate for jobs.</div>
-          </button>
+<button id="btnHomeParts"
+        class="home-tile"
+        onclick="appNav.parts()">
+  <div class="home-tile-title">Fire Parts lookup</div>
+  <div class="home-tile-caption">Search parts, build quotes and cases.</div>
+</button>
+
+<button id="btnHomeBattery"
+        class="home-tile"
+        onclick="appNav.battery()">
+  <div class="home-tile-title">Battery calculator</div>
+  <div class="home-tile-caption">Quick capacity estimate for jobs.</div>
+</button>
+
         </div>
       </div>
     </div>
 
     <!-- Battery calculator page -->
-    <div id="batteryPage" style="display:none;">
-      <button class="btn btn-ghost" id="goHomeFromBattery">← Home</button>
-      
-      <div class="card">
-        <h2 style="margin-top:0; font-size:16px;">Battery calculator</h2>
+<div id="batteryPage" style="display:none;">
+  <div style="margin-bottom:8px;">
+    <button class="btn btn-ghost" onclick="appNav.home()">← Home</button>
+  </div>
+  <div class="card">
+    <h2 style="margin-top:0; font-size:16px;">Battery calculator</h2>
         <p class="small">Simple 20&nbsp;hour capacity estimate using standby and alarm loads.</p>
 
         <div class="batt-wrap">
@@ -340,14 +347,14 @@
       </div>
     </div>
 
-    <!-- Parts page -->
-    <div id="partsPage" style="display:none;">
-      <button class="btn btn-ghost" id="goHomeFromParts">← Home</button>
-
-      <div class="card">
-        <h2 style="margin-top:0; font-size:16px;">Parts lookup</h2>
-
-        <div class="row" style="margin-bottom:8px;">
+<!-- Parts page -->
+<div id="partsPage" style="display:none;">
+  <div style="margin-bottom:8px;">
+    <button class="btn btn-ghost" onclick="appNav.home()">← Home</button>
+  </div>
+  <div class="card">
+    <h2 style="margin-top:0; font-size:16px;">Parts lookup</h2>
+          <div class="row" style="margin-bottom:8px;">
           <input id="q" type="search" placeholder="Search supplier, type, description or part number…">
         </div>
 
