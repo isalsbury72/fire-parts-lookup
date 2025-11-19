@@ -883,6 +883,17 @@ if (els.tabSettings) els.tabSettings.addEventListener('click', showSettingsPage)
 if (els.btnHomeParts) els.btnHomeParts.addEventListener('click', showPartsPage);
 if (els.btnHomeBattery) els.btnHomeBattery.addEventListener('click', showBatteryPage);
 
+// Back-to-home buttons on individual pages
+if (els.goHomeFromParts) {
+  els.goHomeFromParts.addEventListener('click', showHomePage);
+}
+if (els.goHomeFromQuote) {
+  els.goHomeFromQuote.addEventListener('click', showHomePage);
+}
+if (els.goHomeFromBattery) {
+  els.goHomeFromBattery.addEventListener('click', showHomePage);
+}
+
 /* Build case navigation */
 
 if (els.btnBuildCase) els.btnBuildCase.addEventListener('click', showBuild1);
