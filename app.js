@@ -191,10 +191,6 @@ const els = {
   btnHomeParts: document.getElementById('btnHomeParts'),
   btnHomeBattery: document.getElementById('btnHomeBattery'),
 
-     // Home tiles
-  btnHomeParts: document.getElementById('btnHomeParts'),
-  btnHomeBattery: document.getElementById('btnHomeBattery'),
-
   // Battery
   batteryPage: document.getElementById('batteryPage'),
   battIq: document.getElementById('battIq'),
@@ -218,9 +214,6 @@ const els = {
   clearCache: document.getElementById('clearCache'),
   loadShared: document.getElementById('loadShared'),
   partsPage: document.getElementById('partsPage'),
-     partsPage: document.getElementById('partsPage'),
-  goHomeFromParts: document.getElementById('goHomeFromParts'),
-
 
   // Quote + build case pages
   quotePage: document.getElementById('quotePage'),
@@ -865,7 +858,7 @@ function showBuild1() {
 
   renderDiagnostics();
 }
-}
+
 function showBuild2() {
   hideAllPages();
   if (els.buildcase2Page) els.buildcase2Page.style.display = 'block';
