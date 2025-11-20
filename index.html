@@ -272,9 +272,9 @@
       </div>
     </div>
 
-<!-- Battery calculator page -->
+<!-- Battery page -->
 <div id="batteryPage" style="display:none;">
-  <button class="btn btn-ghost" id="goHomeFromBattery">← Home</button>
+<button class="tab-btn" id="goHomeFromBattery" style="margin-bottom:8px;">← Home</button>
 
   <div class="card">
     <h2 style="margin-top:0; font-size:16px;">Battery calculator</h2>
@@ -348,21 +348,19 @@
 
 <!-- Parts page -->
 <div id="partsPage" style="display:none;">
-  <div style="margin-bottom:8px;">
-    <button class="btn btn-ghost" onclick="appNav.home()">← Home</button>
-  </div>
+<div style="margin-bottom:8px;">
+  <button class="tab-btn" onclick="appNav.home()">← Home</button>
+</div>
   <div class="card">
     <h2 style="margin-top:0; font-size:16px;">Parts lookup</h2>
           <div class="row" style="margin-bottom:8px;">
           <input id="q" type="search" placeholder="Search supplier, type, description or part number…">
         </div>
 
-        <div class="row" style="margin-bottom:4px;">
-          <label for="csv" class="btn">Load local CSV</label>
-          <input id="csv" type="file" accept=".csv">
-          <button id="loadShared" class="btn btn-secondary">Load shared file</button>
-          <button id="clearCache" class="btn btn-secondary">Clear data</button>
-        </div>
+<div class="row" style="margin-bottom:4px;">
+  <button id="loadShared" class="btn btn-secondary">Load shared file</button>
+  <button id="clearCache" class="btn btn-secondary">Clear data</button>
+</div>
 
         <div class="hint">
           Showing <span id="count">0</span> items.<br>
@@ -431,10 +429,10 @@
           <!-- Manual item section (hidden until toggled on) -->
           <div id="manualSection" style="display:none; margin-top:10px;">
             <div class="row" style="gap:8px; flex-wrap:wrap;">
-              <input id="manualSupplier" type="text" placeholder="Supplier *" class="bc-input" style="flex:1; min-width:160px;">
-              <input id="manualDescription" type="text" placeholder="Description *" class="bc-input" style="flex:2; min-width:220px;">
-              <input id="manualPart" type="text" placeholder="Part # *" class="bc-input" style="flex:1; min-width:120px;">
-              <input id="manualPrice" type="text" placeholder="Price each * e.g. 12.95" class="bc-input" style="flex:1; min-width:160px;">
+              <input id="manualSupplier" type="text" placeholder="Supplier " class="bc-input" style="flex:1; min-width:160px;">
+              <input id="manualDescription" type="text" placeholder="Description " class="bc-input" style="flex:2; min-width:220px;">
+              <input id="manualPart" type="text" placeholder="Part # " class="bc-input" style="flex:1; min-width:120px;">
+              <input id="manualPrice" type="text" placeholder="Price each  e.g. 12.95" class="bc-input" style="flex:1; min-width:160px;">
               <input id="manualQty" type="number" min="1" value="1" placeholder="Qty" class="bc-input" style="width:100px;">
             </div>
             <div style="margin-top:8px; display:flex; gap:8px; justify-content:flex-end;">
@@ -516,12 +514,19 @@
         </div>
 
         <!-- Maintenance -->
-        <div class="card" style="margin-top:8px;">
-          <h3 style="margin:0 0 6px 0; font-size:14px;">Maintenance</h3>
-          <p class="small">If things look odd, you can clear all local data and reload CSV.</p>
-          <button id="btnDiagClearAll" class="btn btn-danger" style="margin-top:6px;">Clear all app data</button>
-          <p class="small" style="margin-top:6px; color:#b91c1c;">This removes cached CSV, saved quotes, build case state, and access flag. It does not touch your CSV file on OneDrive or GitHub.</p>
-        </div>
+<div class="card" style="margin-top:8px;">
+  <h3 style="margin:0 0 6px 0; font-size:14px;">Maintenance</h3>
+  <p class="small">If things look odd, you can clear all local data and reload CSV.</p>
+
+  <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:6px;">
+    <label for="csv" class="btn btn-secondary">Load local CSV</label>
+    <button id="btnDiagClearAll" class="btn btn-danger">Clear all app data</button>
+  </div>
+
+  <input id="csv" type="file" accept=".csv" style="display:none;">
+
+  <p class="small" style="margin-top:6px; color:#b91c1c;">This removes cached CSV, saved quotes, build case state, and access flag. It does not touch your CSV file on OneDrive or GitHub.</p>
+</div>
 
         <!-- Debug export -->
         <div class="card" style="margin-top:8px;">
