@@ -808,6 +808,9 @@ function showHomePage() {
     // fallback if home not present
     showPartsPage();
     return;
+  }
+
+  // After deciding which page to show
   setTabVisibility(false, false);   // hide Parts & Quote
   selectTab(null);                  // no tab highlighted
   renderDiagnostics();
