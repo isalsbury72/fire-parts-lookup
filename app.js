@@ -799,7 +799,7 @@ function hideAllPages() {
 
 function showHomePage() {
   hideAllPages();
-   document.querySelector('.tabs').style.visibility = 'hidden';
+
   if (els.homePage) {
     els.homePage.style.display = 'block';
   } else {
@@ -808,9 +808,7 @@ function showHomePage() {
     return;
   }
 
-  // After deciding which page to show
-  setTabVisibility(false, false);   // hide Parts & Quote
-  selectTab(null);                  // no tab highlighted
+  // Do not touch any tab buttons or other elements here
   renderDiagnostics();
 }
 
