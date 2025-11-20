@@ -282,11 +282,18 @@
 
 <!-- Battery page -->
 <div id="batteryPage" style="display:none;">
-<button class="tab-btn" id="goHomeFromBattery" style="margin-bottom:8px;">← Home</button>
+<div style="margin-bottom:8px; display:flex; gap:8px;">
+  <button class="btn btn-ghost" id="goHomeFromBattery" style="flex:1;">← Home</button>
+  <button class="btn btn-primary" style="flex:1; background:#3b82f6; color:white;" disabled>
+    Battery calculator
+  </button>
+</div>
 
   <div class="card">
-    <h2 style="margin-top:0; font-size:16px;">Battery calculator</h2>
-        <p class="small">Simple 20&nbsp;hour capacity estimate using standby and alarm loads.</p>
+<h2 style="margin-top:0; font-size:18px; text-align:center;">Battery calculator</h2>
+<p class="small" style="font-size:12px; text-align:center;">
+  Simple 20&nbsp;hour capacity estimate using standby and alarm loads.
+</p>
 
         <div class="batt-wrap">
           <!-- Iq -->
