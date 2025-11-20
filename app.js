@@ -851,14 +851,15 @@ function showSettingsPage() {
   hideAllPages();
   if (els.settingsPage) els.settingsPage.style.display = 'block';
 
-  // Hide the Settings tab, keep Parts & Quote visible
+  // Hide ALL tabs on Settings page
+  if (els.tabParts) els.tabParts.style.display = 'none';
+  if (els.tabQuote) els.tabQuote.style.display = 'none';
   if (els.tabSettings) els.tabSettings.style.display = 'none';
-  if (els.tabParts) els.tabParts.style.display = 'inline-flex';
-  if (els.tabQuote) els.tabQuote.style.display = 'inline-flex';
 
-  selectTab(null);   // nothing highlighted (you already have a blue settings button INSIDE the page)
+  selectTab(null); // nothing highlighted
   renderDiagnostics();
 }
+
 
 function showBuild1() {
   hideAllPages();
