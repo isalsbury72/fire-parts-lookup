@@ -749,12 +749,27 @@ function buildLabourSummary() {
   return out.join('\n');
 }
 
+function buildItemsOnlyLines() {
+  return state.quote.map(i => {
+    const qty = i.qty || 1;
+    return `${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each (${i.SUPPLIER} price)`;
+  });
+}
+
 function buildCaseStep1Fill() {
   const lines = buildItemsOnlyLines();
   const itemsTxt = lines.join('\n');
-  els.notesEstimator.value = itemsTxt;
+
+  if (els.notesEstimator) {
+    els.notesEstimator.value = itemsTxt;
+  }
+
+  // Keep state in sync as well
   state.buildcase.notesEstimator = itemsTxt;
-  els.bc1ItemsCount.textContent = `Items: ${state.quote.length}`;
+
+  if (els.bc1ItemsCount) {
+    els.bc1ItemsCount.textContent = `Items: ${state.quote.length}`;
+  }
 }
 
 /* ---------- Page switching ---------- */
@@ -833,19 +848,23 @@ function showSettingsPage() {
   selectTab(els.tabSettings);
   renderDiagnostics();
 }
+
+
 function showBuild1() {
   hideAllPages();
   if (els.buildcase1Page) els.buildcase1Page.style.display = 'block';
   selectTab(els.tabQuote);
 
-  els.notesCustomer.value = state.buildcase.notesCustomer || '';
-  if (state.buildcase.notesEstimator && state.buildcase.notesEstimator.trim().length > 0) {
-    els.notesEstimator.value = state.buildcase.notesEstimator;
-  } else {
-    buildCaseStep1Fill();
+  // Notes to customer stays whatever the user last typed
+  if (els.notesCustomer) {
+    els.notesCustomer.value = state.buildcase.notesCustomer || '';
   }
-  els.bc1ItemsCount.textContent = `Items: ${state.quote.length}`;
+
+  // Always rebuild Notes to estimator from the CURRENT quote lines
+  buildCaseStep1Fill();
+
   renderDiagnostics();
+}
 }
 function showBuild2() {
   hideAllPages();
