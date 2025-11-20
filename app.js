@@ -252,6 +252,7 @@ const els = {
   btnToBuild3: document.getElementById('btnToBuild3'),
   btnBackToBuild2: document.getElementById('btnBackToBuild2'),
   btnBackToQuoteFrom3: document.getElementById('btnBackToQuoteFrom3'),
+  btnBackToQuoteFrom2: document.getElementById('btnBackToQuoteFrom2'),
 
   notesCustomer: document.getElementById('notesCustomer'),
   notesEstimator: document.getElementById('notesEstimator'),
