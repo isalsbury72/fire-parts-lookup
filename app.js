@@ -731,14 +731,14 @@ function buildLabourSummary() {
 
   const out = [];
   out.push(...linesMain);
+
   if (total > 0) {
-    if (out.length) out.push('');
     out.push(`Total labour: ${total} hours`);
   }
   if (linesAfter.length) {
-    out.push('');
     out.push(...linesAfter);
   }
+
   return out.join('\n');
 }
 
@@ -986,13 +986,39 @@ if (els.btnCopyNE3) els.btnCopyNE3.addEventListener('click', () => {
 if (els.btnClearQuote) els.btnClearQuote.addEventListener('click', () => {
   if (!state.quote.length) return;
   if (confirm('Clear all items?')) {
+    // Clear quote
     state.quote = [];
     saveQuote();
     renderQuote();
+
+    // Clear Step 2 state
+    state.buildcase.routineVisit       = null;
+    state.buildcase.accomNights        = '';
+    state.buildcase.labourHoursNormal  = '';
+    state.buildcase.numTechsNormal     = '';
+    state.buildcase.travelHoursNormal  = '';
+    state.buildcase.labourHoursAfter   = '';
+    state.buildcase.numTechsAfter      = '';
+    state.buildcase.travelHoursAfter   = '';
+    saveBuildcase();
+
+    // Clear Step 2 UI (and routine radio buttons)
+    if (els.routineYes)       els.routineYes.checked = false;
+    if (els.routineNo)        els.routineNo.checked = false;
+    if (els.accomNights)      els.accomNights.value = '';
+    if (els.labourHoursNormal) els.labourHoursNormal.value = '';
+    if (els.numTechsNormal)   els.numTechsNormal.value = '';
+    if (els.travelHoursNormal) els.travelHoursNormal.value = '';
+    if (els.labourHoursAfter) els.labourHoursAfter.value = '';
+    if (els.numTechsAfter)    els.numTechsAfter.value = '';
+    if (els.travelHoursAfter) els.travelHoursAfter.value = '';
+
+    renderDiagnostics();
     toast('Quote cleared.', true);
     showPartsPage();
   }
 });
+
 
 /* Manual add button */
 
@@ -1083,6 +1109,39 @@ function initBattery() {
   if (els.battIa) els.battIa.addEventListener('input', recalcBattery);
 
   recalcBattery();
+}
+
+// Toggle routine visit radios: click again to turn off
+if (els.routineYes) {
+  els.routineYes.addEventListener('click', () => {
+    if (state.buildcase.routineVisit === 'yes') {
+      // Turn off
+      state.buildcase.routineVisit = null;
+      els.routineYes.checked = false;
+    } else {
+      // Turn on YES, turn off NO
+      state.buildcase.routineVisit = 'yes';
+      els.routineYes.checked = true;
+      if (els.routineNo) els.routineNo.checked = false;
+    }
+    saveBuildcase();
+  });
+}
+
+if (els.routineNo) {
+  els.routineNo.addEventListener('click', () => {
+    if (state.buildcase.routineVisit === 'no') {
+      // Turn off
+      state.buildcase.routineVisit = null;
+      els.routineNo.checked = false;
+    } else {
+      // Turn on NO, turn off YES
+      state.buildcase.routineVisit = 'no';
+      els.routineNo.checked = true;
+      if (els.routineYes) els.routineYes.checked = false;
+    }
+    saveBuildcase();
+  });
 }
 
 /* ---------- Diagnostics + debug export ---------- */
