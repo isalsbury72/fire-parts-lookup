@@ -1234,6 +1234,12 @@ if (els.btnDiagCopy) {
 /* ---------- Start ---------- */
 
 function start() {
+
+  // Hide all tabs on first load — home page doesn't use them
+  if (els.tabParts) els.tabParts.style.display = 'none';
+  if (els.tabQuote) els.tabQuote.style.display = 'none';
+  if (els.tabSettings) els.tabSettings.style.display = 'none';
+
   renderParts();
   renderQuote();
   updateAddToQuoteState();
