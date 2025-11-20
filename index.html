@@ -488,11 +488,17 @@
       </div>
     </div>
 
-    <!-- Settings / Diagnostics page -->
-    <div id="settingsPage" style="display:none;">
-      <div class="card">
-        <h2 style="margin-top:0; font-size:16px;">Settings and diagnostics</h2>
-        <p class="small">Quick health check of your Fire Parts app and data.</p>
+<!-- Settings / Diagnostics page -->
+<div id="settingsPage" style="display:none;">
+  <!-- Row with Home + Settings buttons -->
+  <div style="margin-bottom:8px; display:flex; gap:8px;">
+    <button class="btn btn-ghost" id="goHomeFromSettings" style="flex:1;">← Home</button>
+    <button class="btn btn-primary" style="flex:1;" disabled>Settings</button>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0; font-size:16px;">Settings and diagnostics</h2>
+    <p class="small">Quick health check of your Fire Parts app and data.</p>
 
         <!-- Software versions bubble -->
         <div class="card" style="margin-top:8px;">
