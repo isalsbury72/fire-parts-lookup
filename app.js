@@ -799,6 +799,7 @@ function hideAllPages() {
 
 function showHomePage() {
   hideAllPages();
+   document.querySelector('.tabs').style.visibility = 'hidden';
   if (els.homePage) {
     els.homePage.style.display = 'block';
   } else {
@@ -824,6 +825,7 @@ function showBatteryPage() {
 
 function showPartsPage() {
   hideAllPages();
+   document.querySelector('.tabs').style.visibility = 'visible';
   if (els.partsPage) els.partsPage.style.display = 'block';
   setTabVisibility(false, true);    // hide Parts tab, keep Quote
   selectTab(null);                  // nothing highlighted
@@ -841,6 +843,7 @@ window.appNav = {
 
 function showQuotePage() {
   hideAllPages();
+   document.querySelector('.tabs').style.visibility = 'visible';
   if (els.quotePage) els.quotePage.style.display = 'block';
   setTabVisibility(true, true);     // show Parts & Quote tabs here
   selectTab(els.tabQuote);
@@ -849,6 +852,7 @@ function showQuotePage() {
    
 function showSettingsPage() {
   hideAllPages();
+   document.querySelector('.tabs').style.visibility = 'hidden';
   if (els.settingsPage) els.settingsPage.style.display = 'block';
 
   // Hide ALL tabs on Settings page
