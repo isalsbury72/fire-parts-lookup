@@ -851,11 +851,12 @@ function showSettingsPage() {
   hideAllPages();
   if (els.settingsPage) els.settingsPage.style.display = 'block';
 
-  // On settings page: hide Parts & Quote tabs entirely
-  setTabVisibility(false, false);
-  // No tab highlight on the top row, you now have the in-page Settings pill instead
-  selectTab(null);
+  // Hide the Settings tab, keep Parts & Quote visible
+  if (els.tabSettings) els.tabSettings.style.display = 'none';
+  if (els.tabParts) els.tabParts.style.display = 'inline-flex';
+  if (els.tabQuote) els.tabQuote.style.display = 'inline-flex';
 
+  selectTab(null);   // nothing highlighted (you already have a blue settings button INSIDE the page)
   renderDiagnostics();
 }
 
