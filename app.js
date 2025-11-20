@@ -530,11 +530,9 @@ function setManualBtnEnabled(enabled) {
 }
 function manualInputsValid() {
   if (!els.manualSection || els.manualSection.style.display === 'none') return false;
-  const sup = (els.manualSupplier.value || '').trim();
+  // Only require a description; everything else can be blank or 0
   const desc = (els.manualDescription.value || '').trim();
-  const pn = (els.manualPart.value || '').trim();
-  const priceEach = parseFloat((els.manualPrice.value || '').toString().replace(/[^0-9.]/g, ''));
-  return !!(sup && desc && pn && !isNaN(priceEach));
+  return !!desc;
 }
 ['manualSupplier','manualDescription','manualPart','manualPrice','manualQty'].forEach(id => {
   const input = els[id];
@@ -1024,12 +1022,13 @@ if (els.btnClearQuote) els.btnClearQuote.addEventListener('click', () => {
 
 if (els.manualAddBtn) els.manualAddBtn.addEventListener('click', () => {
   if (!manualInputsValid()) {
-    toast('Fill supplier, description, part number and price.', false);
+    toast('Enter a description for the manual item.', false);
     return;
   }
-  const sup = els.manualSupplier.value.trim();
-  const desc = els.manualDescription.value.trim();
-  const pn = els.manualPart.value.trim();
+
+  const sup = (els.manualSupplier.value || '').trim();
+  const desc = (els.manualDescription.value || '').trim();
+  const pn = (els.manualPart.value || '').trim();
   const priceEach = parseFloat((els.manualPrice.value || '').toString().replace(/[^0-9.]/g, '')) || 0;
   const qty = Math.max(1, parseInt(els.manualQty.value, 10) || 1);
 
