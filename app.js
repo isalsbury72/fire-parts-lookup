@@ -946,6 +946,7 @@ if (els.goHomeFromBattery) {
 if (els.btnBuildCase) els.btnBuildCase.addEventListener('click', showBuild1);
 if (els.btnBackToQuote) els.btnBackToQuote.addEventListener('click', showQuotePage);
 if (els.btnBackToQuoteFrom3) els.btnBackToQuoteFrom3.addEventListener('click', showQuotePage);
+if (els.btnBackToQuoteFrom2) els.btnBackToQuoteFrom2.addEventListener('click', showQuotePage);
 if (els.btnBackToBuild1) els.btnBackToBuild1.addEventListener('click', showBuild1);
 if (els.btnBackToBuild2) els.btnBackToBuild2.addEventListener('click', showBuild2);
 
