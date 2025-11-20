@@ -275,9 +275,9 @@ const els = {
   btnCopyNE3: document.getElementById('btnCopyNE3'),
 
   // Home navigation buttons
-  goHomeFromParts: document.getElementById('goHomeFromParts'),
-  goHomeFromQuote: document.getElementById('goHomeFromQuote'),
-  goHomeFromBattery: document.getElementById('goHomeFromBattery'),
+  goHomeFromParts:    document.getElementById('goHomeFromParts'),
+  goHomeFromQuote:    document.getElementById('goHomeFromQuote'),
+  goHomeFromBattery:  document.getElementById('goHomeFromBattery'),
   goHomeFromSettings: document.getElementById('goHomeFromSettings'),
 
   // Diagnostics
@@ -763,35 +763,12 @@ function buildCaseStep1Fill() {
 
 /* ---------- Page switching ---------- */
 
-function selectTab(tab) {
-  const tabs = [els.tabParts, els.tabQuote, els.tabSettings];
-  tabs.forEach(b => {
-    if (!b) return;
-    if (b === tab) {
-      b.style.background = '#3b82f6';
-      b.style.color = '#fff';
-    } else {
-      b.style.background = '#fff';
-      b.style.color = '#111';
-    }
-  });
-}
-
-function setTabVisibility(showParts, showQuote) {
-  if (els.tabParts) {
-    els.tabParts.style.display = showParts ? 'inline-flex' : 'none';
-  }
-  if (els.tabQuote) {
-    els.tabQuote.style.display = showQuote ? 'inline-flex' : 'none';
-  }
-}
-
 function hideAllPages() {
-  if (els.homePage) els.homePage.style.display = 'none';
-  if (els.batteryPage) els.batteryPage.style.display = 'none';
-  if (els.partsPage) els.partsPage.style.display = 'none';
-  if (els.quotePage) els.quotePage.style.display = 'none';
-  if (els.settingsPage) els.settingsPage.style.display = 'none';
+  if (els.homePage)       els.homePage.style.display = 'none';
+  if (els.batteryPage)    els.batteryPage.style.display = 'none';
+  if (els.partsPage)      els.partsPage.style.display = 'none';
+  if (els.quotePage)      els.quotePage.style.display = 'none';
+  if (els.settingsPage)   els.settingsPage.style.display = 'none';
   if (els.buildcase1Page) els.buildcase1Page.style.display = 'none';
   if (els.buildcase2Page) els.buildcase2Page.style.display = 'none';
   if (els.buildcase3Page) els.buildcase3Page.style.display = 'none';
@@ -799,75 +776,38 @@ function hideAllPages() {
 
 function showHomePage() {
   hideAllPages();
-
-  if (els.homePage) {
-    els.homePage.style.display = 'block';
-  } else {
-    // fallback if home not present
-    showPartsPage();
-    return;
-  }
-
-  // Do not touch any tab buttons or other elements here
+  if (els.homePage) els.homePage.style.display = 'block';
   renderDiagnostics();
 }
 
 function showBatteryPage() {
   hideAllPages();
   if (els.batteryPage) els.batteryPage.style.display = 'block';
-  setTabVisibility(false, false);   // hide Parts & Quote
-  selectTab(null);
   recalcBattery();
   renderDiagnostics();
 }
 
 function showPartsPage() {
   hideAllPages();
-   document.querySelector('.tabs').style.visibility = 'visible';
   if (els.partsPage) els.partsPage.style.display = 'block';
-  setTabVisibility(false, true);    // hide Parts tab, keep Quote
-  selectTab(null);                  // nothing highlighted
   renderDiagnostics();
 }
-
-// Simple global nav helper so HTML buttons can call these directly
-window.appNav = {
-  home:    showHomePage,
-  parts:   showPartsPage,
-  quote:   showQuotePage,
-  battery: showBatteryPage,
-  settings: showSettingsPage
-};
 
 function showQuotePage() {
   hideAllPages();
-   document.querySelector('.tabs').style.visibility = 'visible';
   if (els.quotePage) els.quotePage.style.display = 'block';
-  setTabVisibility(true, true);     // show Parts & Quote tabs here
-  selectTab(els.tabQuote);
   renderDiagnostics();
 }
-   
+
 function showSettingsPage() {
   hideAllPages();
-   document.querySelector('.tabs').style.visibility = 'hidden';
   if (els.settingsPage) els.settingsPage.style.display = 'block';
-
-  // Hide ALL tabs on Settings page
-  if (els.tabParts) els.tabParts.style.display = 'none';
-  if (els.tabQuote) els.tabQuote.style.display = 'none';
-  if (els.tabSettings) els.tabSettings.style.display = 'none';
-
-  selectTab(null); // nothing highlighted
   renderDiagnostics();
 }
-
 
 function showBuild1() {
   hideAllPages();
   if (els.buildcase1Page) els.buildcase1Page.style.display = 'block';
-  setTabVisibility(true, true);
-  selectTab(els.tabQuote);
 
   // Notes to customer stays whatever the user last typed
   if (els.notesCustomer) {
@@ -883,40 +823,55 @@ function showBuild1() {
 function showBuild2() {
   hideAllPages();
   if (els.buildcase2Page) els.buildcase2Page.style.display = 'block';
-  setTabVisibility(true, true);
-  selectTab(els.tabQuote);
 
-  if (state.buildcase.routineVisit === 'yes') els.routineYes.checked = true;
-  else if (state.buildcase.routineVisit === 'no') els.routineNo.checked = true;
-  else {
+  // Routine visit radios
+  if (state.buildcase.routineVisit === 'yes') {
+    if (els.routineYes) els.routineYes.checked = true;
+    if (els.routineNo)  els.routineNo.checked  = false;
+  } else if (state.buildcase.routineVisit === 'no') {
+    if (els.routineNo)  els.routineNo.checked  = true;
     if (els.routineYes) els.routineYes.checked = false;
-    if (els.routineNo) els.routineNo.checked = false;
+  } else {
+    if (els.routineYes) els.routineYes.checked = false;
+    if (els.routineNo)  els.routineNo.checked  = false;
   }
 
-  els.accomNights.value = state.buildcase.accomNights || '';
-  els.labourHoursNormal.value = state.buildcase.labourHoursNormal || '';
-  els.numTechsNormal.value = state.buildcase.numTechsNormal || '';
-  els.travelHoursNormal.value = state.buildcase.travelHoursNormal || '';
-  els.labourHoursAfter.value = state.buildcase.labourHoursAfter || '';
-  els.numTechsAfter.value = state.buildcase.numTechsAfter || '';
-  els.travelHoursAfter.value = state.buildcase.travelHoursAfter || '';
+  if (els.accomNights)       els.accomNights.value       = state.buildcase.accomNights       || '';
+  if (els.labourHoursNormal) els.labourHoursNormal.value = state.buildcase.labourHoursNormal || '';
+  if (els.numTechsNormal)    els.numTechsNormal.value    = state.buildcase.numTechsNormal    || '';
+  if (els.travelHoursNormal) els.travelHoursNormal.value = state.buildcase.travelHoursNormal || '';
+  if (els.labourHoursAfter)  els.labourHoursAfter.value  = state.buildcase.labourHoursAfter  || '';
+  if (els.numTechsAfter)     els.numTechsAfter.value     = state.buildcase.numTechsAfter     || '';
+  if (els.travelHoursAfter)  els.travelHoursAfter.value  = state.buildcase.travelHoursAfter  || '';
 
   renderDiagnostics();
 }
+
 function showBuild3() {
   hideAllPages();
   if (els.buildcase3Page) els.buildcase3Page.style.display = 'block';
-  setTabVisibility(true, true);
-  selectTab(els.tabQuote);
 
-  const base = buildItemsOnlyLines().join('\n');
+  const base   = buildItemsOnlyLines().join('\n');
   const labour = buildLabourSummary();
-  els.notesEstimator3.value = labour ? `${base}\n\n${labour}` : base;
 
-  els.notesCustomer3.value = state.buildcase.notesCustomer || '';
-  els.bc3ItemsCount.textContent = `Items: ${state.quote.length}`;
+  if (els.notesEstimator3) {
+    els.notesEstimator3.value = labour ? `${base}\n\n${labour}` : base;
+  }
+
+  if (els.notesCustomer3)  els.notesCustomer3.value  = state.buildcase.notesCustomer || '';
+  if (els.bc3ItemsCount)   els.bc3ItemsCount.textContent = `Items: ${state.quote.length}`;
+
   renderDiagnostics();
 }
+
+// Simple global nav helper so HTML buttons can call these directly
+window.appNav = {
+  home:    showHomePage,
+  parts:   showPartsPage,
+  quote:   showQuotePage,
+  battery: showBatteryPage,
+  settings: showSettingsPage
+};
 
 /* Tab click handlers */
 
@@ -958,7 +913,7 @@ if (els.goHomeFromSettings) {
 if (els.btnHomeParts) els.btnHomeParts.addEventListener('click', showPartsPage);
 if (els.btnHomeBattery) els.btnHomeBattery.addEventListener('click', showBatteryPage);
 
-// Back-to-home buttons on individual pages
+// Back-to-home buttons on Parts / Battery / Settings pages
 if (els.goHomeFromParts) {
   els.goHomeFromParts.addEventListener('click', showHomePage);
 }
@@ -967,6 +922,9 @@ if (els.goHomeFromQuote) {
 }
 if (els.goHomeFromBattery) {
   els.goHomeFromBattery.addEventListener('click', showHomePage);
+}
+if (els.goHomeFromSettings) {
+  els.goHomeFromSettings.addEventListener('click', showHomePage);
 }
 
 /* Build case navigation */
