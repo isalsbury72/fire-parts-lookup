@@ -274,14 +274,11 @@ const els = {
   btnCopyNC3: document.getElementById('btnCopyNC3'),
   btnCopyNE3: document.getElementById('btnCopyNE3'),
 
-     // Home navigation buttons
+  // Home navigation buttons
   goHomeFromParts: document.getElementById('goHomeFromParts'),
   goHomeFromQuote: document.getElementById('goHomeFromQuote'),
   goHomeFromBattery: document.getElementById('goHomeFromBattery'),
-
-     // Back-to-home buttons on pages
-  goHomeFromParts: document.getElementById('goHomeFromParts'),
-  goHomeFromBattery: document.getElementById('goHomeFromBattery'),
+  goHomeFromSettings: document.getElementById('goHomeFromSettings'),
 
   // Diagnostics
   diagCsvSource: document.getElementById('diagCsvSource'),
@@ -853,8 +850,12 @@ function showQuotePage() {
 function showSettingsPage() {
   hideAllPages();
   if (els.settingsPage) els.settingsPage.style.display = 'block';
-  setTabVisibility(true, true);     // show Parts & Quote on settings
-  selectTab(els.tabSettings);
+
+  // On settings page: hide Parts & Quote tabs entirely
+  setTabVisibility(false, false);
+  // No tab highlight on the top row, you now have the in-page Settings pill instead
+  selectTab(null);
+
   renderDiagnostics();
 }
 
@@ -942,6 +943,10 @@ if (els.goHomeFromParts) {
 }
 if (els.goHomeFromBattery) {
   els.goHomeFromBattery.addEventListener('click', showHomePage);
+}
+
+if (els.goHomeFromSettings) {
+  els.goHomeFromSettings.addEventListener('click', showHomePage);
 }
 
 /* Home tile handlers */
