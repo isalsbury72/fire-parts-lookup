@@ -780,6 +780,15 @@ function selectTab(tab) {
   });
 }
 
+function setTabVisibility(showParts, showQuote) {
+  if (els.tabParts) {
+    els.tabParts.style.display = showParts ? 'inline-flex' : 'none';
+  }
+  if (els.tabQuote) {
+    els.tabQuote.style.display = showQuote ? 'inline-flex' : 'none';
+  }
+}
+
 function hideAllPages() {
   if (els.homePage) els.homePage.style.display = 'none';
   if (els.batteryPage) els.batteryPage.style.display = 'none';
@@ -799,15 +808,16 @@ function showHomePage() {
     // fallback if home not present
     showPartsPage();
     return;
-  }
-  selectTab(els.tabParts);
+  setTabVisibility(false, false);   // hide Parts & Quote
+  selectTab(null);                  // no tab highlighted
   renderDiagnostics();
 }
 
 function showBatteryPage() {
   hideAllPages();
   if (els.batteryPage) els.batteryPage.style.display = 'block';
-  selectTab(els.tabParts);
+  setTabVisibility(false, false);   // hide Parts & Quote
+  selectTab(null);
   recalcBattery();
   renderDiagnostics();
 }
@@ -815,7 +825,8 @@ function showBatteryPage() {
 function showPartsPage() {
   hideAllPages();
   if (els.partsPage) els.partsPage.style.display = 'block';
-  selectTab(els.tabParts);
+  setTabVisibility(false, true);    // hide Parts tab, keep Quote
+  selectTab(null);                  // nothing highlighted
   renderDiagnostics();
 }
 
@@ -831,20 +842,23 @@ window.appNav = {
 function showQuotePage() {
   hideAllPages();
   if (els.quotePage) els.quotePage.style.display = 'block';
+  setTabVisibility(true, true);     // show Parts & Quote tabs here
   selectTab(els.tabQuote);
   renderDiagnostics();
 }
+   
 function showSettingsPage() {
   hideAllPages();
   if (els.settingsPage) els.settingsPage.style.display = 'block';
+  setTabVisibility(true, true);     // show Parts & Quote on settings
   selectTab(els.tabSettings);
   renderDiagnostics();
 }
 
-
 function showBuild1() {
   hideAllPages();
   if (els.buildcase1Page) els.buildcase1Page.style.display = 'block';
+  setTabVisibility(true, true);
   selectTab(els.tabQuote);
 
   // Notes to customer stays whatever the user last typed
@@ -861,6 +875,7 @@ function showBuild1() {
 function showBuild2() {
   hideAllPages();
   if (els.buildcase2Page) els.buildcase2Page.style.display = 'block';
+  setTabVisibility(true, true);
   selectTab(els.tabQuote);
 
   if (state.buildcase.routineVisit === 'yes') els.routineYes.checked = true;
@@ -883,6 +898,7 @@ function showBuild2() {
 function showBuild3() {
   hideAllPages();
   if (els.buildcase3Page) els.buildcase3Page.style.display = 'block';
+  setTabVisibility(true, true);
   selectTab(els.tabQuote);
 
   const base = buildItemsOnlyLines().join('\n');
