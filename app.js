@@ -2,7 +2,7 @@
    - Quote and build case saved/restored from localStorage
    - CSV metadata (source, last loaded) tracked for diagnostics
    - Settings/Diagnostics tab + Copy debug info
-   - Home + battery calculator page support
+   - Optional home + battery calculator page support
 */
 
 const APP_VERSION = '5.3.9';
@@ -205,12 +205,12 @@ const els = {
 
   // Parts
   q: document.getElementById('q'),
+  csv: document.getElementById('csv'),
   tbl: document.getElementById('tbl')?.querySelector('tbody'),
   count: document.getElementById('count'),
   copyArea: document.getElementById('copyArea'),
   copyPartLine: document.getElementById('copyPartLine'),
   partsPage: document.getElementById('partsPage'),
-  addToQuote: document.getElementById('addToQuote'),
 
   // Quote + build case pages
   quotePage: document.getElementById('quotePage'),
@@ -223,6 +223,7 @@ const els = {
   tabQuote: document.getElementById('tabQuote'),
   tabSettings: document.getElementById('tabSettings'),
 
+  addToQuote: document.getElementById('addToQuote'),
   copyQuote: document.getElementById('copyQuote'),
   copyQuoteRaw: document.getElementById('copyQuoteRaw'),
   copyQuoteEmail: document.getElementById('copyQuoteEmail'),
@@ -248,6 +249,7 @@ const els = {
   btnToBuild3: document.getElementById('btnToBuild3'),
   btnBackToBuild2: document.getElementById('btnBackToBuild2'),
   btnBackToQuoteFrom3: document.getElementById('btnBackToQuoteFrom3'),
+  btnBackToQuoteFrom2: document.getElementById('btnBackToQuoteFrom2'),
 
   notesCustomer: document.getElementById('notesCustomer'),
   notesEstimator: document.getElementById('notesEstimator'),
@@ -275,11 +277,10 @@ const els = {
   goHomeFromBattery:  document.getElementById('goHomeFromBattery'),
   goHomeFromSettings: document.getElementById('goHomeFromSettings'),
 
-  // Settings CSV management
+  // Settings CSV buttons
   loadLocalCsvSettings: document.getElementById('loadLocalCsvSettings'),
   loadSharedSettings:   document.getElementById('loadSharedSettings'),
   clearDataSettings:    document.getElementById('clearDataSettings'),
-  csvFileInput:         document.getElementById('csvFileInput'),
 
   // Diagnostics
   diagCsvSource: document.getElementById('diagCsvSource'),
@@ -288,24 +289,30 @@ const els = {
   diagQuoteItems: document.getElementById('diagQuoteItems'),
   diagRoutine: document.getElementById('diagRoutine'),
   diagSwStatus: document.getElementById('diagSwStatus'),
+  btnDiagClearAll: document.getElementById('btnDiagClearAll'),
   btnDiagCopy: document.getElementById('btnDiagCopy')
 };
 
 /* ---------- Parts page ---------- */
 
 function renderParts() {
+  const q = els.q ? els.q.value.trim().toLowerCase() : '';
   const body = els.tbl;
   if (!body) return;
 
-  const q = els.q ? els.q.value.trim().toLowerCase() : '';
   body.innerHTML = '';
 
-  // Show no rows until there is a search term
-  const rows = !q
-    ? []
-    : state.rows.filter(r =>
-        Object.values(r).join(' ').toLowerCase().includes(q)
-      );
+  let rows = [];
+  if (q) {
+    rows = state.rows.filter(r =>
+      Object.values(r).join(' ').toLowerCase().includes(q)
+    );
+  } else {
+    // No query: show nothing, clear selection & yellow pill
+    state.selected = null;
+    updateAddToQuoteState();
+    if (els.copyArea) els.copyArea.textContent = '';
+  }
 
   rows.forEach(r => {
     const tr = document.createElement('tr');
@@ -318,14 +325,11 @@ function renderParts() {
       <td class="notes">${r.NOTES}</td>`;
     tr.addEventListener('click', () => {
       state.selected = r;
-
-      // Copy pill format: Description — Part — Price each (SUPPLIER price)
       if (els.copyArea) {
-        const supplierBit = r.SUPPLIER ? ` (${r.SUPPLIER} price)` : '';
+        // Same format style as Notes to estimator, but no qty
         els.copyArea.textContent =
-          `${r.DESCRIPTION} — ${r.PARTNUMBER} — ${fmtPrice(r.PRICE)} each${supplierBit}`;
+          `${r.DESCRIPTION} — ${r.PARTNUMBER} — ${fmtPrice(r.PRICE)} each (${r.SUPPLIER} price)`;
       }
-
       updateAddToQuoteState();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
@@ -337,17 +341,7 @@ function renderParts() {
   renderDiagnostics();
 }
 
-if (els.q) {
-  els.q.addEventListener('input', () => {
-    renderParts();
-    // If search is empty, clear selection and yellow pill
-    if (!els.q.value.trim()) {
-      state.selected = null;
-      if (els.copyArea) els.copyArea.textContent = '';
-      updateAddToQuoteState();
-    }
-  });
-}
+if (els.q) els.q.addEventListener('input', renderParts);
 
 function updateAddToQuoteState() {
   const b = els.addToQuote;
@@ -437,7 +431,7 @@ if (cachedCsv) {
   } catch {}
 }
 
-/* ---------- Loaders ---------- */
+/* ---------- Loaders (CSV & shared file) ---------- */
 
 async function loadSharedFromRepo() {
   if (!ensureAccess()) return;
@@ -452,6 +446,20 @@ async function loadSharedFromRepo() {
     console.error(err);
     toast('Error loading shared CSV from repo', false);
   }
+}
+
+if (els.csv) {
+  els.csv.addEventListener('change', e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const r = new FileReader();
+    r.onload = () => {
+      localStorage.setItem(LS_KEYS.CSV, r.result);
+      parseCSV(r.result, 'Local CSV file');
+      toast('Loaded local CSV', true);
+    };
+    r.readAsText(f);
+  });
 }
 
 function ensureAccess() {
@@ -501,6 +509,27 @@ function clearAllData() {
   toast('All app data cleared.', true);
 }
 
+/* Settings: CSV buttons */
+
+if (els.loadSharedSettings) {
+  els.loadSharedSettings.addEventListener('click', loadSharedFromRepo);
+}
+
+if (els.loadLocalCsvSettings) {
+  els.loadLocalCsvSettings.addEventListener('click', () => {
+    if (els.csv) els.csv.click();
+  });
+}
+
+if (els.clearDataSettings) {
+  els.clearDataSettings.addEventListener('click', clearAllData);
+}
+
+// Keep original diag clear button wired too (if present)
+if (els.btnDiagClearAll) {
+  els.btnDiagClearAll.addEventListener('click', clearAllData);
+}
+
 /* ---------- Manual item ---------- */
 
 function setManualBtnEnabled(enabled) {
@@ -521,20 +550,23 @@ function setManualBtnEnabled(enabled) {
     b.style.cursor = 'not-allowed';
   }
 }
+
 function manualInputsValid() {
-  if (!els.manualSection || els.manualSection.style.display === 'none') return false;
-  const desc = (els.manualDescription.value || '').trim();
+  // Only require a non-empty description
+  const desc = (els.manualDescription?.value || '').trim();
   return !!desc;
 }
+
 ['manualSupplier','manualDescription','manualPart','manualPrice','manualQty'].forEach(id => {
   const input = els[id];
   if (input) input.addEventListener('input', () => setManualBtnEnabled(manualInputsValid()));
 });
+
 if (els.manualToggle) {
   els.manualToggle.addEventListener('change', e => {
     const on = e.target.checked;
     if (on) {
-      els.manualSection.style.display = 'block';
+      if (els.manualSection) els.manualSection.style.display = 'block';
       setManualBtnEnabled(manualInputsValid());
     } else {
       if (els.manualSupplier) els.manualSupplier.value = '';
@@ -543,14 +575,14 @@ if (els.manualToggle) {
       if (els.manualPrice) els.manualPrice.value = '';
       if (els.manualQty) els.manualQty.value = '1';
       setManualBtnEnabled(false);
-      els.manualSection.style.display = 'none';
+      if (els.manualSection) els.manualSection.style.display = 'none';
     }
   });
   if (els.manualToggle.checked) {
-    els.manualSection.style.display = 'block';
+    if (els.manualSection) els.manualSection.style.display = 'block';
     setManualBtnEnabled(manualInputsValid());
   } else {
-    els.manualSection.style.display = 'none';
+    if (els.manualSection) els.manualSection.style.display = 'none';
     setManualBtnEnabled(false);
   }
 }
@@ -673,10 +705,12 @@ function buildItemsOnlyLines() {
     return `${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each (${i.SUPPLIER} price)`;
   });
 }
+
 function toNum(x, d = 0) {
   const n = parseFloat((x ?? '').toString());
   return Number.isNaN(n) ? d : n;
 }
+
 function buildLabourSummary() {
   const nh = toNum(state.buildcase.labourHoursNormal, 0);
   const nm = Math.max(0, parseInt(state.buildcase.numTechsNormal || '0', 10) || 0);
@@ -776,12 +810,14 @@ function showBatteryPage() {
 function showPartsPage() {
   hideAllPages();
   if (els.partsPage) els.partsPage.style.display = 'block';
+  renderParts();
   renderDiagnostics();
 }
 
 function showQuotePage() {
   hideAllPages();
   if (els.quotePage) els.quotePage.style.display = 'block';
+  renderQuote();
   renderDiagnostics();
 }
 
@@ -856,17 +892,17 @@ window.appNav = {
   settings: showSettingsPage
 };
 
-/* Tab click handlers (legacy tabs, hidden) */
+/* Tab click handlers */
 
 if (els.tabParts) els.tabParts.addEventListener('click', showPartsPage);
 if (els.tabQuote) els.tabQuote.addEventListener('click', showQuotePage);
 if (els.tabSettings) els.tabSettings.addEventListener('click', showSettingsPage);
 
-// Home tiles
-if (els.btnHomeParts)   els.btnHomeParts.addEventListener('click', showPartsPage);
-if (els.btnHomeBattery) els.btnHomeBattery.addEventListener('click', showBatteryPage);
+// Home page tiles
+if (els.btnHomeParts)    els.btnHomeParts.addEventListener('click', showPartsPage);
+if (els.btnHomeBattery)  els.btnHomeBattery.addEventListener('click', showBatteryPage);
 
-// Back-to-home buttons on Parts / Battery / Quote / Settings pages
+// Back-to-Home buttons
 if (els.goHomeFromParts)    els.goHomeFromParts.addEventListener('click', showHomePage);
 if (els.goHomeFromQuote)    els.goHomeFromQuote.addEventListener('click', showHomePage);
 if (els.goHomeFromBattery)  els.goHomeFromBattery.addEventListener('click', showHomePage);
@@ -874,11 +910,12 @@ if (els.goHomeFromSettings) els.goHomeFromSettings.addEventListener('click', sho
 
 /* Build case navigation */
 
-if (els.btnBuildCase)          els.btnBuildCase.addEventListener('click', showBuild1);
-if (els.btnBackToQuote)        els.btnBackToQuote.addEventListener('click', showQuotePage);
-if (els.btnBackToQuoteFrom3)   els.btnBackToQuoteFrom3.addEventListener('click', showQuotePage);
-if (els.btnBackToBuild1)       els.btnBackToBuild1.addEventListener('click', showBuild1);
-if (els.btnBackToBuild2)       els.btnBackToBuild2.addEventListener('click', showBuild2);
+if (els.btnBuildCase)           els.btnBuildCase.addEventListener('click', showBuild1);
+if (els.btnBackToQuote)         els.btnBackToQuote.addEventListener('click', showQuotePage);
+if (els.btnBackToQuoteFrom3)    els.btnBackToQuoteFrom3.addEventListener('click', showQuotePage);
+if (els.btnBackToQuoteFrom2)    els.btnBackToQuoteFrom2.addEventListener('click', showQuotePage);
+if (els.btnBackToBuild1)        els.btnBackToBuild1.addEventListener('click', showBuild1);
+if (els.btnBackToBuild2)        els.btnBackToBuild2.addEventListener('click', showBuild2);
 
 if (els.btnToBuild2) els.btnToBuild2.addEventListener('click', () => {
   state.buildcase.notesCustomer = (els.notesCustomer?.value || '').trim();
@@ -920,7 +957,6 @@ if (els.btnClearQuote) els.btnClearQuote.addEventListener('click', () => {
     saveQuote();
     renderQuote();
 
-    // Reset Step 2 state
     state.buildcase.routineVisit       = null;
     state.buildcase.accomNights        = '';
     state.buildcase.labourHoursNormal  = '';
@@ -947,6 +983,39 @@ if (els.btnClearQuote) els.btnClearQuote.addEventListener('click', () => {
   }
 });
 
+/* Manual add button */
+
+if (els.manualAddBtn) els.manualAddBtn.addEventListener('click', () => {
+  const desc = (els.manualDescription?.value || '').trim();
+  if (!desc) {
+    toast('Enter a description for the manual item.', false);
+    return;
+  }
+
+  const sup = (els.manualSupplier?.value || '').trim();
+  const pn = (els.manualPart?.value || '').trim();
+  const priceEach = parseFloat((els.manualPrice?.value || '').toString().replace(/[^0-9.]/g, '')) || 0;
+  const qty = Math.max(1, parseInt(els.manualQty?.value, 10) || 1);
+
+  state.quote.push({
+    SUPPLIER: sup,
+    DESCRIPTION: desc,
+    PARTNUMBER: pn,
+    PRICE: priceEach,
+    qty
+  });
+  saveQuote();
+  renderQuote();
+
+  if (els.manualSupplier) els.manualSupplier.value = '';
+  if (els.manualDescription) els.manualDescription.value = '';
+  if (els.manualPart) els.manualPart.value = '';
+  if (els.manualPrice) els.manualPrice.value = '';
+  if (els.manualQty) els.manualQty.value = '1';
+  setManualBtnEnabled(false);
+  toast('Manual item added.', true);
+});
+
 /* ---------- Battery calculator ---------- */
 
 function recalcBattery() {
@@ -966,7 +1035,7 @@ function recalcBattery() {
   const ageCap = cap20 * ageMult;
 
   const fmt2 = n => n.toFixed(2);
-  
+
   els.battTqDisplay.textContent = fmt2(Tq) + ' h';
   els.battTaDisplay.textContent = fmt2(Ta) + ' h';
 
@@ -1029,39 +1098,6 @@ if (els.routineNo) {
       if (els.routineYes) els.routineYes.checked = false;
     }
     saveBuildcase();
-  });
-}
-
-/* ---------- Settings: CSV management buttons ---------- */
-
-if (els.loadLocalCsvSettings && els.csvFileInput) {
-  els.loadLocalCsvSettings.addEventListener('click', () => {
-    els.csvFileInput.value = '';
-    els.csvFileInput.click();
-  });
-
-  els.csvFileInput.addEventListener('change', e => {
-    const f = e.target.files[0];
-    if (!f) return;
-    const r = new FileReader();
-    r.onload = () => {
-      localStorage.setItem(LS_KEYS.CSV, r.result);
-      parseCSV(r.result, 'Local CSV file');
-      toast('Loaded local CSV', true);
-    };
-    r.readAsText(f);
-  });
-}
-
-if (els.loadSharedSettings) {
-  els.loadSharedSettings.addEventListener('click', loadSharedFromRepo);
-}
-
-if (els.clearDataSettings) {
-  els.clearDataSettings.addEventListener('click', () => {
-    if (confirm('Clear cached CSV, quotes, build case and access?')) {
-      clearAllData();
-    }
   });
 }
 
@@ -1128,7 +1164,8 @@ if (els.btnDiagCopy) {
 /* ---------- Start ---------- */
 
 function start() {
-  // Hide legacy tabs on first load
+
+  // Hide tab bar if present
   if (els.tabParts) els.tabParts.style.display = 'none';
   if (els.tabQuote) els.tabQuote.style.display = 'none';
   if (els.tabSettings) els.tabSettings.style.display = 'none';
