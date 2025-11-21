@@ -288,39 +288,25 @@ const els = {
   diagRoutine: document.getElementById('diagRoutine'),
   diagSwStatus: document.getElementById('diagSwStatus'),
   btnDiagClearAll: document.getElementById('btnDiagClearAll'),
-  btnDiagCopy: document.getElementById('btnDiagCopy'),
-
-  // Settings CSV/data management buttons
-  loadLocalCsvSettings: document.getElementById('loadLocalCsvSettings'),
-  loadSharedSettings: document.getElementById('loadSharedSettings'),
-  clearDataSettings: document.getElementById('clearDataSettings')
+  btnDiagCopy: document.getElementById('btnDiagCopy')
 };
 
 /* ---------- Parts page ---------- */
 
 function renderParts() {
-  const q = els.q ? els.q.value.trim().toLowerCase() : '';
+  const qRaw = els.q ? els.q.value : '';
+  const q = qRaw.trim().toLowerCase();
   const body = els.tbl;
   if (!body) return;
+
   body.innerHTML = '';
 
-  // If there is no search text:
-  // - show 0 items
-  // - clear the yellow results pill
-  // - clear the selected row and disable "Add to quote"
-  if (!q) {
-    if (els.count) els.count.textContent = '0';
-    state.selected = null;
-    if (els.copyArea) els.copyArea.textContent = '';
-    updateAddToQuoteState();
-    renderDiagnostics();
-    return;
-  }
-
-  // Only show rows that match the search text
-  const rows = state.rows.filter(r =>
-    Object.values(r).join(' ').toLowerCase().includes(q)
-  );
+  // If no search text, do not show any rows
+  const rows = q
+    ? state.rows.filter(r =>
+        Object.values(r).join(' ').toLowerCase().includes(q)
+      )
+    : [];
 
   rows.forEach(r => {
     const tr = document.createElement('tr');
@@ -333,28 +319,26 @@ function renderParts() {
       <td class="notes">${r.NOTES}</td>`;
     tr.addEventListener('click', () => {
       state.selected = r;
-
-      // Yellow pill format:
-      // SUPPLIER — DESCRIPTION — PARTNUMBER — $xx.xx each (SUPPLIER price)
-if (els.copyArea) {
-  const sup = r.SUPPLIER || 'Supplier';
-  els.copyArea.textContent =
-    `${r.DESCRIPTION} — ${r.PARTNUMBER} — ${fmtPrice(r.PRICE)} each (${sup} price)`;
-}
+      if (els.copyArea) {
+        const sup = r.SUPPLIER || 'Supplier';
+        els.copyArea.textContent =
+          `${r.DESCRIPTION} — ${r.PARTNUMBER} — ${fmtPrice(r.PRICE)} each (${sup} price)`;
+      }
       updateAddToQuoteState();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
     body.appendChild(tr);
   });
 
-  if (els.count) els.count.textContent = rows.length.toString();
-
-  renderDiagnostics();
-}
-
   if (els.count) els.count.textContent = rows.length;
 
-  // We still keep diagnostics (they show total rows etc)
+  // If there is no search text, clear the yellow pill and selection
+  if (!q) {
+    state.selected = null;
+    updateAddToQuoteState();
+    if (els.copyArea) els.copyArea.textContent = '';
+  }
+
   renderDiagnostics();
 }
 
@@ -528,25 +512,6 @@ function clearAllData() {
 
 if (els.clearCache) els.clearCache.addEventListener('click', clearAllData);
 if (els.btnDiagClearAll) els.btnDiagClearAll.addEventListener('click', clearAllData);
-
-// Settings page CSV & data buttons
-if (els.loadLocalCsvSettings) {
-  els.loadLocalCsvSettings.addEventListener('click', () => {
-    if (els.csv) els.csv.click();
-  });
-}
-
-if (els.loadSharedSettings) {
-  els.loadSharedSettings.addEventListener('click', () => {
-    loadSharedFromRepo();
-  });
-}
-
-if (els.clearDataSettings) {
-  els.clearDataSettings.addEventListener('click', () => {
-    clearAllData();
-  });
-}
 
 /* ---------- Manual item ---------- */
 
@@ -780,13 +745,6 @@ function buildLabourSummary() {
   return out.join('\n');
 }
 
-function buildItemsOnlyLines() {
-  return state.quote.map(i => {
-    const qty = i.qty || 1;
-    return `${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each (${i.SUPPLIER} price)`;
-  });
-}
-
 function buildCaseStep1Fill() {
   const lines = buildItemsOnlyLines();
   const itemsTxt = lines.join('\n');
@@ -929,33 +887,7 @@ if (els.btnHomeBattery) {
   els.btnHomeBattery.addEventListener('click', showBatteryPage);
 }
 
-// From Parts back to Home
-if (els.goHomeFromParts) {
-  els.goHomeFromParts.addEventListener('click', (e) => {
-    e.preventDefault();
-    showHomePage();
-  });
-}
-
-
-// Back to Home buttons on Parts / Battery pages
-if (els.goHomeFromParts) {
-  els.goHomeFromParts.addEventListener('click', showHomePage);
-}
-if (els.goHomeFromBattery) {
-  els.goHomeFromBattery.addEventListener('click', showHomePage);
-}
-
-if (els.goHomeFromSettings) {
-  els.goHomeFromSettings.addEventListener('click', showHomePage);
-}
-
-/* Home tile handlers */
-
-if (els.btnHomeParts) els.btnHomeParts.addEventListener('click', showPartsPage);
-if (els.btnHomeBattery) els.btnHomeBattery.addEventListener('click', showBatteryPage);
-
-// Back-to-home buttons on Parts / Battery / Settings pages
+// Back to Home buttons on Parts / Battery / Settings / Quote pages
 if (els.goHomeFromParts) {
   els.goHomeFromParts.addEventListener('click', showHomePage);
 }
