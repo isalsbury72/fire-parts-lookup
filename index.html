@@ -136,7 +136,7 @@
       .home-grid { grid-template-columns: 1fr; }
     }
 
- /* Battery calculator */
+
     .batt-wrap {
       display:flex;
       flex-direction:column;
@@ -154,40 +154,39 @@
     .batt-input-pill,
     .batt-required-pill {
       border-radius:999px;
-      padding:10px 16px;              /* taller, room for larger text */
+      padding:10px 16px;              /* height stays the same */
       line-height:1.4;
       border:1px solid #e5e7eb;
       background:#f9fafb;
     }
 
-    /* Left-hand labels (slightly smaller font) */
+    /* Left-hand labels */
     .batt-label-pill {
       flex:1 1 auto;
       min-width:0;
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
-      font-size:14px;                 /* label font */
+      font-size:14px;
     }
 
-    /* Right-hand value pills – ALL the same size & font */
+    /* Right-hand value pills – ALL same width + font */
     .batt-input-pill,
     .batt-required-pill {
-      flex:0 0 auto;
-      min-width:110px;                /* unified width for all right pills */
-      max-width:130px;
+      flex:0 0 100px;                 /* fixed width, ~20% narrower than before */
+      width:100px;
       display:flex;
       align-items:center;
       justify-content:flex-end;
       font-variant-numeric: tabular-nums;
-      font-size:18px;                 /* +4 from previous 14 */
+      font-size:18px;
     }
     .batt-input-pill input {
       width:100%;
       border:none;
       outline:none;
       background:transparent;
-      font-size:18px;                 /* match pill font */
+      font-size:18px;
       text-align:right;
       font-variant-numeric: tabular-nums;
     }
@@ -202,7 +201,7 @@
       background:#eff6ff;
     }
 
-    /* Required capacity pill – visually identical to other right pills */
+    /* Required capacity pill – same size, just different colours */
     .batt-required-pill {
       background:#f97316;
       border-color:#ea580c;
@@ -219,7 +218,7 @@
       margin-top:4px;
     }
 
-    /* Tq buttons – same height & font as right-hand pills */
+    /* Tq buttons – match right pills for height + font */
     .batt-tq-buttons {
       display:flex;
       gap:8px;
@@ -230,8 +229,8 @@
       border-radius:999px;
       border:1px solid #d1d5db;
       background:#f9fafb;
-      padding:10px 16px;              /* match pill height */
-      font-size:18px;                 /* match right-hand pills */
+      padding:10px 16px;              /* same height as pills */
+      font-size:18px;                 /* same font size as right pills */
       cursor:pointer;
     }
     .batt-tq-btn.active {
@@ -244,10 +243,10 @@
     @media (max-width: 480px) {
       .batt-input-pill,
       .batt-required-pill {
-        min-width:100px;
-        max-width:120px;
+        flex:0 0 90px;
+        width:90px;
         padding:9px 14px;
-        font-size:16px;               /* slightly scaled down on small screens */
+        font-size:16px;
       }
       .batt-input-pill input {
         font-size:16px;
@@ -262,8 +261,7 @@
         font-size:16px;
         padding:9px 14px;
       }
-    }
-  
+    }  
 
     @keyframes authFadeIn {
       from { opacity:0; transform:translateY(-2px); }
