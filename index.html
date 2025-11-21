@@ -412,7 +412,6 @@
 
     <!-- Shared CSV only (no local CSV, no clear data here) -->
     <div class="row" style="margin-bottom:4px; justify-content:flex-end;">
-      <button id="loadShared" class="btn btn-secondary">Load shared file</button>
     </div>
 
     <div class="hint" style="text-align:center; font-size:12px;">
@@ -598,6 +597,20 @@
           <p class="small"><strong>Routine visit setting:</strong> <span id="diagRoutine">Not set</span></p>
           <p class="small"><strong>Service worker:</strong> <span id="diagSwStatus">Checking…</span></p>
         </div>
+        
+        <!-- CSV + Data Management -->
+<div class="card" style="margin-top:8px;">
+  <h3 style="margin:0 0 6px 0; font-size:14px;">CSV & data management</h3>
+
+  <button id="loadLocalCsvSettings" class="btn btn-secondary" style="margin-top:6px;">Load local CSV</button>
+  <button id="loadSharedSettings" class="btn btn-secondary" style="margin-top:6px;">Load shared file</button>
+  <button id="clearDataSettings" class="btn btn-danger" style="margin-top:6px;">Clear all data</button>
+
+  <p class="small" style="margin-top:6px; color:#6b7280;">
+    These actions only affect your device. They do not modify the shared CSV.
+  </p>
+</div>
+
 
 <!-- CSV & data management -->
 <div class="card" style="margin-top:8px;">
