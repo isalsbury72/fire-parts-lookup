@@ -136,38 +136,29 @@
       .home-grid { grid-template-columns: 1fr; }
     }
 
+
     /* Battery calculator */
     .batt-wrap {
       display:flex;
       flex-direction:column;
-      gap:6px;
+      gap:8px;
     }
     .batt-row {
       display:flex;
       align-items:center;
       justify-content:space-between;
-      gap:6px;
+      gap:8px;
     }
-.batt-label-pill,
-.batt-input-pill,
-.batt-required-pill {
-  border-radius:999px;
-  padding:10px 14px; /* increased height */
-  font-size:12px;
-  line-height:1.4;
-  border:1px solid #e5e7eb;
-  background:#f9fafb;
-}
-
-    /* Normalise right-side pill widths */
-.batt-input-pill,
-.batt-required-pill {
-  width: 120px;        /* consistent width for all values */
-  max-width: 120px;
-  min-width: 120px;
-  justify-content: flex-end;
-}
-    
+    .batt-label-pill,
+    .batt-input-pill,
+    .batt-required-pill {
+      border-radius:999px;
+      padding:8px 14px;              /* taller + a bit wider */
+      font-size:14px;                 /* +2 from previous 12 */
+      line-height:1.4;
+      border:1px solid #e5e7eb;
+      background:#f9fafb;
+    }
     .batt-label-pill {
       flex:1 1 auto;
       min-width:0;
@@ -175,22 +166,21 @@
       overflow:hidden;
       text-overflow:ellipsis;
     }
-.batt-input-pill {
-  flex:0 0 110px;             /* fixed width for all right-side pills */
-  width:110px;
-  min-width:110px;
-  max-width:110px;
-  display:flex;
-  align-items:center;
-  justify-content:flex-end;
-  font-variant-numeric: tabular-nums;
-}
+    .batt-input-pill {
+      flex:0 0 auto;
+      min-width:90px;                 /* narrower – roughly 1/3 less */
+      max-width:110px;
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      font-variant-numeric: tabular-nums;
+    }
     .batt-input-pill input {
       width:100%;
       border:none;
       outline:none;
       background:transparent;
-      font-size:12px;
+      font-size:14px;                 /* match pill font size */
       text-align:right;
       font-variant-numeric: tabular-nums;
     }
@@ -204,39 +194,36 @@
       box-shadow:0 0 0 2px rgba(37,99,235,0.25);
       background:#eff6ff;
     }
-.batt-required-pill {
-  flex:0 0 110px;             /* same width as input pills */
-  width:110px;
-  min-width:110px;
-  max-width:110px;
-  background:#f97316;
-  border-color:#ea580c;
-  color:#fff;
-  font-weight:600;
-  display:flex;
-  align-items:center;
-  justify-content:flex-end;
-  font-variant-numeric: tabular-nums;
-}
+    .batt-required-pill {
+      min-width:110px;                /* same visual size as other right pills */
+      background:#f97316;
+      border-color:#ea580c;
+      color:#fff;
+      font-weight:600;
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      font-variant-numeric: tabular-nums;
+    }
     .batt-required-row {
       display:flex;
       align-items:center;
       justify-content:space-between;
-      gap:6px;
+      gap:8px;
       margin-top:4px;
     }
     .batt-tq-buttons {
       display:flex;
-      gap:6px;
-      margin-top:6px;
+      gap:8px;
+      margin-top:8px;
     }
     .batt-tq-btn {
       flex:1;
       border-radius:999px;
       border:1px solid #d1d5db;
       background:#f9fafb;
-      padding:6px 10px;
-      font-size:11px;
+      padding:8px 12px;              /* taller to match pills */
+      font-size:13px;                /* slightly smaller than 14 but still +2 */
       cursor:pointer;
     }
     .batt-tq-btn.active {
@@ -246,28 +233,23 @@
       font-weight:600;
     }
 
-@media (max-width: 480px) {
-  .batt-input-pill {
-    flex:0 0 110px;
-    width:110px;
-    min-width:110px;
-    max-width:110px;
-    padding:6px 10px;     /* a touch smaller horizontally on phones */
-  }
-  .batt-label-pill {
-    font-size:11px;
-  }
-  .batt-input-pill input {
-    font-size:11px;
-  }
-  .batt-required-pill {
-    flex:0 0 110px;
-    width:110px;
-    min-width:110px;
-    max-width:110px;
-    font-size:12px;
-  }
-}
+    @media (max-width: 480px) {
+      .batt-input-pill {
+        min-width:80px;              /* still narrower on mobile */
+        max-width:100px;
+        padding:7px 12px;
+      }
+      .batt-label-pill {
+        font-size:13px;
+      }
+      .batt-input-pill input {
+        font-size:13px;
+      }
+      .batt-required-pill {
+        min-width:100px;
+        font-size:14px;
+      }
+    }
 
     @keyframes authFadeIn {
       from { opacity:0; transform:translateY(-2px); }
@@ -355,7 +337,7 @@
 
           <!-- Tq display -->
           <div class="batt-row">
-            <div class="batt-label-pill">Required quiescent time (Tq)</div>
+            <div class="batt-label-pill">Quiescent standby time (Tq)</div>
             <div class="batt-input-pill">
               <span id="battTqDisplay">24 h</span>
             </div>
@@ -363,7 +345,7 @@
 
           <!-- Ta fixed -->
           <div class="batt-row">
-            <div class="batt-label-pill">Required alarm mode standby time (Ta)</div>
+            <div class="batt-label-pill">Alarm mode standby time (Ta)</div>
             <div class="batt-input-pill">
               <span id="battTaDisplay">0.5 h</span>
             </div>
