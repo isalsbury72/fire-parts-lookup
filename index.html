@@ -333,7 +333,7 @@
         <div class="batt-wrap">
           <!-- Iq -->
           <div class="batt-row">
-            <div class="batt-label-pill">Quiescent current (Iq)</div>
+            <div class="batt-label-pill">Quiescent Current (Iq)</div>
             <div class="batt-input-pill">
               <input id="battIq" type="number" step="0.01" inputmode="decimal" placeholder="0.00">
             </div>
@@ -341,7 +341,7 @@
 
           <!-- Ia -->
           <div class="batt-row">
-            <div class="batt-label-pill">Alarm mode current (Ia)</div>
+            <div class="batt-label-pill">Alarm Bode Current (Ia)</div>
             <div class="batt-input-pill">
               <input id="battIa" type="number" step="0.01" inputmode="decimal" placeholder="0.00">
             </div>
@@ -349,23 +349,23 @@
 
           <!-- Tq display -->
           <div class="batt-row">
-            <div class="batt-label-pill">Quiescent standby time (Tq)</div>
+            <div class="batt-label-pill">Quiescent Standby Time (Tq)</div>
             <div class="batt-input-pill">
-              <span id="battTqDisplay">24 h</span>
+              <span id="battTqDisplay">24 Hr</span>
             </div>
           </div>
 
           <!-- Ta fixed -->
           <div class="batt-row">
-            <div class="batt-label-pill">Alarm mode standby time (Ta)</div>
+            <div class="batt-label-pill">Alarm Standby Time (Ta)</div>
             <div class="batt-input-pill">
-              <span id="battTaDisplay">0.5 h</span>
+              <span id="battTaDisplay">0.5 Hr</span>
             </div>
           </div>
 
           <!-- Calculated 20 hr capacity -->
           <div class="batt-row" style="margin-top:4px;">
-            <div class="batt-label-pill">Calculated 20&nbsp;hour capacity</div>
+            <div class="batt-label-pill">Calculated 20&nbsp;Hr Capacity</div>
             <div class="batt-input-pill">
               <span id="battCap20">0.00 Ah</span>
             </div>
@@ -373,7 +373,7 @@
 
           <!-- Age factor -->
           <div class="batt-row">
-            <div class="batt-label-pill">Age factor (capacity × 1.25)</div>
+            <div class="batt-label-pill">Age Factor (capacity × 1.25)</div>
             <div class="batt-input-pill">
               <span id="battAgeCap">0.00 Ah</span>
             </div>
@@ -381,7 +381,7 @@
 
           <!-- Required capacity (orange) -->
           <div class="batt-required-row">
-            <div class="batt-label-pill" style="flex:1;">Required capacity</div>
+            <div class="batt-label-pill" style="flex:1;">Required Capacity</div>
             <div class="batt-required-pill">
               <span id="battRequired">0.00 Ah</span>
             </div>
@@ -389,8 +389,8 @@
 
           <!-- Tq buttons -->
           <div class="batt-tq-buttons">
-            <button id="battBtnTq24" class="batt-tq-btn active">Tq 24 h</button>
-            <button id="battBtnTq72" class="batt-tq-btn">Tq 72 h</button>
+            <button id="battBtnTq24" class="batt-tq-btn active">Tq @ 24 Hr</button>
+            <button id="battBtnTq72" class="batt-tq-btn">Tq @ 72 Hr</button>
           </div>
         </div>
       </div>
