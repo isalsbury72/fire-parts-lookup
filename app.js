@@ -341,7 +341,6 @@ if (els.copyArea) {
   els.copyArea.textContent =
     `${r.DESCRIPTION} — ${r.PARTNUMBER} — ${fmtPrice(r.PRICE)} each (${sup} price)`;
 }
-
       updateAddToQuoteState();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
