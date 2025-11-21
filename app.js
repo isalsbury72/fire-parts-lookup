@@ -208,11 +208,8 @@ const els = {
   csv: document.getElementById('csv'),
   tbl: document.getElementById('tbl')?.querySelector('tbody'),
   count: document.getElementById('count'),
-  partsCsvSummary: document.getElementById('partsCsvSummary'),
   copyArea: document.getElementById('copyArea'),
   copyPartLine: document.getElementById('copyPartLine'),
-  clearCache: document.getElementById('clearCache'),
-  loadShared: document.getElementById('loadShared'),
   partsPage: document.getElementById('partsPage'),
 
   // Quote + build case pages
@@ -280,6 +277,11 @@ const els = {
   goHomeFromBattery:  document.getElementById('goHomeFromBattery'),
   goHomeFromSettings: document.getElementById('goHomeFromSettings'),
 
+  // Settings CSV buttons
+  loadLocalCsvSettings: document.getElementById('loadLocalCsvSettings'),
+  loadSharedSettings:   document.getElementById('loadSharedSettings'),
+  clearDataSettings:    document.getElementById('clearDataSettings'),
+
   // Diagnostics
   diagCsvSource: document.getElementById('diagCsvSource'),
   diagLastLoaded: document.getElementById('diagLastLoaded'),
@@ -294,19 +296,24 @@ const els = {
 /* ---------- Parts page ---------- */
 
 function renderParts() {
-  const qRaw = els.q ? els.q.value : '';
-  const q = qRaw.trim().toLowerCase();
+  const q = els.q ? els.q.value.trim().toLowerCase() : '';
   const body = els.tbl;
   if (!body) return;
 
   body.innerHTML = '';
 
-  // If no search text, do not show any rows
-  const rows = q
-    ? state.rows.filter(r =>
-        Object.values(r).join(' ').toLowerCase().includes(q)
-      )
-    : [];
+  // Filter rows only if there is a search query.
+  let rows = [];
+  if (q) {
+    rows = state.rows.filter(r =>
+      Object.values(r).join(' ').toLowerCase().includes(q)
+    );
+  } else {
+    // No query: show nothing, clear selection and yellow pill.
+    state.selected = null;
+    updateAddToQuoteState();
+    if (els.copyArea) els.copyArea.textContent = '';
+  }
 
   rows.forEach(r => {
     const tr = document.createElement('tr');
@@ -320,9 +327,10 @@ function renderParts() {
     tr.addEventListener('click', () => {
       state.selected = r;
       if (els.copyArea) {
-        const sup = r.SUPPLIER || 'Supplier';
+        // Format to match Notes to estimator line (but no qty):
+        // Tyco 614TA Type A Heat Detector — 4098-9637EA — $62.14 each (JCI 2025 price)
         els.copyArea.textContent =
-          `${r.DESCRIPTION} — ${r.PARTNUMBER} — ${fmtPrice(r.PRICE)} each (${sup} price)`;
+          `${r.DESCRIPTION} — ${r.PARTNUMBER} — ${fmtPrice(r.PRICE)} each (${r.SUPPLIER} price)`;
       }
       updateAddToQuoteState();
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -330,14 +338,7 @@ function renderParts() {
     body.appendChild(tr);
   });
 
-  if (els.count) els.count.textContent = rows.length;
-
-  // If there is no search text, clear the yellow pill and selection
-  if (!q) {
-    state.selected = null;
-    updateAddToQuoteState();
-    if (els.copyArea) els.copyArea.textContent = '';
-  }
+  if (els.count) els.count.textContent = rows.length.toString();
 
   renderDiagnostics();
 }
@@ -432,7 +433,7 @@ if (cachedCsv) {
   } catch {}
 }
 
-/* ---------- Loaders ---------- */
+/* ---------- Loaders (CSV & shared file) ---------- */
 
 async function loadSharedFromRepo() {
   if (!ensureAccess()) return;
@@ -449,17 +450,21 @@ async function loadSharedFromRepo() {
   }
 }
 
-if (els.csv) els.csv.addEventListener('change', e => {
-  const f = e.target.files[0];
-  if (!f) return;
-  const r = new FileReader();
-  r.onload = () => {
-    localStorage.setItem(LS_KEYS.CSV, r.result);
-    parseCSV(r.result, 'Local CSV file');
-    toast('Loaded local CSV', true);
-  };
-  r.readAsText(f);
-});
+// Hidden <input id="csv"> is still used for file picking,
+// but the button that triggers it now lives in Settings.
+if (els.csv) {
+  els.csv.addEventListener('change', e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const r = new FileReader();
+    r.onload = () => {
+      localStorage.setItem(LS_KEYS.CSV, r.result);
+      parseCSV(r.result, 'Local CSV file');
+      toast('Loaded local CSV', true);
+    };
+    r.readAsText(f);
+  });
+}
 
 function ensureAccess() {
   const ok = localStorage.getItem(LS_KEYS.ACCESS);
@@ -473,8 +478,6 @@ function ensureAccess() {
   toast('Access denied.', false);
   return false;
 }
-
-if (els.loadShared) els.loadShared.addEventListener('click', loadSharedFromRepo);
 
 function clearAllData() {
   localStorage.removeItem(LS_KEYS.CSV);
@@ -510,8 +513,27 @@ function clearAllData() {
   toast('All app data cleared.', true);
 }
 
-if (els.clearCache) els.clearCache.addEventListener('click', clearAllData);
-if (els.btnDiagClearAll) els.btnDiagClearAll.addEventListener('click', clearAllData);
+/* Settings: wire CSV buttons */
+
+if (els.loadSharedSettings) {
+  els.loadSharedSettings.addEventListener('click', loadSharedFromRepo);
+}
+
+if (els.loadLocalCsvSettings) {
+  els.loadLocalCsvSettings.addEventListener('click', () => {
+    if (els.csv) els.csv.click();
+  });
+}
+
+// Clear data from Settings section
+if (els.clearDataSettings) {
+  els.clearDataSettings.addEventListener('click', clearAllData);
+}
+
+// Also keep diagnostic "Clear all app data" button wired, if present
+if (els.btnDiagClearAll) {
+  els.btnDiagClearAll.addEventListener('click', clearAllData);
+}
 
 /* ---------- Manual item ---------- */
 
@@ -753,7 +775,6 @@ function buildCaseStep1Fill() {
     els.notesEstimator.value = itemsTxt;
   }
 
-  // Keep state in sync as well
   state.buildcase.notesEstimator = itemsTxt;
 
   if (els.bc1ItemsCount) {
@@ -790,12 +811,14 @@ function showBatteryPage() {
 function showPartsPage() {
   hideAllPages();
   if (els.partsPage) els.partsPage.style.display = 'block';
+  renderParts();
   renderDiagnostics();
 }
 
 function showQuotePage() {
   hideAllPages();
   if (els.quotePage) els.quotePage.style.display = 'block';
+  renderQuote();
   renderDiagnostics();
 }
 
@@ -809,12 +832,10 @@ function showBuild1() {
   hideAllPages();
   if (els.buildcase1Page) els.buildcase1Page.style.display = 'block';
 
-  // Notes to customer stays whatever the user last typed
   if (els.notesCustomer) {
     els.notesCustomer.value = state.buildcase.notesCustomer || '';
   }
 
-  // Always rebuild Notes to estimator from the CURRENT quote lines
   buildCaseStep1Fill();
 
   renderDiagnostics();
@@ -824,7 +845,6 @@ function showBuild2() {
   hideAllPages();
   if (els.buildcase2Page) els.buildcase2Page.style.display = 'block';
 
-  // Routine visit radios
   if (state.buildcase.routineVisit === 'yes') {
     if (els.routineYes) els.routineYes.checked = true;
     if (els.routineNo)  els.routineNo.checked  = false;
@@ -873,42 +893,30 @@ window.appNav = {
   settings: showSettingsPage
 };
 
-/* Tab click handlers */
+/* Tab click handlers (if ever shown again) */
 
 if (els.tabParts) els.tabParts.addEventListener('click', showPartsPage);
 if (els.tabQuote) els.tabQuote.addEventListener('click', showQuotePage);
 if (els.tabSettings) els.tabSettings.addEventListener('click', showSettingsPage);
 
 // Home page tiles
-if (els.btnHomeParts) {
-  els.btnHomeParts.addEventListener('click', showPartsPage);
-}
-if (els.btnHomeBattery) {
-  els.btnHomeBattery.addEventListener('click', showBatteryPage);
-}
+if (els.btnHomeParts)    els.btnHomeParts.addEventListener('click', showPartsPage);
+if (els.btnHomeBattery)  els.btnHomeBattery.addEventListener('click', showBatteryPage);
 
-// Back to Home buttons on Parts / Battery / Settings / Quote pages
-if (els.goHomeFromParts) {
-  els.goHomeFromParts.addEventListener('click', showHomePage);
-}
-if (els.goHomeFromQuote) {
-  els.goHomeFromQuote.addEventListener('click', showHomePage);
-}
-if (els.goHomeFromBattery) {
-  els.goHomeFromBattery.addEventListener('click', showHomePage);
-}
-if (els.goHomeFromSettings) {
-  els.goHomeFromSettings.addEventListener('click', showHomePage);
-}
+// Back-to-Home buttons
+if (els.goHomeFromParts)    els.goHomeFromParts.addEventListener('click', showHomePage);
+if (els.goHomeFromQuote)    els.goHomeFromQuote.addEventListener('click', showHomePage);
+if (els.goHomeFromBattery)  els.goHomeFromBattery.addEventListener('click', showHomePage);
+if (els.goHomeFromSettings) els.goHomeFromSettings.addEventListener('click', showHomePage);
 
 /* Build case navigation */
 
-if (els.btnBuildCase) els.btnBuildCase.addEventListener('click', showBuild1);
-if (els.btnBackToQuote) els.btnBackToQuote.addEventListener('click', showQuotePage);
-if (els.btnBackToQuoteFrom3) els.btnBackToQuoteFrom3.addEventListener('click', showQuotePage);
-if (els.btnBackToQuoteFrom2) els.btnBackToQuoteFrom2.addEventListener('click', showQuotePage);
-if (els.btnBackToBuild1) els.btnBackToBuild1.addEventListener('click', showBuild1);
-if (els.btnBackToBuild2) els.btnBackToBuild2.addEventListener('click', showBuild2);
+if (els.btnBuildCase)           els.btnBuildCase.addEventListener('click', showBuild1);
+if (els.btnBackToQuote)         els.btnBackToQuote.addEventListener('click', showQuotePage);
+if (els.btnBackToQuoteFrom3)    els.btnBackToQuoteFrom3.addEventListener('click', showQuotePage);
+if (els.btnBackToQuoteFrom2)    els.btnBackToQuoteFrom2.addEventListener('click', showQuotePage);
+if (els.btnBackToBuild1)        els.btnBackToBuild1.addEventListener('click', showBuild1);
+if (els.btnBackToBuild2)        els.btnBackToBuild2.addEventListener('click', showBuild2);
 
 if (els.btnToBuild2) els.btnToBuild2.addEventListener('click', () => {
   state.buildcase.notesCustomer = (els.notesCustomer?.value || '').trim();
@@ -946,12 +954,10 @@ if (els.btnCopyNE3) els.btnCopyNE3.addEventListener('click', () => {
 if (els.btnClearQuote) els.btnClearQuote.addEventListener('click', () => {
   if (!state.quote.length) return;
   if (confirm('Clear all items?')) {
-    // Clear quote
     state.quote = [];
     saveQuote();
     renderQuote();
 
-    // Clear Step 2 state
     state.buildcase.routineVisit       = null;
     state.buildcase.accomNights        = '';
     state.buildcase.labourHoursNormal  = '';
@@ -962,7 +968,6 @@ if (els.btnClearQuote) els.btnClearQuote.addEventListener('click', () => {
     state.buildcase.travelHoursAfter   = '';
     saveBuildcase();
 
-    // Clear Step 2 UI (and routine radio buttons)
     if (els.routineYes)       els.routineYes.checked = false;
     if (els.routineNo)        els.routineNo.checked = false;
     if (els.accomNights)      els.accomNights.value = '';
@@ -978,7 +983,6 @@ if (els.btnClearQuote) els.btnClearQuote.addEventListener('click', () => {
     showPartsPage();
   }
 });
-
 
 /* Manual add button */
 
@@ -1029,12 +1033,11 @@ function recalcBattery() {
   // C = L × [(Iq × Tq) + Fc × (Ia × Ta)]
   const cap20 = L * ((Iq * Tq) + Fc * (Ia * Ta));
 
-  // Age factor multiplier chosen so your example hits ~12.7
   const ageMult = 1.25;
   const ageCap = cap20 * ageMult;
 
   const fmt2 = n => n.toFixed(2);
-  
+
   els.battTqDisplay.textContent = fmt2(Tq) + ' h';
   els.battTaDisplay.textContent = fmt2(Ta) + ' h';
 
@@ -1046,13 +1049,12 @@ function recalcBattery() {
 function initBattery() {
   if (!els.batteryPage) return;
 
-  // Default Tq 24 h
   state.battery.Tq = 24;
 
   if (els.battBtnTq24) {
     els.battBtnTq24.addEventListener('click', () => {
       state.battery.Tq = 24;
-      if (els.battBtnTq24) els.battBtnTq24.classList.add('active');
+      els.battBtnTq24.classList.add('active');
       if (els.battBtnTq72) els.battBtnTq72.classList.remove('active');
       recalcBattery();
     });
@@ -1060,7 +1062,7 @@ function initBattery() {
   if (els.battBtnTq72) {
     els.battBtnTq72.addEventListener('click', () => {
       state.battery.Tq = 72;
-      if (els.battBtnTq72) els.battBtnTq72.classList.add('active');
+      els.battBtnTq72.classList.add('active');
       if (els.battBtnTq24) els.battBtnTq24.classList.remove('active');
       recalcBattery();
     });
@@ -1076,11 +1078,9 @@ function initBattery() {
 if (els.routineYes) {
   els.routineYes.addEventListener('click', () => {
     if (state.buildcase.routineVisit === 'yes') {
-      // Turn off
       state.buildcase.routineVisit = null;
       els.routineYes.checked = false;
     } else {
-      // Turn on YES, turn off NO
       state.buildcase.routineVisit = 'yes';
       els.routineYes.checked = true;
       if (els.routineNo) els.routineNo.checked = false;
@@ -1092,11 +1092,9 @@ if (els.routineYes) {
 if (els.routineNo) {
   els.routineNo.addEventListener('click', () => {
     if (state.buildcase.routineVisit === 'no') {
-      // Turn off
       state.buildcase.routineVisit = null;
       els.routineNo.checked = false;
     } else {
-      // Turn on NO, turn off YES
       state.buildcase.routineVisit = 'no';
       els.routineNo.checked = true;
       if (els.routineYes) els.routineYes.checked = false;
@@ -1179,7 +1177,6 @@ function start() {
   updateAddToQuoteState();
   initBattery();
 
-  // If you have a home page div, start there; otherwise go to Parts
   if (els.homePage) {
     showHomePage();
   } else {
