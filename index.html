@@ -17,13 +17,6 @@
     .ver { margin-left: auto; background: #fff; color: #1d4ed8; font-weight: 600; padding: 2px 8px; border-radius: 999px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; }
     .auth-pill { background: #dcfce7; color: #166534; border-radius: 999px; padding: 2px 8px; font-size: 11px; border: 1px solid #22c55e; display: inline-flex; align-items: center; gap: 4px; animation: authFadeIn 0.3s ease-out; }
 
-   body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; background: #fafafa; color: #111; }
-    header { position: sticky; top: 0; background: #3b82f6; color: #fff; padding: 10px 16px; display: flex; align-items: center; gap: 12px; z-index: 10; }
-    header img { width: 28px; height: 28px; border-radius: 6px; }
-    h1 { font-size: 18px; margin: 0; }
-    .ver { margin-left: auto; background: #fff; color: #1d4ed8; font-weight: 600; padding: 2px 8px; border-radius: 999px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; }
-    .auth-pill { background: #dcfce7; color: #166534; border-radius: 999px; padding: 2px 8px; font-size: 11px; border: 1px solid #22c55e; display: inline-flex; align-items: center; gap: 4px; animation: authFadeIn 0.3s ease-out; }
-
     /* Tabs – no longer used, hide the whole strip */
     .tabs {
       display: none;
@@ -278,49 +271,49 @@
     <!-- Home page -->
     <div id="homePage">
       <div class="card">
-<h2 style="margin-top:0; font-size:18px; text-align:center;">Home</h2>
-<p class="small" style="margin-bottom:12px; text-align:center;">Choose an area to jump into.</p>
-       <div class="home-grid">
+        <h2 style="margin-top:0; font-size:18px; text-align:center;">Home</h2>
+        <p class="small" style="margin-bottom:12px; text-align:center;">Choose an area to jump into.</p>
+        <div class="home-grid">
 
-  <button id="btnHomeParts"
-          class="home-tile"
-          onclick="appNav.parts()">
-    <div class="home-tile-title">Fire Parts lookup</div>
-    <div class="home-tile-caption">Search parts, build quotes and cases.</div>
-  </button>
+          <button id="btnHomeParts"
+                  class="home-tile"
+                  onclick="appNav.parts()">
+            <div class="home-tile-title">Fire Parts lookup</div>
+            <div class="home-tile-caption">Search parts, build quotes and cases.</div>
+          </button>
 
-  <button id="btnHomeBattery"
-          class="home-tile"
-          onclick="appNav.battery()">
-    <div class="home-tile-title">Battery calculator</div>
-    <div class="home-tile-caption">Quick capacity estimate for jobs.</div>
-  </button>
+          <button id="btnHomeBattery"
+                  class="home-tile"
+                  onclick="appNav.battery()">
+            <div class="home-tile-title">Battery calculator</div>
+            <div class="home-tile-caption">Quick capacity estimate for jobs.</div>
+          </button>
 
-  <button id="btnHomeSettings"
-          class="home-tile"
-          onclick="appNav.settings()">
-    <div class="home-tile-title">Settings</div>
-    <div class="home-tile-caption">App version, CSV data, diagnostics.</div>
-  </button>
+          <button id="btnHomeSettings"
+                  class="home-tile"
+                  onclick="appNav.settings()">
+            <div class="home-tile-title">Settings</div>
+            <div class="home-tile-caption">App version, CSV data, diagnostics.</div>
+          </button>
 
-</div>
+        </div>
       </div>
     </div>
 
-<!-- Battery page -->
-<div id="batteryPage" style="display:none;">
-<div style="margin-bottom:8px; display:flex; gap:8px;">
-  <button class="btn btn-ghost" id="goHomeFromBattery" style="flex:1;">← Home</button>
-  <button class="btn btn-primary" style="flex:1; background:#3b82f6; color:white;" disabled>
-    Battery calculator
-  </button>
-</div>
+    <!-- Battery page -->
+    <div id="batteryPage" style="display:none;">
+      <div style="margin-bottom:8px; display:flex; gap:8px;">
+        <button class="btn btn-ghost" id="goHomeFromBattery" style="flex:1;">← Home</button>
+        <button class="btn btn-primary" style="flex:1; background:#3b82f6; color:white;" disabled>
+          Battery calculator
+        </button>
+      </div>
 
-  <div class="card">
-<h2 style="margin-top:0; font-size:18px; text-align:center;">Battery calculator</h2>
-<p class="small" style="font-size:12px; text-align:center;">
-  Simple 20&nbsp;hour capacity estimate using standby and alarm loads.
-</p>
+      <div class="card">
+        <h2 style="margin-top:0; font-size:18px; text-align:center;">Battery calculator</h2>
+        <p class="small" style="font-size:12px; text-align:center;">
+          Simple 20&nbsp;hour capacity estimate using standby and alarm loads.
+        </p>
 
         <div class="batt-wrap">
           <!-- Iq -->
@@ -388,49 +381,50 @@
       </div>
     </div>
 
-<!-- Parts page -->
-<div id="partsPage" style="display:none;">
-  <!-- Row with Home / Quote / Parts buttons -->
-  <div style="margin-bottom:8px; display:flex; gap:8px;">
-    <button id="goHomeFromParts"
-            class="tab-btn"
-            style="border-color:#9ca3af; background:#ffffff; color:#374151;">
-      ← Home
-    </button>
-    <button class="tab-btn"
-            onclick="appNav.quote()"
-            style="border-color:#d1d5db; background:#f9fafb; color:#111827;">
-      Quote page
-    </button>
-    <button class="tab-btn"
-            disabled
-            style="border-color:#2563eb; background:#3b82f6; color:#ffffff;">
-      Parts
-    </button>
-  </div>
+    <!-- Parts page -->
+    <div id="partsPage" style="display:none;">
+      <!-- Row with Home / Quote / Parts buttons -->
+      <div style="margin-bottom:8px; display:flex; gap:8px;">
+        <button id="goHomeFromParts"
+                class="tab-btn"
+                style="border-color:#9ca3af; background:#ffffff; color:#374151;">
+          ← Home
+        </button>
+        <button class="tab-btn"
+                onclick="appNav.quote()"
+                style="border-color:#d1d5db; background:#f9fafb; color:#111827;">
+          Quote page
+        </button>
+        <button class="tab-btn"
+                disabled
+                style="border-color:#2563eb; background:#3b82f6; color:#ffffff;">
+          Parts
+        </button>
+      </div>
 
-  <div class="card">
-    <h2 style="margin-top:0; font-size:18px; text-align:center;">Parts lookup</h2>
-            <div class="row" style="margin-bottom:8px;">
+      <div class="card">
+        <h2 style="margin-top:0; font-size:18px; text-align:center;">Parts lookup</h2>
+
+        <!-- Search row -->
+        <div class="row" style="margin-bottom:8px;">
           <input id="q" type="search" placeholder="Search supplier, type, description or part number…">
         </div>
 
+        <!-- CSV + cache controls -->
         <div class="row" style="margin-bottom:4px;">
           <label for="csv" class="btn">Load local CSV</label>
           <input id="csv" type="file" accept=".csv">
           <button id="loadShared" class="btn btn-secondary">Load shared file</button>
           <button id="clearCache" class="btn btn-secondary">Clear data</button>
+        </div>
 
-<div class="row" style="margin-bottom:4px;">
-  <button id="loadShared" class="btn btn-secondary">Load shared file</button>
-  <button id="clearCache" class="btn btn-secondary">Clear data</button>
-</div>
+        <!-- Hint -->
+        <div class="hint" style="text-align:center; font-size:12px;">
+          Showing <span id="count">0</span> items.<br>
+          <span id="partsCsvSummary">CSV: None loaded</span>
+        </div>
 
-<div class="hint" style="text-align:center; font-size:12px;">
-  Showing <span id="count">0</span> items.<br>
-  <span id="partsCsvSummary">CSV: None loaded</span>
-</div>
-
+        <!-- Copy + add to quote -->
         <div style="display:flex; align-items:center; gap:8px; margin-top:8px;">
           <div class="copycell" id="copyArea" style="flex:1;"></div>
           <button id="copyPartLine" class="btn btn-ghost">Copy line</button>
@@ -442,6 +436,7 @@
           </button>
         </div>
 
+        <!-- Parts table -->
         <table id="tbl">
           <thead>
             <tr>
@@ -457,36 +452,36 @@
         </table>
       </div>
     </div>
-    
-<!-- Quote page -->
-<div id="quotePage" style="display:none;">
 
-  <!-- Top navigation pills -->
-  <div style="margin-bottom:8px; display:flex; gap:8px;">
-    <button id="goHomeFromQuote"
-            class="tab-btn"
-            style="border-color:#9ca3af; background:#ffffff; color:#374151;">
-      ← Home
-    </button>
+    <!-- Quote page -->
+    <div id="quotePage" style="display:none;">
 
-    <button class="tab-btn"
-            onclick="appNav.parts()"
-            style="border-color:#d1d5db; background:#f9fafb; color:#111827;">
-      Parts
-    </button>
+      <!-- Top navigation pills -->
+      <div style="margin-bottom:8px; display:flex; gap:8px;">
+        <button id="goHomeFromQuote"
+                class="tab-btn"
+                style="border-color:#9ca3af; background:#ffffff; color:#374151;">
+          ← Home
+        </button>
 
-    <button class="tab-btn"
-            disabled
-            style="border-color:#2563eb; background:#3b82f6; color:#ffffff;">
-      Quote Items
-    </button>
-  </div>
+        <button class="tab-btn"
+                onclick="appNav.parts()"
+                style="border-color:#d1d5db; background:#f9fafb; color:#111827;">
+          Parts
+        </button>
 
-  <div class="card">
-    <h2 style="margin-top:0; font-size:18px; text-align:center;">Quote items</h2>
-    <p class="small" style="font-size:12px; text-align:center;">
-      Parts you add from the Parts page will appear here. You can also add a manual line below.
-    </p>
+        <button class="tab-btn"
+                disabled
+                style="border-color:#2563eb; background:#3b82f6; color:#ffffff;">
+          Quote Items
+        </button>
+      </div>
+
+      <div class="card">
+        <h2 style="margin-top:0; font-size:18px; text-align:center;">Quote items</h2>
+        <p class="small" style="font-size:12px; text-align:center;">
+          Parts you add from the Parts page will appear here. You can also add a manual line below.
+        </p>
 
         <table style="width:100%; border-collapse:collapse; margin-top:8px;" id="quoteTable">
           <thead>
@@ -576,19 +571,19 @@
       </div>
     </div>
 
-<!-- Settings / Diagnostics page -->
-<div id="settingsPage" style="display:none;">
-  <!-- Row with Home + Settings buttons -->
-<div style="margin-bottom:8px; display:flex; gap:8px;">
-    <button class="btn btn-ghost" id="goHomeFromSettings" style="flex:1;">← Home</button>
-    <button class="btn btn-primary" style="flex:1; background:#3b82f6; color:white;" disabled>
-        Settings
-    </button>
-</div>
+    <!-- Settings / Diagnostics page -->
+    <div id="settingsPage" style="display:none;">
+      <!-- Row with Home + Settings buttons -->
+      <div style="margin-bottom:8px; display:flex; gap:8px;">
+        <button class="btn btn-ghost" id="goHomeFromSettings" style="flex:1;">← Home</button>
+        <button class="btn btn-primary" style="flex:1; background:#3b82f6; color:white;" disabled>
+          Settings
+        </button>
+      </div>
 
-  <div class="card">
-    <h2 style="margin-top:0; font-size:16px;">Settings and diagnostics</h2>
-    <p class="small">Quick health check of your Fire Parts app and data.</p>
+      <div class="card">
+        <h2 style="margin-top:0; font-size:16px;">Settings and diagnostics</h2>
+        <p class="small">Quick health check of your Fire Parts app and data.</p>
 
         <!-- Software versions bubble -->
         <div class="card" style="margin-top:8px;">
@@ -610,19 +605,18 @@
         </div>
 
         <!-- Maintenance -->
-<div class="card" style="margin-top:8px;">
-  <h3 style="margin:0 0 6px 0; font-size:14px;">Maintenance</h3>
-  <p class="small">If things look odd, you can clear all local data and reload CSV.</p>
+        <div class="card" style="margin-top:8px;">
+          <h3 style="margin:0 0 6px 0; font-size:14px;">Maintenance</h3>
+          <p class="small">If things look odd, you can clear all local data and reload CSV.</p>
 
-  <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:6px;">
-    <label for="csv" class="btn btn-secondary">Load local CSV</label>
-    <button id="btnDiagClearAll" class="btn btn-danger">Clear all app data</button>
-  </div>
+          <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:6px;">
+            <button id="btnDiagClearAll" class="btn btn-danger">Clear all app data</button>
+          </div>
 
-  <input id="csv" type="file" accept=".csv" style="display:none;">
-
-  <p class="small" style="margin-top:6px; color:#b91c1c;">This removes cached CSV, saved quotes, build case state, and access flag. It does not touch your CSV file on OneDrive or GitHub.</p>
-</div>
+          <p class="small" style="margin-top:6px; color:#b91c1c;">
+            This removes cached CSV, saved quotes, build case state, and access flag. It does not touch your CSV file on GitHub or elsewhere.
+          </p>
+        </div>
 
         <!-- Debug export -->
         <div class="card" style="margin-top:8px;">
@@ -652,26 +646,26 @@
           <textarea id="notesEstimator" class="bc-textarea" placeholder="Auto filled with quote line items..."></textarea>
         </div>
 
-<!-- Top navigation pills for Step 1 -->
-<div style="margin-bottom:8px; display:flex; gap:8px;">
-  <button class="tab-btn"
-          onclick="appNav.home()"
-          style="border-color:#9ca3af; background:#ffffff; color:#374151;">
-    ← Home
-  </button>
+        <!-- Top navigation pills for Step 1 -->
+        <div style="margin-bottom:8px; display:flex; gap:8px;">
+          <button class="tab-btn"
+                  onclick="appNav.home()"
+                  style="border-color:#9ca3af; background:#ffffff; color:#374151;">
+            ← Home
+          </button>
 
-  <button class="tab-btn"
-          onclick="appNav.quote()"
-          style="border-color:#d1d5db; background:#f9fafb; color:#111827;">
-    Quote Items
-  </button>
+          <button class="tab-btn"
+                  onclick="appNav.quote()"
+                  style="border-color:#d1d5db; background:#f9fafb; color:#111827;">
+            Quote Items
+          </button>
 
-  <button class="tab-btn"
-          disabled
-          style="border-color:#2563eb; background:#3b82f6; color:#ffffff;">
-    Build Case – Step 1
-  </button>
-</div>
+          <button class="tab-btn"
+                  disabled
+                  style="border-color:#2563eb; background:#3b82f6; color:#ffffff;">
+            Build Case – Step 1
+          </button>
+        </div>
 
       </div>
     </div>
@@ -772,10 +766,10 @@
           <textarea id="notesEstimator3" class="bc-textarea" placeholder="Estimator notes..."></textarea>
         </div>
 
-<div style="margin-top:10px; display:flex; gap:8px; justify-content:space-between; flex-wrap:wrap;">
-  <button id="btnBackToQuoteFrom3" class="btn" style="border-color:#3b82f6; color:#1d4ed8;">Back to Quote</button>
-  <button id="btnBackToBuild2" class="btn" style="border-color:#6b7280; color:#374151;">Back to Step 2</button>
-</div>
+        <div style="margin-top:10px; display:flex; gap:8px; justify-content:space-between; flex-wrap:wrap;">
+          <button id="btnBackToQuoteFrom3" class="btn" style="border-color:#3b82f6; color:#1d4ed8;">Back to Quote</button>
+          <button id="btnBackToBuild2" class="btn" style="border-color:#6b7280; color:#374151;">Back to Step 2</button>
+        </div>
       </div>
     </div>
   </main>
