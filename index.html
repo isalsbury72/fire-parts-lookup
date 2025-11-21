@@ -171,16 +171,16 @@
     }
 
     /* Right-hand value pills – ALL same width + font */
-    .batt-input-pill,
-    .batt-required-pill {
-      flex:0 0 100px;                 /* fixed width, ~20% narrower than before */
-      width:100px;
-      display:flex;
-      align-items:center;
-      justify-content:flex-end;
-      font-variant-numeric: tabular-nums;
-      font-size:18px;
-    }
+.batt-input-pill,
+.batt-required-pill {
+  flex:0 0 80px;
+  width:80px;
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  font-variant-numeric: tabular-nums;
+  font-size:18px;
+}
     .batt-input-pill input {
       width:100%;
       border:none;
@@ -241,13 +241,13 @@
     }
 
     @media (max-width: 480px) {
-      .batt-input-pill,
-      .batt-required-pill {
-        flex:0 0 90px;
-        width:90px;
-        padding:9px 14px;
-        font-size:16px;
-      }
+  .batt-input-pill,
+  .batt-required-pill {
+    flex:0 0 72px;
+    width:72px;
+    padding:9px 14px;
+    font-size:16px;
+  }
       .batt-input-pill input {
         font-size:16px;
       }
