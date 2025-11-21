@@ -304,12 +304,23 @@ function renderParts() {
   if (!body) return;
   body.innerHTML = '';
 
-  // Only show rows when there is something in the search box
-  const rows = q
-    ? state.rows.filter(r =>
-        Object.values(r).join(' ').toLowerCase().includes(q)
-      )
-    : [];
+  // If there is no search text:
+  // - show 0 items
+  // - clear the yellow results pill
+  // - clear the selected row and disable "Add to quote"
+  if (!q) {
+    if (els.count) els.count.textContent = '0';
+    state.selected = null;
+    if (els.copyArea) els.copyArea.textContent = '';
+    updateAddToQuoteState();
+    renderDiagnostics();
+    return;
+  }
+
+  // Only show rows that match the search text
+  const rows = state.rows.filter(r =>
+    Object.values(r).join(' ').toLowerCase().includes(q)
+  );
 
   rows.forEach(r => {
     const tr = document.createElement('tr');
@@ -322,15 +333,25 @@ function renderParts() {
       <td class="notes">${r.NOTES}</td>`;
     tr.addEventListener('click', () => {
       state.selected = r;
-      if (els.copyArea) {
-        els.copyArea.textContent =
-          `${r.SUPPLIER} — ${r.DESCRIPTION} — ${r.PARTNUMBER} — ${fmtPrice(r.PRICE)} each`;
-      }
+
+      // Yellow pill format:
+      // SUPPLIER — DESCRIPTION — PARTNUMBER — $xx.xx each (SUPPLIER price)
+if (els.copyArea) {
+  const sup = r.SUPPLIER || 'Supplier';
+  els.copyArea.textContent =
+    `${r.DESCRIPTION} — ${r.PARTNUMBER} — ${fmtPrice(r.PRICE)} each (${sup} price)`;
+}
+
       updateAddToQuoteState();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
     body.appendChild(tr);
   });
+
+  if (els.count) els.count.textContent = rows.length.toString();
+
+  renderDiagnostics();
+}
 
   if (els.count) els.count.textContent = rows.length;
 
