@@ -186,6 +186,32 @@ function loadSavedState() {
 /* DOM refs */
 
 const els = {
+
+   loadLocalCsvSettings: document.getElementById('loadLocalCsvSettings'),
+loadSharedSettings: document.getElementById('loadSharedSettings'),
+clearDataSettings: document.getElementById('clearDataSettings'),
+
+   // Settings page: Load Local CSV
+if (els.loadLocalCsvSettings) {
+  els.loadLocalCsvSettings.addEventListener('click', () => {
+    els.csv.click();
+  });
+}
+
+// Settings page: Load Shared File
+if (els.loadSharedSettings) {
+  els.loadSharedSettings.addEventListener('click', () => {
+    loadSharedFromRepo();
+  });
+}
+
+// Settings page: Clear Data
+if (els.clearDataSettings) {
+  els.clearDataSettings.addEventListener('click', () => {
+    clearAllData();
+  });
+}
+   
   // Home
   homePage: document.getElementById('homePage'),
   btnHomeParts: document.getElementById('btnHomeParts'),
