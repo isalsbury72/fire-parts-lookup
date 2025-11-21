@@ -1036,8 +1036,8 @@ function recalcBattery() {
 
   const fmt2 = n => n.toFixed(2);
 
-  els.battTqDisplay.textContent = fmt2(Tq) + ' h';
-  els.battTaDisplay.textContent = fmt2(Ta) + ' h';
+  els.battTqDisplay.textContent = fmt2(Tq) + ' Hr';
+  els.battTaDisplay.textContent = fmt2(Ta) + ' Hr';
 
   if (els.battCap20) els.battCap20.textContent = fmt2(cap20) + ' Ah';
   if (els.battAgeCap) els.battAgeCap.textContent = fmt2(ageCap) + ' Ah';
