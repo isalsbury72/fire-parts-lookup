@@ -303,9 +303,14 @@ function renderParts() {
   const body = els.tbl;
   if (!body) return;
   body.innerHTML = '';
-  const rows = state.rows.filter(r =>
-    !q || Object.values(r).join(' ').toLowerCase().includes(q)
-  );
+
+  // Only show rows when there is something in the search box
+  const rows = q
+    ? state.rows.filter(r =>
+        Object.values(r).join(' ').toLowerCase().includes(q)
+      )
+    : [];
+
   rows.forEach(r => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
@@ -329,14 +334,7 @@ function renderParts() {
 
   if (els.count) els.count.textContent = rows.length;
 
-  if (els.partsCsvSummary) {
-    const src = state.csvMeta.source || 'None loaded';
-    const when = state.csvMeta.loadedAt ? formatLastLoaded(state.csvMeta.loadedAt) : null;
-    els.partsCsvSummary.textContent = when
-      ? `CSV: ${src} • Last loaded: ${when}`
-      : `CSV: ${src}`;
-  }
-
+  // We still keep diagnostics (they show total rows etc)
   renderDiagnostics();
 }
 
