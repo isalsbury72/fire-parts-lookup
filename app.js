@@ -2,7 +2,7 @@
    - Quote and build case saved/restored from localStorage
    - CSV metadata (source, last loaded) tracked for diagnostics
    - Settings/Diagnostics tab + Copy debug info
-   - Optional home + battery calculator page support
+   - Home + battery calculator page support
 */
 
 const APP_VERSION = '5.3.9';
@@ -205,12 +205,12 @@ const els = {
 
   // Parts
   q: document.getElementById('q'),
-  csv: document.getElementById('csv'),
   tbl: document.getElementById('tbl')?.querySelector('tbody'),
   count: document.getElementById('count'),
   copyArea: document.getElementById('copyArea'),
   copyPartLine: document.getElementById('copyPartLine'),
   partsPage: document.getElementById('partsPage'),
+  addToQuote: document.getElementById('addToQuote'),
 
   // Quote + build case pages
   quotePage: document.getElementById('quotePage'),
@@ -223,7 +223,6 @@ const els = {
   tabQuote: document.getElementById('tabQuote'),
   tabSettings: document.getElementById('tabSettings'),
 
-  addToQuote: document.getElementById('addToQuote'),
   copyQuote: document.getElementById('copyQuote'),
   copyQuoteRaw: document.getElementById('copyQuoteRaw'),
   copyQuoteEmail: document.getElementById('copyQuoteEmail'),
@@ -249,7 +248,6 @@ const els = {
   btnToBuild3: document.getElementById('btnToBuild3'),
   btnBackToBuild2: document.getElementById('btnBackToBuild2'),
   btnBackToQuoteFrom3: document.getElementById('btnBackToQuoteFrom3'),
-  btnBackToQuoteFrom2: document.getElementById('btnBackToQuoteFrom2'),
 
   notesCustomer: document.getElementById('notesCustomer'),
   notesEstimator: document.getElementById('notesEstimator'),
@@ -277,10 +275,11 @@ const els = {
   goHomeFromBattery:  document.getElementById('goHomeFromBattery'),
   goHomeFromSettings: document.getElementById('goHomeFromSettings'),
 
-  // Settings CSV buttons
+  // Settings CSV management
   loadLocalCsvSettings: document.getElementById('loadLocalCsvSettings'),
   loadSharedSettings:   document.getElementById('loadSharedSettings'),
   clearDataSettings:    document.getElementById('clearDataSettings'),
+  csvFileInput:         document.getElementById('csvFileInput'),
 
   // Diagnostics
   diagCsvSource: document.getElementById('diagCsvSource'),
@@ -289,31 +288,24 @@ const els = {
   diagQuoteItems: document.getElementById('diagQuoteItems'),
   diagRoutine: document.getElementById('diagRoutine'),
   diagSwStatus: document.getElementById('diagSwStatus'),
-  btnDiagClearAll: document.getElementById('btnDiagClearAll'),
   btnDiagCopy: document.getElementById('btnDiagCopy')
 };
 
 /* ---------- Parts page ---------- */
 
 function renderParts() {
-  const q = els.q ? els.q.value.trim().toLowerCase() : '';
   const body = els.tbl;
   if (!body) return;
 
+  const q = els.q ? els.q.value.trim().toLowerCase() : '';
   body.innerHTML = '';
 
-  // Filter rows only if there is a search query.
-  let rows = [];
-  if (q) {
-    rows = state.rows.filter(r =>
-      Object.values(r).join(' ').toLowerCase().includes(q)
-    );
-  } else {
-    // No query: show nothing, clear selection and yellow pill.
-    state.selected = null;
-    updateAddToQuoteState();
-    if (els.copyArea) els.copyArea.textContent = '';
-  }
+  // Show no rows until there is a search term
+  const rows = !q
+    ? []
+    : state.rows.filter(r =>
+        Object.values(r).join(' ').toLowerCase().includes(q)
+      );
 
   rows.forEach(r => {
     const tr = document.createElement('tr');
@@ -326,12 +318,14 @@ function renderParts() {
       <td class="notes">${r.NOTES}</td>`;
     tr.addEventListener('click', () => {
       state.selected = r;
+
+      // Copy pill format: Description — Part — Price each (SUPPLIER price)
       if (els.copyArea) {
-        // Format to match Notes to estimator line (but no qty):
-        // Tyco 614TA Type A Heat Detector — 4098-9637EA — $62.14 each (JCI 2025 price)
+        const supplierBit = r.SUPPLIER ? ` (${r.SUPPLIER} price)` : '';
         els.copyArea.textContent =
-          `${r.DESCRIPTION} — ${r.PARTNUMBER} — ${fmtPrice(r.PRICE)} each (${r.SUPPLIER} price)`;
+          `${r.DESCRIPTION} — ${r.PARTNUMBER} — ${fmtPrice(r.PRICE)} each${supplierBit}`;
       }
+
       updateAddToQuoteState();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
@@ -343,7 +337,17 @@ function renderParts() {
   renderDiagnostics();
 }
 
-if (els.q) els.q.addEventListener('input', renderParts);
+if (els.q) {
+  els.q.addEventListener('input', () => {
+    renderParts();
+    // If search is empty, clear selection and yellow pill
+    if (!els.q.value.trim()) {
+      state.selected = null;
+      if (els.copyArea) els.copyArea.textContent = '';
+      updateAddToQuoteState();
+    }
+  });
+}
 
 function updateAddToQuoteState() {
   const b = els.addToQuote;
@@ -433,7 +437,7 @@ if (cachedCsv) {
   } catch {}
 }
 
-/* ---------- Loaders (CSV & shared file) ---------- */
+/* ---------- Loaders ---------- */
 
 async function loadSharedFromRepo() {
   if (!ensureAccess()) return;
@@ -448,22 +452,6 @@ async function loadSharedFromRepo() {
     console.error(err);
     toast('Error loading shared CSV from repo', false);
   }
-}
-
-// Hidden <input id="csv"> is still used for file picking,
-// but the button that triggers it now lives in Settings.
-if (els.csv) {
-  els.csv.addEventListener('change', e => {
-    const f = e.target.files[0];
-    if (!f) return;
-    const r = new FileReader();
-    r.onload = () => {
-      localStorage.setItem(LS_KEYS.CSV, r.result);
-      parseCSV(r.result, 'Local CSV file');
-      toast('Loaded local CSV', true);
-    };
-    r.readAsText(f);
-  });
 }
 
 function ensureAccess() {
@@ -513,28 +501,6 @@ function clearAllData() {
   toast('All app data cleared.', true);
 }
 
-/* Settings: wire CSV buttons */
-
-if (els.loadSharedSettings) {
-  els.loadSharedSettings.addEventListener('click', loadSharedFromRepo);
-}
-
-if (els.loadLocalCsvSettings) {
-  els.loadLocalCsvSettings.addEventListener('click', () => {
-    if (els.csv) els.csv.click();
-  });
-}
-
-// Clear data from Settings section
-if (els.clearDataSettings) {
-  els.clearDataSettings.addEventListener('click', clearAllData);
-}
-
-// Also keep diagnostic "Clear all app data" button wired, if present
-if (els.btnDiagClearAll) {
-  els.btnDiagClearAll.addEventListener('click', clearAllData);
-}
-
 /* ---------- Manual item ---------- */
 
 function setManualBtnEnabled(enabled) {
@@ -557,7 +523,6 @@ function setManualBtnEnabled(enabled) {
 }
 function manualInputsValid() {
   if (!els.manualSection || els.manualSection.style.display === 'none') return false;
-  // Only require a description; everything else can be blank or 0
   const desc = (els.manualDescription.value || '').trim();
   return !!desc;
 }
@@ -811,14 +776,12 @@ function showBatteryPage() {
 function showPartsPage() {
   hideAllPages();
   if (els.partsPage) els.partsPage.style.display = 'block';
-  renderParts();
   renderDiagnostics();
 }
 
 function showQuotePage() {
   hideAllPages();
   if (els.quotePage) els.quotePage.style.display = 'block';
-  renderQuote();
   renderDiagnostics();
 }
 
@@ -893,17 +856,17 @@ window.appNav = {
   settings: showSettingsPage
 };
 
-/* Tab click handlers (if ever shown again) */
+/* Tab click handlers (legacy tabs, hidden) */
 
 if (els.tabParts) els.tabParts.addEventListener('click', showPartsPage);
 if (els.tabQuote) els.tabQuote.addEventListener('click', showQuotePage);
 if (els.tabSettings) els.tabSettings.addEventListener('click', showSettingsPage);
 
-// Home page tiles
-if (els.btnHomeParts)    els.btnHomeParts.addEventListener('click', showPartsPage);
-if (els.btnHomeBattery)  els.btnHomeBattery.addEventListener('click', showBatteryPage);
+// Home tiles
+if (els.btnHomeParts)   els.btnHomeParts.addEventListener('click', showPartsPage);
+if (els.btnHomeBattery) els.btnHomeBattery.addEventListener('click', showBatteryPage);
 
-// Back-to-Home buttons
+// Back-to-home buttons on Parts / Battery / Quote / Settings pages
 if (els.goHomeFromParts)    els.goHomeFromParts.addEventListener('click', showHomePage);
 if (els.goHomeFromQuote)    els.goHomeFromQuote.addEventListener('click', showHomePage);
 if (els.goHomeFromBattery)  els.goHomeFromBattery.addEventListener('click', showHomePage);
@@ -911,12 +874,11 @@ if (els.goHomeFromSettings) els.goHomeFromSettings.addEventListener('click', sho
 
 /* Build case navigation */
 
-if (els.btnBuildCase)           els.btnBuildCase.addEventListener('click', showBuild1);
-if (els.btnBackToQuote)         els.btnBackToQuote.addEventListener('click', showQuotePage);
-if (els.btnBackToQuoteFrom3)    els.btnBackToQuoteFrom3.addEventListener('click', showQuotePage);
-if (els.btnBackToQuoteFrom2)    els.btnBackToQuoteFrom2.addEventListener('click', showQuotePage);
-if (els.btnBackToBuild1)        els.btnBackToBuild1.addEventListener('click', showBuild1);
-if (els.btnBackToBuild2)        els.btnBackToBuild2.addEventListener('click', showBuild2);
+if (els.btnBuildCase)          els.btnBuildCase.addEventListener('click', showBuild1);
+if (els.btnBackToQuote)        els.btnBackToQuote.addEventListener('click', showQuotePage);
+if (els.btnBackToQuoteFrom3)   els.btnBackToQuoteFrom3.addEventListener('click', showQuotePage);
+if (els.btnBackToBuild1)       els.btnBackToBuild1.addEventListener('click', showBuild1);
+if (els.btnBackToBuild2)       els.btnBackToBuild2.addEventListener('click', showBuild2);
 
 if (els.btnToBuild2) els.btnToBuild2.addEventListener('click', () => {
   state.buildcase.notesCustomer = (els.notesCustomer?.value || '').trim();
@@ -958,6 +920,7 @@ if (els.btnClearQuote) els.btnClearQuote.addEventListener('click', () => {
     saveQuote();
     renderQuote();
 
+    // Reset Step 2 state
     state.buildcase.routineVisit       = null;
     state.buildcase.accomNights        = '';
     state.buildcase.labourHoursNormal  = '';
@@ -984,39 +947,6 @@ if (els.btnClearQuote) els.btnClearQuote.addEventListener('click', () => {
   }
 });
 
-/* Manual add button */
-
-if (els.manualAddBtn) els.manualAddBtn.addEventListener('click', () => {
-  if (!manualInputsValid()) {
-    toast('Enter a description for the manual item.', false);
-    return;
-  }
-
-  const sup = (els.manualSupplier.value || '').trim();
-  const desc = (els.manualDescription.value || '').trim();
-  const pn = (els.manualPart.value || '').trim();
-  const priceEach = parseFloat((els.manualPrice.value || '').toString().replace(/[^0-9.]/g, '')) || 0;
-  const qty = Math.max(1, parseInt(els.manualQty.value, 10) || 1);
-
-  state.quote.push({
-    SUPPLIER: sup,
-    DESCRIPTION: desc,
-    PARTNUMBER: pn,
-    PRICE: priceEach,
-    qty
-  });
-  saveQuote();
-  renderQuote();
-
-  els.manualSupplier.value = '';
-  els.manualDescription.value = '';
-  els.manualPart.value = '';
-  els.manualPrice.value = '';
-  els.manualQty.value = '1';
-  setManualBtnEnabled(false);
-  toast('Manual item added.', true);
-});
-
 /* ---------- Battery calculator ---------- */
 
 function recalcBattery() {
@@ -1030,14 +960,13 @@ function recalcBattery() {
   const Fc = 2;   // capacity derating factor for alarm term
   const L = 1;    // compensation factor (currently 1)
 
-  // C = L × [(Iq × Tq) + Fc × (Ia × Ta)]
   const cap20 = L * ((Iq * Tq) + Fc * (Ia * Ta));
 
   const ageMult = 1.25;
   const ageCap = cap20 * ageMult;
 
   const fmt2 = n => n.toFixed(2);
-
+  
   els.battTqDisplay.textContent = fmt2(Tq) + ' h';
   els.battTaDisplay.textContent = fmt2(Ta) + ' h';
 
@@ -1100,6 +1029,39 @@ if (els.routineNo) {
       if (els.routineYes) els.routineYes.checked = false;
     }
     saveBuildcase();
+  });
+}
+
+/* ---------- Settings: CSV management buttons ---------- */
+
+if (els.loadLocalCsvSettings && els.csvFileInput) {
+  els.loadLocalCsvSettings.addEventListener('click', () => {
+    els.csvFileInput.value = '';
+    els.csvFileInput.click();
+  });
+
+  els.csvFileInput.addEventListener('change', e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const r = new FileReader();
+    r.onload = () => {
+      localStorage.setItem(LS_KEYS.CSV, r.result);
+      parseCSV(r.result, 'Local CSV file');
+      toast('Loaded local CSV', true);
+    };
+    r.readAsText(f);
+  });
+}
+
+if (els.loadSharedSettings) {
+  els.loadSharedSettings.addEventListener('click', loadSharedFromRepo);
+}
+
+if (els.clearDataSettings) {
+  els.clearDataSettings.addEventListener('click', () => {
+    if (confirm('Clear cached CSV, quotes, build case and access?')) {
+      clearAllData();
+    }
   });
 }
 
@@ -1166,8 +1128,7 @@ if (els.btnDiagCopy) {
 /* ---------- Start ---------- */
 
 function start() {
-
-  // Hide all tabs on first load — home page doesn't use them
+  // Hide legacy tabs on first load
   if (els.tabParts) els.tabParts.style.display = 'none';
   if (els.tabQuote) els.tabQuote.style.display = 'none';
   if (els.tabSettings) els.tabSettings.style.display = 'none';
