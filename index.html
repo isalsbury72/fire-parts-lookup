@@ -175,15 +175,16 @@
       overflow:hidden;
       text-overflow:ellipsis;
     }
-    .batt-input-pill {
-      flex:0 0 auto;
-      min-width:120px;
-      max-width:140px;
-      display:flex;
-      align-items:center;
-      justify-content:flex-end;
-      font-variant-numeric: tabular-nums;
-    }
+.batt-input-pill {
+  flex:0 0 110px;             /* fixed width for all right-side pills */
+  width:110px;
+  min-width:110px;
+  max-width:110px;
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  font-variant-numeric: tabular-nums;
+}
     .batt-input-pill input {
       width:100%;
       border:none;
@@ -203,17 +204,20 @@
       box-shadow:0 0 0 2px rgba(37,99,235,0.25);
       background:#eff6ff;
     }
-    .batt-required-pill {
-      min-width:140px;
-      background:#f97316;
-      border-color:#ea580c;
-      color:#fff;
-      font-weight:600;
-      display:flex;
-      align-items:center;
-      justify-content:flex-end;
-      font-variant-numeric: tabular-nums;
-    }
+.batt-required-pill {
+  flex:0 0 110px;             /* same width as input pills */
+  width:110px;
+  min-width:110px;
+  max-width:110px;
+  background:#f97316;
+  border-color:#ea580c;
+  color:#fff;
+  font-weight:600;
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  font-variant-numeric: tabular-nums;
+}
     .batt-required-row {
       display:flex;
       align-items:center;
@@ -242,23 +246,28 @@
       font-weight:600;
     }
 
-    @media (max-width: 480px) {
-      .batt-input-pill {
-        min-width:110px;
-        max-width:130px;
-        padding:5px 10px;
-      }
-      .batt-label-pill {
-        font-size:11px;
-      }
-      .batt-input-pill input {
-        font-size:11px;
-      }
-      .batt-required-pill {
-        min-width:130px;
-        font-size:12px;
-      }
-    }
+@media (max-width: 480px) {
+  .batt-input-pill {
+    flex:0 0 110px;
+    width:110px;
+    min-width:110px;
+    max-width:110px;
+    padding:6px 10px;     /* a touch smaller horizontally on phones */
+  }
+  .batt-label-pill {
+    font-size:11px;
+  }
+  .batt-input-pill input {
+    font-size:11px;
+  }
+  .batt-required-pill {
+    flex:0 0 110px;
+    width:110px;
+    min-width:110px;
+    max-width:110px;
+    font-size:12px;
+  }
+}
 
     @keyframes authFadeIn {
       from { opacity:0; transform:translateY(-2px); }
