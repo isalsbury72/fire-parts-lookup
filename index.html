@@ -411,6 +411,15 @@
 
   <div class="card">
     <h2 style="margin-top:0; font-size:18px; text-align:center;">Parts lookup</h2>
+            <div class="row" style="margin-bottom:8px;">
+          <input id="q" type="search" placeholder="Search supplier, type, description or part number…">
+        </div>
+
+        <div class="row" style="margin-bottom:4px;">
+          <label for="csv" class="btn">Load local CSV</label>
+          <input id="csv" type="file" accept=".csv">
+          <button id="loadShared" class="btn btn-secondary">Load shared file</button>
+          <button id="clearCache" class="btn btn-secondary">Clear data</button>
 
 <div class="row" style="margin-bottom:4px;">
   <button id="loadShared" class="btn btn-secondary">Load shared file</button>
