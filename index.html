@@ -381,77 +381,72 @@
       </div>
     </div>
 
-    <!-- Parts page -->
-    <div id="partsPage" style="display:none;">
-      <!-- Row with Home / Quote / Parts buttons -->
-      <div style="margin-bottom:8px; display:flex; gap:8px;">
-        <button id="goHomeFromParts"
-                class="tab-btn"
-                style="border-color:#9ca3af; background:#ffffff; color:#374151;">
-          ← Home
-        </button>
-        <button class="tab-btn"
-                onclick="appNav.quote()"
-                style="border-color:#d1d5db; background:#f9fafb; color:#111827;">
-          Quote page
-        </button>
-        <button class="tab-btn"
-                disabled
-                style="border-color:#2563eb; background:#3b82f6; color:#ffffff;">
-          Parts
-        </button>
-      </div>
+<!-- Parts page -->
+<div id="partsPage" style="display:none;">
+  <!-- Row with Home / Quote / Parts buttons -->
+  <div style="margin-bottom:8px; display:flex; gap:8px;">
+    <button id="goHomeFromParts"
+            class="tab-btn"
+            style="border-color:#9ca3af; background:#ffffff; color:#374151;">
+      ← Home
+    </button>
+    <button class="tab-btn"
+            onclick="appNav.quote()"
+            style="border-color:#d1d5db; background:#f9fafb; color:#111827;">
+      Quote page
+    </button>
+    <button class="tab-btn"
+            disabled
+            style="border-color:#2563eb; background:#3b82f6; color:#ffffff;">
+      Parts
+    </button>
+  </div>
 
-      <div class="card">
-        <h2 style="margin-top:0; font-size:18px; text-align:center;">Parts lookup</h2>
+  <div class="card">
+    <h2 style="margin-top:0; font-size:18px; text-align:center;">Parts lookup</h2>
 
-        <!-- Search row -->
-        <div class="row" style="margin-bottom:8px;">
-          <input id="q" type="search" placeholder="Search supplier, type, description or part number…">
-        </div>
-
-        <!-- CSV + cache controls -->
-        <div class="row" style="margin-bottom:4px;">
-          <label for="csv" class="btn">Load local CSV</label>
-          <input id="csv" type="file" accept=".csv">
-          <button id="loadShared" class="btn btn-secondary">Load shared file</button>
-          <button id="clearCache" class="btn btn-secondary">Clear data</button>
-        </div>
-
-        <!-- Hint -->
-        <div class="hint" style="text-align:center; font-size:12px;">
-          Showing <span id="count">0</span> items.<br>
-          <span id="partsCsvSummary">CSV: None loaded</span>
-        </div>
-
-        <!-- Copy + add to quote -->
-        <div style="display:flex; align-items:center; gap:8px; margin-top:8px;">
-          <div class="copycell" id="copyArea" style="flex:1;"></div>
-          <button id="copyPartLine" class="btn btn-ghost">Copy line</button>
-          <button id="addToQuote"
-                  disabled
-                  class="btn"
-                  style="background:#f3f4f6; color:#9ca3af; border-color:#d1d5db; opacity:0.5; cursor:not-allowed;">
-            Add to quote
-          </button>
-        </div>
-
-        <!-- Parts table -->
-        <table id="tbl">
-          <thead>
-            <tr>
-              <th>Supplier</th>
-              <th>Type</th>
-              <th>Description</th>
-              <th>Part #</th>
-              <th>Price</th>
-              <th>Notes</th>
-            </tr>
-          </thead>
-          <tbody><!-- filled by app.js --></tbody>
-        </table>
-      </div>
+    <!-- Search row -->
+    <div class="row" style="margin-bottom:8px;">
+      <input id="q" type="search" placeholder="Search supplier, type, description or part number…">
     </div>
+
+    <!-- Shared CSV only (no local CSV, no clear data here) -->
+    <div class="row" style="margin-bottom:4px; justify-content:flex-end;">
+      <button id="loadShared" class="btn btn-secondary">Load shared file</button>
+    </div>
+
+    <div class="hint" style="text-align:center; font-size:12px;">
+      Showing <span id="count">0</span> items.<br>
+      <span id="partsCsvSummary">CSV: None loaded</span>
+    </div>
+
+    <div style="display:flex; align-items:center; gap:8px; margin-top:8px;">
+      <div class="copycell" id="copyArea" style="flex:1;"></div>
+      <button id="copyPartLine" class="btn btn-ghost">Copy line</button>
+      <button id="addToQuote"
+              disabled
+              class="btn"
+              style="background:#f3f4f6; color:#9ca3af; border-color:#d1d5db; opacity:0.5; cursor:not-allowed;">
+        Add to quote
+      </button>
+    </div>
+
+    <table id="tbl">
+      <thead>
+        <tr>
+          <th>Supplier</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Part #</th>
+          <th>Price</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody><!-- filled by app.js --></tbody>
+    </table>
+  </div>
+</div>
+
 
     <!-- Quote page -->
     <div id="quotePage" style="display:none;">
@@ -604,19 +599,22 @@
           <p class="small"><strong>Service worker:</strong> <span id="diagSwStatus">Checking…</span></p>
         </div>
 
-        <!-- Maintenance -->
-        <div class="card" style="margin-top:8px;">
-          <h3 style="margin:0 0 6px 0; font-size:14px;">Maintenance</h3>
-          <p class="small">If things look odd, you can clear all local data and reload CSV.</p>
+<!-- CSV & data management -->
+<div class="card" style="margin-top:8px;">
+  <h3 style="margin:0 0 6px 0; font-size:14px;">CSV and local data</h3>
+  <p class="small">Manage your CSV file and clear any saved app data on this device.</p>
 
-          <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:6px;">
-            <button id="btnDiagClearAll" class="btn btn-danger">Clear all app data</button>
-          </div>
+  <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:6px;">
+    <label for="csvSettings" class="btn btn-secondary">Load local CSV</label>
+    <button id="btnDiagClearAll" class="btn btn-danger">Clear all app data</button>
+  </div>
 
-          <p class="small" style="margin-top:6px; color:#b91c1c;">
-            This removes cached CSV, saved quotes, build case state, and access flag. It does not touch your CSV file on GitHub or elsewhere.
-          </p>
-        </div>
+  <input id="csvSettings" type="file" accept=".csv" style="display:none;">
+
+  <p class="small" style="margin-top:6px; color:#b91c1c;">
+    This removes cached CSV, saved quotes, build case state, and access flag. It does not touch your CSV file on OneDrive or GitHub.
+  </p>
+</div>
 
         <!-- Debug export -->
         <div class="card" style="margin-top:8px;">
