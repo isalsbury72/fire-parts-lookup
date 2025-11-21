@@ -186,32 +186,6 @@ function loadSavedState() {
 /* DOM refs */
 
 const els = {
-
-   loadLocalCsvSettings: document.getElementById('loadLocalCsvSettings'),
-loadSharedSettings: document.getElementById('loadSharedSettings'),
-clearDataSettings: document.getElementById('clearDataSettings'),
-
-   // Settings page: Load Local CSV
-if (els.loadLocalCsvSettings) {
-  els.loadLocalCsvSettings.addEventListener('click', () => {
-    els.csv.click();
-  });
-}
-
-// Settings page: Load Shared File
-if (els.loadSharedSettings) {
-  els.loadSharedSettings.addEventListener('click', () => {
-    loadSharedFromRepo();
-  });
-}
-
-// Settings page: Clear Data
-if (els.clearDataSettings) {
-  els.clearDataSettings.addEventListener('click', () => {
-    clearAllData();
-  });
-}
-   
   // Home
   homePage: document.getElementById('homePage'),
   btnHomeParts: document.getElementById('btnHomeParts'),
@@ -314,7 +288,12 @@ if (els.clearDataSettings) {
   diagRoutine: document.getElementById('diagRoutine'),
   diagSwStatus: document.getElementById('diagSwStatus'),
   btnDiagClearAll: document.getElementById('btnDiagClearAll'),
-  btnDiagCopy: document.getElementById('btnDiagCopy')
+  btnDiagCopy: document.getElementById('btnDiagCopy'),
+
+  // Settings CSV/data management buttons
+  loadLocalCsvSettings: document.getElementById('loadLocalCsvSettings'),
+  loadSharedSettings: document.getElementById('loadSharedSettings'),
+  clearDataSettings: document.getElementById('clearDataSettings')
 };
 
 /* ---------- Parts page ---------- */
@@ -531,6 +510,25 @@ function clearAllData() {
 
 if (els.clearCache) els.clearCache.addEventListener('click', clearAllData);
 if (els.btnDiagClearAll) els.btnDiagClearAll.addEventListener('click', clearAllData);
+
+// Settings page CSV & data buttons
+if (els.loadLocalCsvSettings) {
+  els.loadLocalCsvSettings.addEventListener('click', () => {
+    if (els.csv) els.csv.click();
+  });
+}
+
+if (els.loadSharedSettings) {
+  els.loadSharedSettings.addEventListener('click', () => {
+    loadSharedFromRepo();
+  });
+}
+
+if (els.clearDataSettings) {
+  els.clearDataSettings.addEventListener('click', () => {
+    clearAllData();
+  });
+}
 
 /* ---------- Manual item ---------- */
 
