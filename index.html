@@ -17,8 +17,10 @@
     .ver { margin-left: auto; background: #fff; color: #1d4ed8; font-weight: 600; padding: 2px 8px; border-radius: 999px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; }
     .auth-pill { background: #dcfce7; color: #166534; border-radius: 999px; padding: 2px 8px; font-size: 11px; border: 1px solid #22c55e; display: inline-flex; align-items: center; gap: 4px; animation: authFadeIn 0.3s ease-out; }
 
-    /* Tabs strip is not used any more */
-    .tabs { display: none; }
+    /* Tabs – no longer used, hide the whole strip */
+    .tabs {
+      display: none;
+    }
 
     main { padding: 12px 16px 80px; max-width: 960px; margin: 0 auto; }
     .card { background:#fff; border:1px solid #eee; border-radius:12px; padding:12px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); margin-bottom:12px; }
@@ -30,6 +32,7 @@
 
     input[type="file"] { display:none; }
 
+    /* Pill buttons */
     .btn {
       display:inline-flex;
       align-items:center;
@@ -51,6 +54,7 @@
 
     .hint { font-size:12px; color:#555; margin-top:6px; }
 
+    /* Legacy tab button style (used for small nav rows) */
     .tab-btn {
       flex:1;
       padding:8px 10px;
@@ -71,6 +75,7 @@
 
     .small { font-size:12px; color:#6b7280; }
 
+    /* Build case + inputs */
     .bc-textarea { width:100%; min-height:120px; padding:8px; border-radius:8px; border:1px solid #d1d5db; font-size:13px; resize:vertical; background:#fff; }
     .bc-input { width:100%; padding:6px 8px; border-radius: 8px; border:1px solid #d1d5db; font-size:13px; }
     .bc-input--tiny { width: 64px; min-width:64px; padding:6px 6px; text-align:center; }
@@ -80,6 +85,7 @@
     .muted { color:#6b7280; font-size:12px; }
     .pill { display:inline-flex; align-items:center; gap:6px; padding:4px 8px; border-radius:999px; border:1px solid #e5e7eb; background:#f9fafb; font-size:12px; }
 
+    /* Actions grid */
     .action-grid {
       display:grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -105,7 +111,7 @@
       .action-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
 
-    /* Home tiles */
+    /* Home page */
     .home-grid {
       display:grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -244,7 +250,10 @@
       }
     }
 
-    @keyframes authFadeIn { from { opacity:0; transform:translateY(-2px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes authFadeIn {
+      from { opacity:0; transform:translateY(-2px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
   </style>
 </head>
 <body>
@@ -267,6 +276,7 @@
       <div class="card">
         <h2 style="margin-top:0; font-size:18px; text-align:center;">Home</h2>
         <p class="small" style="margin-bottom:12px; text-align:center;">Choose an area to jump into.</p>
+
         <div class="home-grid">
           <button id="btnHomeParts"
                   class="home-tile"
@@ -308,6 +318,7 @@
         </p>
 
         <div class="batt-wrap">
+          <!-- Iq -->
           <div class="batt-row">
             <div class="batt-label-pill">Quiescent current (Iq)</div>
             <div class="batt-input-pill">
@@ -315,6 +326,7 @@
             </div>
           </div>
 
+          <!-- Ia -->
           <div class="batt-row">
             <div class="batt-label-pill">Alarm mode current (Ia)</div>
             <div class="batt-input-pill">
@@ -322,6 +334,7 @@
             </div>
           </div>
 
+          <!-- Tq display -->
           <div class="batt-row">
             <div class="batt-label-pill">Required quiescent time (Tq)</div>
             <div class="batt-input-pill">
@@ -329,6 +342,7 @@
             </div>
           </div>
 
+          <!-- Ta fixed -->
           <div class="batt-row">
             <div class="batt-label-pill">Required alarm mode standby time (Ta)</div>
             <div class="batt-input-pill">
@@ -336,6 +350,7 @@
             </div>
           </div>
 
+          <!-- Calculated 20 hr capacity -->
           <div class="batt-row" style="margin-top:4px;">
             <div class="batt-label-pill">Calculated 20&nbsp;hour capacity</div>
             <div class="batt-input-pill">
@@ -343,6 +358,7 @@
             </div>
           </div>
 
+          <!-- Age factor -->
           <div class="batt-row">
             <div class="batt-label-pill">Age factor (capacity × 1.25)</div>
             <div class="batt-input-pill">
@@ -350,6 +366,7 @@
             </div>
           </div>
 
+          <!-- Required capacity (orange) -->
           <div class="batt-required-row">
             <div class="batt-label-pill" style="flex:1;">Required capacity</div>
             <div class="batt-required-pill">
@@ -357,6 +374,7 @@
             </div>
           </div>
 
+          <!-- Tq buttons -->
           <div class="batt-tq-buttons">
             <button id="battBtnTq24" class="batt-tq-btn active">Tq 24 h</button>
             <button id="battBtnTq72" class="batt-tq-btn">Tq 72 h</button>
@@ -367,6 +385,7 @@
 
     <!-- Parts page -->
     <div id="partsPage" style="display:none;">
+      <!-- Row with Home / Quote / Parts buttons -->
       <div style="margin-bottom:8px; display:flex; gap:8px;">
         <button id="goHomeFromParts"
                 class="tab-btn"
@@ -425,21 +444,25 @@
 
     <!-- Quote page -->
     <div id="quotePage" style="display:none;">
+
+      <!-- Top navigation pills -->
       <div style="margin-bottom:8px; display:flex; gap:8px;">
         <button id="goHomeFromQuote"
                 class="tab-btn"
                 style="border-color:#9ca3af; background:#ffffff; color:#374151;">
           ← Home
         </button>
+
         <button class="tab-btn"
                 onclick="appNav.parts()"
                 style="border-color:#d1d5db; background:#f9fafb; color:#111827;">
           Parts
         </button>
+
         <button class="tab-btn"
                 disabled
                 style="border-color:#2563eb; background:#3b82f6; color:#ffffff;">
-          Quote items
+          Quote Items
         </button>
       </div>
 
@@ -465,6 +488,7 @@
 
         <p class="small" id="quoteSummary" style="margin-top:8px;">Total: $0.00</p>
 
+        <!-- Manual item toggle -->
         <div class="card" style="margin-top:10px;">
           <div class="row" style="justify-content:space-between;">
             <h3 style="margin:0; font-size:14px;">Manual item</h3>
@@ -474,6 +498,7 @@
             </label>
           </div>
 
+          <!-- Manual item section (hidden until toggled on) -->
           <div id="manualSection" style="display:none; margin-top:10px;">
             <div class="row" style="gap:8px; flex-wrap:wrap;">
               <input id="manualSupplier" type="text" placeholder="Supplier" class="bc-input" style="flex:1; min-width:160px;">
@@ -485,10 +510,11 @@
             <div style="margin-top:8px; display:flex; gap:8px; justify-content:flex-end;">
               <button id="manualAddBtn" class="btn" style="border-color:#22c55e; background:#ecfdf5; color:#166534;">Add manual line to quote</button>
             </div>
-            <div class="small" style="margin-top:6px; color:#6b7280;">Tip: Price can include a dollar sign, commas, or spaces. We will clean it automatically.</div>
+            <div class="small" style="margin-top:6px; color:#6b7280;">Tip: Price can include a dollar sign, commas, or spaces. It will be cleaned automatically.</div>
           </div>
         </div>
 
+        <!-- Job + delivery -->
         <div style="margin-top:8px; display:flex; flex-direction:column; gap:8px;">
           <div style="display:flex; flex-wrap:wrap; gap:8px;">
             <div style="flex:1; min-width:160px;">
@@ -508,6 +534,7 @@
             </div>
           </div>
 
+          <!-- Actions grid -->
           <div class="action-grid" style="margin-top:6px;">
             <button id="btnBuildCase" class="action-btn ghost">
               <div class="ico">🧩</div><div class="lbl">Build case</div><div class="cap">Prep scope notes</div>
@@ -535,6 +562,7 @@
 
     <!-- Settings / Diagnostics page -->
     <div id="settingsPage" style="display:none;">
+      <!-- Row with Home + Settings buttons -->
       <div style="margin-bottom:8px; display:flex; gap:8px;">
         <button class="btn btn-ghost" id="goHomeFromSettings" style="flex:1;">← Home</button>
         <button class="btn btn-primary" style="flex:1; background:#3b82f6; color:white;" disabled>
@@ -546,7 +574,7 @@
         <h2 style="margin-top:0; font-size:16px;">Settings and diagnostics</h2>
         <p class="small">Quick health check of your Fire Parts app and data.</p>
 
-        <!-- Software versions bubble -->
+        <!-- Software versions -->
         <div class="card" style="margin-top:8px;">
           <h3 style="margin:0 0 6px 0; font-size:14px;">Software versions</h3>
           <p class="small"><strong>App version (app.js):</strong> <span>v5.3.9</span></p>
@@ -554,25 +582,7 @@
           <p class="small"><strong>Service worker cache:</strong> <span id="diagSwVersion">fpl-v5-3-9</span></p>
         </div>
 
-        <!-- CSV data management -->
-        <div class="card" style="margin-top:8px;">
-          <h3 style="margin:0 0 6px 0; font-size:14px;">CSV data management</h3>
-          <p class="small">Manage your parts list CSV used on the Parts page.</p>
-
-          <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:6px;">
-            <button id="loadLocalCsvSettings" class="btn btn-secondary">Load local CSV</button>
-            <button id="loadSharedSettings" class="btn btn-secondary">Load shared file</button>
-            <button id="clearDataSettings" class="btn btn-danger">Clear all app data</button>
-          </div>
-
-          <input id="csvFileInput" type="file" accept=".csv" style="display:none;">
-
-          <p class="small" style="margin-top:6px; color:#b91c1c;">
-            Clears cached CSV, saved quotes, build case state, and access flag. Your CSV file on GitHub/OneDrive is not touched.
-          </p>
-        </div>
-
-        <!-- Data & status bubble -->
+        <!-- Data & status -->
         <div class="card" style="margin-top:8px;">
           <h3 style="margin:0 0 6px 0; font-size:14px;">Data and status</h3>
           <p class="small"><strong>CSV source:</strong> <span id="diagCsvSource">None loaded</span></p>
@@ -582,6 +592,26 @@
           <p class="small"><strong>Routine visit setting:</strong> <span id="diagRoutine">Not set</span></p>
           <p class="small"><strong>Service worker:</strong> <span id="diagSwStatus">Checking…</span></p>
         </div>
+
+        <!-- CSV data management -->
+        <div class="card" style="margin-top:8px;">
+          <h3 style="margin:0 0 6px 0; font-size:14px;">CSV data management</h3>
+          <p class="small">Control how your shared CSV and local data are loaded and cleared.</p>
+
+          <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:6px;">
+            <button id="loadLocalCsvSettings" class="btn btn-secondary">Load local CSV</button>
+            <button id="loadSharedSettings" class="btn btn-secondary">Load shared CSV</button>
+            <button id="clearDataSettings" class="btn btn-danger">Clear all app data</button>
+          </div>
+
+          <p class="small" style="margin-top:6px; color:#b91c1c;">
+            This removes cached CSV, saved quotes, build case state, and the access flag.
+            It does not touch the CSV file stored on GitHub or OneDrive.
+          </p>
+        </div>
+
+        <!-- Hidden file picker (used by CSV load) -->
+        <input id="csv" type="file" accept=".csv">
 
         <!-- Debug export -->
         <div class="card" style="margin-top:8px;">
@@ -611,9 +641,25 @@
           <textarea id="notesEstimator" class="bc-textarea" placeholder="Auto filled with quote line items..."></textarea>
         </div>
 
+        <!-- Step 1 nav -->
         <div style="margin-top:10px; display:flex; gap:8px; justify-content:space-between; flex-wrap:wrap;">
-          <button id="btnBackToQuote" class="btn" style="border-color:#3b82f6; color:#1d4ed8;">Back to Quote</button>
-          <button id="btnToBuild2" class="btn" style="border-color:#16a34a; color:#166534; background:#ecfdf5;">Continue to Step 2</button>
+          <button class="tab-btn"
+                  onclick="appNav.home()"
+                  style="border-color:#9ca3af; background:#ffffff; color:#374151;">
+            ← Home
+          </button>
+
+          <button class="tab-btn"
+                  onclick="appNav.quote()"
+                  style="border-color:#d1d5db; background:#f9fafb; color:#111827;">
+            Quote Items
+          </button>
+
+          <button id="btnToBuild2"
+                  class="tab-btn"
+                  style="border-color:#2563eb; background:#3b82f6; color:#ffffff;">
+            Continue to Step 2
+          </button>
         </div>
       </div>
     </div>
@@ -635,6 +681,7 @@
             </label>
           </div>
 
+          <!-- Overnight accommodation -->
           <div class="row" style="margin-bottom:10px;">
             <div>
               <label class="small" for="accomNights">Overnight accommodation (nights)</label><br>
@@ -642,6 +689,7 @@
             </div>
           </div>
 
+          <!-- Normal Time -->
           <div class="card" style="background:#f9fafb;">
             <p class="small" style="margin:0 0 6px 0;"><strong>Normal Time</strong></p>
             <div class="row">
@@ -660,6 +708,7 @@
             </div>
           </div>
 
+          <!-- After Hours -->
           <div class="card" style="background:#f9fafb; margin-top:8px;">
             <p class="small" style="margin:0 0 6px 0;"><strong>After Hours</strong></p>
             <div class="row">
@@ -690,7 +739,7 @@
     <div id="buildcase3Page" style="display:none;">
       <div class="card">
         <p class="step-title">Build case - Step 3</p>
-        <p class="muted">Final review. Notes to estimator carry over exactly from the current quote plus labour summary.</p>
+        <p class="muted">Final review. Notes to estimator carry over from the current quote plus labour summary.</p>
 
         <div class="card" style="margin-top:8px;">
           <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
