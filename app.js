@@ -325,6 +325,13 @@ const els = {
   loadSharedSettings:   document.getElementById('loadSharedSettings'),
   clearDataSettings:    document.getElementById('clearDataSettings'),
 
+     // Haymans store dialog
+  haymansDialog: document.getElementById('haymansDialog'),
+  haymansStoreInput: document.getElementById('haymansStoreInput'),
+  haymansStoreList: document.getElementById('haymansStoreList'),
+  haymansStoreOk: document.getElementById('haymansStoreOk'),
+  haymansStoreCancel: document.getElementById('haymansStoreCancel'),
+
   // Diagnostics
   diagCsvSource: document.getElementById('diagCsvSource'),
   diagLastLoaded: document.getElementById('diagLastLoaded'),
@@ -751,20 +758,69 @@ if (els.copyQuoteEmail) els.copyQuoteEmail.addEventListener('click', () => {
   copyText(lines.join('\n').trimEnd(), 'Email PO copied.');
 });
 
+function chooseHaymansStore() {
+  return new Promise(resolve => {
+    const dlg   = els.haymansDialog;
+    const input = els.haymansStoreInput;
+    const list  = els.haymansStoreList;
+    const btnOk = els.haymansStoreOk;
+    const btnCancel = els.haymansStoreCancel;
+
+    if (!dlg || !input || !list || !btnOk || !btnCancel) {
+      // Fallback – if dialog not in DOM, just use prompt
+      const fallback = prompt('Which Haymans store should the PO be sent to?');
+      resolve((fallback || '').trim() || null);
+      return;
+    }
+
+    // Fill datalist with previously used stores
+    const stores = getHaymansStores();
+    list.innerHTML = '';
+    stores.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s;
+      list.appendChild(opt);
+    });
+
+    // Pre-fill with last used store (if any)
+    input.value = stores[stores.length - 1] || '';
+    input.focus();
+
+    dlg.style.display = 'flex';
+
+    function cleanup(result) {
+      dlg.style.display = 'none';
+      btnOk.onclick = null;
+      btnCancel.onclick = null;
+      resolve(result);
+    }
+
+    btnOk.onclick = () => {
+      const val = (input.value || '').trim();
+      if (!val) {
+        toast('Haymans store not set.', false);
+        return;
+      }
+      cleanup(val);
+    };
+
+    btnCancel.onclick = () => {
+      cleanup(null);
+    };
+  });
+}
+
 /* Email PO Request – opens mail client with subject + body */
 if (els.emailPoRequest) {
-  els.emailPoRequest.addEventListener('click', () => {
-    console.log('Email PO button clicked', state.quote); // debug line
+  els.emailPoRequest.addEventListener('click', async (e) => {
+    e.preventDefault();
 
     if (!state.quote.length) {
       toast('No items in quote.', false);
       return;
     }
 
-    // Job number
     const job = (els.jobNumber?.value || '').trim();
-
-    // Delivery address
     const delivery = (els.deliveryAddress?.value || '').trim();
 
     // Supplier: use first item’s supplier, strip years (e.g. 2025)
@@ -774,25 +830,16 @@ if (els.emailPoRequest) {
 
     let haymansSuffix = '';
 
-    // If supplier is Haymans, prompt every time and maintain a stored list
     if (supplierClean.toUpperCase() === 'HAYMANS') {
-      let stores = getHaymansStores();     // array of strings
-      const knownText = stores.length
-        ? '\nPreviously used: ' + stores.join(', ')
-        : '';
-      const lastUsed = stores[stores.length - 1] || '';
-
-      const input = prompt(
-        'Which Haymans store should the PO be sent to?' + knownText,
-        lastUsed
-      );
-
-      if (!input) {
+      // Use our autocomplete dialog
+      let store = await chooseHaymansStore();
+      if (!store) {
         toast('Haymans store not set. Email not created.', false);
-        return; // bail out, user cancelled or left it empty
+        return;
       }
 
-      const store = input.trim();
+      // Normalise whitespace
+      store = store.trim();
       if (!store) {
         toast('Haymans store not set. Email not created.', false);
         return;
@@ -800,13 +847,56 @@ if (els.emailPoRequest) {
 
       haymansSuffix = ' ' + store;
 
-      // Add to list if new (case insensitive)
+      // Save back to localStorage if new
+      let stores = getHaymansStores();
       const exists = stores.some(s => s.toLowerCase() === store.toLowerCase());
       if (!exists) {
         stores.push(store);
         saveHaymansStores(stores);
       }
     }
+
+    supplierClean += haymansSuffix;
+
+    const subject = job
+      ? `PO for job ${job}`
+      : 'PO request';
+
+    let partsBlock = (els.notesEstimator?.value || '').trim();
+    if (!partsBlock) {
+      partsBlock = buildItemsOnlyLines().join('\n');
+    }
+
+    const lines = [];
+
+    if (job) {
+      lines.push(`Please forward a PO to ${supplierClean} for job ${job}`);
+    } else {
+      lines.push(`Please forward a PO to ${supplierClean} for this job`);
+    }
+
+    lines.push('');
+
+    if (partsBlock) {
+      lines.push(partsBlock);
+      lines.push('');
+    }
+
+    if (delivery) {
+      lines.push(delivery);
+      lines.push('');
+    }
+
+    const body = lines.join('\n');
+
+    const mailtoUrl =
+      'mailto:?' +
+      'subject=' + encodeURIComponent(subject) +
+      '&body=' + encodeURIComponent(body);
+
+    window.location.href = mailtoUrl;
+  });
+}
 
     // For non-Haymans, haymansSuffix stays empty
     supplierClean += haymansSuffix;
