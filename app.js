@@ -7,6 +7,8 @@
 
 const APP_VERSION = '5.3.10';
 const FEEDBACK_EMAIL = 'FPLFeedback@salsbury.com.au'; // TODO: set to your real feedback address
+// Bump this whenever you upload a new Parts.csv to GitHub
+const CSV_VERSION = '20251122';
 
 const state = {
   rows: [],
@@ -446,7 +448,7 @@ if (cachedCsv) {
 async function loadSharedFromRepo() {
   if (!ensureAccess()) return;
   try {
-    const res = await fetch('Parts.csv', { cache: 'no-cache' });
+    const res = await fetch(`Parts.csv?v=${CSV_VERSION}`, { cache: 'no-cache' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const text = await res.text();
     localStorage.setItem(LS_KEYS.CSV, text);
