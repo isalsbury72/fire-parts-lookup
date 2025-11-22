@@ -107,7 +107,6 @@ function getHaymansStores() {
     if (!raw) return [];
     const arr = JSON.parse(raw);
     if (!Array.isArray(arr)) return [];
-    // Normalise to trimmed strings
     return arr
       .map(s => (s || '').toString().trim())
       .filter(s => s.length > 0);
@@ -270,6 +269,7 @@ const els = {
   copyQuote: document.getElementById('copyQuote'),
   copyQuoteRaw: document.getElementById('copyQuoteRaw'),
   copyQuoteEmail: document.getElementById('copyQuoteEmail'),
+   emailPoRequest: document.getElementById('emailPoRequest'),
   btnClearQuote: document.getElementById('btnClearQuote'),
   btnBuildCase: document.getElementById('btnBuildCase'),
   jobNumber: document.getElementById('jobNumber'),
