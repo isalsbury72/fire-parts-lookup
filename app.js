@@ -276,8 +276,7 @@ const els = {
   deliveryAddress: document.getElementById('deliveryAddress'),
   quoteTableBody: document.querySelector('#quoteTable tbody'),
   quoteSummary: document.getElementById('quoteSummary'),
-   btnEmailPoRequest: document.getElementById('btnEmailPoRequest'),
-
+  
   manualToggle: document.getElementById('manualToggle'),
   manualSection: document.getElementById('manualSection'),
   manualSupplier: document.getElementById('manualSupplier'),
@@ -729,10 +728,32 @@ if (els.copyQuoteEmail) els.copyQuoteEmail.addEventListener('click', () => {
     groups.get(key).items.push(item);
   });
 
-   /* Email PO Request – opens mail client with subject + body */
+  const lines = [];
+  groups.forEach(({ display, items }) => {
+    const supName = display || 'Supplier';
+    lines.push(
+      job
+        ? `Please forward a PO to ${supName} for job ${job}`
+        : `Please forward a PO to ${supName} for this job`
+    );
+    lines.push('');
+    items.forEach(i => {
+      const qty = i.qty || 1;
+      lines.push(`${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each`);
+    });
+    if (delivery) {
+      lines.push('');
+      lines.push(delivery);
+    }
+    lines.push('');
+  });
 
-if (els.btnEmailPoRequest) {
-  els.btnEmailPoRequest.addEventListener('click', () => {
+  copyText(lines.join('\n').trimEnd(), 'Email PO copied.');
+});
+
+/* Email PO Request – opens mail client with subject + body */
+if (els.emailPoRequest) {
+  els.emailPoRequest.addEventListener('click', () => {
     if (!state.quote.length) {
       toast('No items in quote.', false);
       return;
@@ -744,68 +765,49 @@ if (els.btnEmailPoRequest) {
     // Delivery address
     const delivery = (els.deliveryAddress?.value || '').trim();
 
-// Supplier: use first item’s supplier, strip years
-const firstSupRaw = (state.quote[0].SUPPLIER || '').toString();
-let supplierClean = firstSupRaw.replace(/\b20\d{2}\b/g, '').trim();
-if (!supplierClean) supplierClean = 'Supplier';
+    // Supplier: use first item’s supplier, strip years (e.g. 2025)
+    const firstSupRaw = (state.quote[0].SUPPLIER || '').toString();
+    let supplierClean = firstSupRaw.replace(/\b20\d{2}\b/g, '').trim();
+    if (!supplierClean) supplierClean = 'Supplier';
 
-let haymansSuffix = '';
+    let haymansSuffix = '';
 
-// If supplier is Haymans, prompt every time and maintain a stored list
-if (supplierClean.toUpperCase() === 'HAYMANS') {
-  let stores = getHaymansStores();     // array of strings
-  const knownText = stores.length
-    ? '\nPreviously used: ' + stores.join(', ')
-    : '';
-  const lastUsed = stores[stores.length - 1] || '';
+    // If supplier is Haymans, prompt every time and maintain a stored list
+    if (supplierClean.toUpperCase() === 'HAYMANS') {
+      let stores = getHaymansStores();     // array of strings
+      const knownText = stores.length
+        ? '\nPreviously used: ' + stores.join(', ')
+        : '';
+      const lastUsed = stores[stores.length - 1] || '';
 
-  const input = prompt(
-    'Which Haymans store should the PO be sent to?' + knownText,
-    lastUsed
-  );
+      const input = prompt(
+        'Which Haymans store should the PO be sent to?' + knownText,
+        lastUsed
+      );
 
-  if (!input) {
-    toast('Haymans store not set. Email not created.', false);
-    return; // bail out, user cancelled or left it empty
-  }
+      if (!input) {
+        toast('Haymans store not set. Email not created.', false);
+        return; // bail out, user cancelled or left it empty
+      }
 
-  const store = input.trim();
-  if (!store) {
-    toast('Haymans store not set. Email not created.', false);
-    return;
-  }
+      const store = input.trim();
+      if (!store) {
+        toast('Haymans store not set. Email not created.', false);
+        return;
+      }
 
-  haymansSuffix = ' ' + store;
+      haymansSuffix = ' ' + store;
 
-  // Add to list if new (case insensitive)
-  const exists = stores.some(s => s.toLowerCase() === store.toLowerCase());
-  if (!exists) {
-    stores.push(store);
-    saveHaymansStores(stores);
-  }
-}
-
-// For non-Haymans, haymansSuffix stays empty
-supplierClean += haymansSuffix;
-
-if (supplierClean.toUpperCase() === 'HAYMANS') {
-  // Check if we have a saved store
-  let saved = localStorage.getItem(LS_KEYS.HAYMANS_STORE);
-
-  if (saved && saved.trim()) {
-    haymansSuffix = ' ' + saved.trim();
-  } else {
-    // Ask user
-    const store = prompt('Which Haymans store should the PO be sent to? (e.g., Archerfield, Rocklea, Ipswich)');
-    if (store && store.trim()) {
-      localStorage.setItem(LS_KEYS.HAYMANS_STORE, store.trim());
-      haymansSuffix = ' ' + store.trim();
+      // Add to list if new (case insensitive)
+      const exists = stores.some(s => s.toLowerCase() === store.toLowerCase());
+      if (!exists) {
+        stores.push(store);
+        saveHaymansStores(stores);
+      }
     }
-  }
-}
 
-// Apply suffix to supplier name (only for Haymans)
-supplierClean += haymansSuffix;
+    // For non-Haymans, haymansSuffix stays empty
+    supplierClean += haymansSuffix;
 
     // Subject line
     const subject = job
@@ -854,29 +856,6 @@ supplierClean += haymansSuffix;
     window.location.href = mailtoUrl;
   });
 }
-
-  const lines = [];
-  groups.forEach(({ display, items }) => {
-    const supName = display || 'Supplier';
-    lines.push(
-      job
-        ? `Please forward a PO to ${supName} for job ${job}`
-        : `Please forward a PO to ${supName} for this job`
-    );
-    lines.push('');
-    items.forEach(i => {
-      const qty = i.qty || 1;
-      lines.push(`${qty} x ${i.DESCRIPTION} — ${i.PARTNUMBER} — ${fmtPrice(i.PRICE)} each`);
-    });
-    if (delivery) {
-      lines.push('');
-      lines.push(delivery);
-    }
-    lines.push('');
-  });
-
-  copyText(lines.join('\n').trimEnd(), 'Email PO copied.');
-});
 
 /* Build case helpers */
 
