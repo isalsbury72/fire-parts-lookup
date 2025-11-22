@@ -754,6 +754,8 @@ if (els.copyQuoteEmail) els.copyQuoteEmail.addEventListener('click', () => {
 /* Email PO Request – opens mail client with subject + body */
 if (els.emailPoRequest) {
   els.emailPoRequest.addEventListener('click', () => {
+    console.log('Email PO button clicked', state.quote); // debug line
+
     if (!state.quote.length) {
       toast('No items in quote.', false);
       return;
@@ -1381,8 +1383,9 @@ if (els.btnDiagCopy) {
 
 /* ---------- Start ---------- */
 
-function start() {
+/* ---------- Start ---------- */
 
+function start() {
   // Hide tab bar if present
   if (els.tabParts) els.tabParts.style.display = 'none';
   if (els.tabQuote) els.tabQuote.style.display = 'none';
@@ -1400,4 +1403,9 @@ function start() {
   }
 }
 
-start();
+// Ensure DOM is ready before we run anything
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', start);
+} else {
+  start();
+}
