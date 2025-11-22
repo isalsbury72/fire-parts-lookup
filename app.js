@@ -6,6 +6,7 @@
 */
 
 const APP_VERSION = '5.3.10';
+const FEEDBACK_EMAIL = 'FPLFeedback@salsbury.com.au'; // TODO: set to your real feedback address
 
 const state = {
   rows: [],
@@ -191,8 +192,9 @@ const els = {
   btnHomeParts: document.getElementById('btnHomeParts'),
   btnHomeBattery: document.getElementById('btnHomeBattery'),
 
-     // Feedback page
+  // Feedback page
   feedbackPage: document.getElementById('feedbackPage'),
+  feedbackSubject: document.getElementById('feedbackSubject'),
   feedbackText: document.getElementById('feedbackText'),
   feedbackCancel: document.getElementById('feedbackCancel'),
   feedbackClear: document.getElementById('feedbackClear'),
@@ -935,22 +937,42 @@ if (els.feedbackCancel) {
 
 if (els.feedbackClear) {
   els.feedbackClear.addEventListener('click', () => {
-    if (els.feedbackText) {
-      els.feedbackText.value = '';
-    }
+    if (els.feedbackSubject) els.feedbackSubject.value = '';
+    if (els.feedbackText)    els.feedbackText.value = '';
   });
 }
 
-// Send is just a placeholder for now – we’ll wire real sending later
+// Send opens an email with subject + body
 if (els.feedbackSend) {
   els.feedbackSend.addEventListener('click', () => {
-    const txt = (els.feedbackText?.value || '').trim();
-    if (!txt) {
-      toast('Enter some feedback before sending.', false);
+    const subject = (els.feedbackSubject?.value || '').trim();
+    const txt     = (els.feedbackText?.value || '').trim();
+
+    if (!subject) {
+      toast('Enter a subject for your feedback.', false);
       return;
     }
-    // No backend yet – just acknowledge so user knows it "worked"
-    toast('Feedback noted (no send target yet).', true);
+    if (!txt) {
+      toast('Enter some feedback details before sending.', false);
+      return;
+    }
+
+    // Build body with a little context
+    const lines = [
+      txt,
+      '',
+      '---',
+      `App version: ${APP_VERSION}`,
+      `CSV source: ${state.csvMeta.source || 'None'}`,
+      `Parts rows loaded: ${state.rows.length}`,
+    ];
+    const body = encodeURIComponent(lines.join('\n'));
+    const subj = encodeURIComponent(subject);
+
+    const mailto = `mailto:${FEEDBACK_EMAIL}?subject=${subj}&body=${body}`;
+    window.location.href = mailto;
+
+    toast('Opening email with your feedback…', true);
   });
 }
 
