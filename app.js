@@ -42,7 +42,7 @@ const LS_KEYS = {
   CSV_META: 'csv_meta_v1',
   QUOTE: 'quote_data_v1',
   BUILDCASE: 'buildcase_state_v1',
-  ACCESS: 'hasAccess'
+  ACCESS: 'hasAccess',
    HAYMANS_STORE: 'haymans_store_preference'
 };
 
