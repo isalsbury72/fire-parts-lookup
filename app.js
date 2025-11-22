@@ -43,7 +43,7 @@ const LS_KEYS = {
   QUOTE: 'quote_data_v1',
   BUILDCASE: 'buildcase_state_v1',
   ACCESS: 'hasAccess',
-   HAYMANS_STORE: 'haymans_store_preference'
+  HAYMANS_STORES: 'haymans_stores_v1'
 };
 
 function toast(msg, ok = false) {
@@ -99,6 +99,36 @@ function formatLastLoaded(iso) {
     hour: '2-digit',
     minute: '2-digit'
   });
+}
+
+function getHaymansStores() {
+  try {
+    const raw = localStorage.getItem(LS_KEYS.HAYMANS_STORES);
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    if (!Array.isArray(arr)) return [];
+    // Normalise to trimmed strings
+    return arr
+      .map(s => (s || '').toString().trim())
+      .filter(s => s.length > 0);
+  } catch {
+    return [];
+  }
+}
+
+function saveHaymansStores(stores) {
+  try {
+    const unique = [];
+    const seen = new Set();
+    stores.forEach(s => {
+      const key = s.toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        unique.push(s);
+      }
+    });
+    localStorage.setItem(LS_KEYS.HAYMANS_STORES, JSON.stringify(unique));
+  } catch {}
 }
 
 /* CSV parsing and metadata */
@@ -719,8 +749,44 @@ const firstSupRaw = (state.quote[0].SUPPLIER || '').toString();
 let supplierClean = firstSupRaw.replace(/\b20\d{2}\b/g, '').trim();
 if (!supplierClean) supplierClean = 'Supplier';
 
-// Haymans store memory
 let haymansSuffix = '';
+
+// If supplier is Haymans, prompt every time and maintain a stored list
+if (supplierClean.toUpperCase() === 'HAYMANS') {
+  let stores = getHaymansStores();     // array of strings
+  const knownText = stores.length
+    ? '\nPreviously used: ' + stores.join(', ')
+    : '';
+  const lastUsed = stores[stores.length - 1] || '';
+
+  const input = prompt(
+    'Which Haymans store should the PO be sent to?' + knownText,
+    lastUsed
+  );
+
+  if (!input) {
+    toast('Haymans store not set. Email not created.', false);
+    return; // bail out, user cancelled or left it empty
+  }
+
+  const store = input.trim();
+  if (!store) {
+    toast('Haymans store not set. Email not created.', false);
+    return;
+  }
+
+  haymansSuffix = ' ' + store;
+
+  // Add to list if new (case insensitive)
+  const exists = stores.some(s => s.toLowerCase() === store.toLowerCase());
+  if (!exists) {
+    stores.push(store);
+    saveHaymansStores(stores);
+  }
+}
+
+// For non-Haymans, haymansSuffix stays empty
+supplierClean += haymansSuffix;
 
 if (supplierClean.toUpperCase() === 'HAYMANS') {
   // Check if we have a saved store
