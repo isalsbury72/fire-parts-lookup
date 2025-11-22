@@ -245,6 +245,7 @@ const els = {
   deliveryAddress: document.getElementById('deliveryAddress'),
   quoteTableBody: document.querySelector('#quoteTable tbody'),
   quoteSummary: document.getElementById('quoteSummary'),
+   btnEmailPoRequest: document.getElementById('btnEmailPoRequest'),
 
   manualToggle: document.getElementById('manualToggle'),
   manualSection: document.getElementById('manualSection'),
@@ -696,6 +697,74 @@ if (els.copyQuoteEmail) els.copyQuoteEmail.addEventListener('click', () => {
     }
     groups.get(key).items.push(item);
   });
+
+   /* Email PO Request – opens mail client with subject + body */
+
+if (els.btnEmailPoRequest) {
+  els.btnEmailPoRequest.addEventListener('click', () => {
+    if (!state.quote.length) {
+      toast('No items in quote.', false);
+      return;
+    }
+
+    // Job number
+    const job = (els.jobNumber?.value || '').trim();
+
+    // Delivery address
+    const delivery = (els.deliveryAddress?.value || '').trim();
+
+    // Supplier: use first item’s supplier, strip any 20xx year tokens
+    const firstSupRaw = (state.quote[0].SUPPLIER || '').toString();
+    let supplierClean = firstSupRaw.replace(/\b20\d{2}\b/g, '').trim();
+    if (!supplierClean) supplierClean = 'Supplier';
+
+    // Subject line
+    const subject = job
+      ? `PO for job ${job}`
+      : 'PO request';
+
+    // Parts details from Step 1 "Notes to estimator"
+    let partsBlock = (els.notesEstimator?.value || '').trim();
+    if (!partsBlock) {
+      // Fallback: rebuild from current quote
+      partsBlock = buildItemsOnlyLines().join('\n');
+    }
+
+    const lines = [];
+
+    // First line
+    if (job) {
+      lines.push(`Please forward a PO to ${supplierClean} for job ${job}`);
+    } else {
+      lines.push(`Please forward a PO to ${supplierClean} for this job`);
+    }
+
+    // Blank line
+    lines.push('');
+
+    // Parts details (from Notes to estimator / fallback)
+    if (partsBlock) {
+      lines.push(partsBlock);
+      lines.push(''); // blank line after parts
+    }
+
+    // Delivery address
+    if (delivery) {
+      lines.push(delivery);
+      lines.push(''); // trailing blank line
+    }
+
+    const body = lines.join('\n');
+
+    // Open default mail client (no fixed "to" address)
+    const mailtoUrl =
+      'mailto:?' +
+      'subject=' + encodeURIComponent(subject) +
+      '&body=' + encodeURIComponent(body);
+
+    window.location.href = mailtoUrl;
+  });
+}
 
   const lines = [];
   groups.forEach(({ display, items }) => {
