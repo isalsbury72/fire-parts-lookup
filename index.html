@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Fire Parts Lookup v5.3.9</title>
+  <title>Fire Parts Lookup v5.3.10</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
 
   <link rel="manifest" href="manifest.json">
@@ -136,7 +136,6 @@
       .home-grid { grid-template-columns: 1fr; }
     }
 
-
     .batt-wrap {
       display:flex;
       flex-direction:column;
@@ -154,7 +153,7 @@
     .batt-input-pill,
     .batt-required-pill {
       border-radius:999px;
-      padding:10px 16px;              /* height stays the same */
+      padding:10px 16px;
       line-height:1.4;
       border:1px solid #e5e7eb;
       background:#f9fafb;
@@ -170,17 +169,17 @@
       font-size:14px;
     }
 
-    /* Right-hand value pills – ALL same width + font */
-.batt-input-pill,
-.batt-required-pill {
-  flex:0 0 86px;
-  width:86px;
-  display:flex;
-  align-items:center;
-  justify-content:flex-end;
-  font-variant-numeric: tabular-nums;
-  font-size:18px;
-}
+    /* Right-hand value pills – fixed width */
+    .batt-input-pill,
+    .batt-required-pill {
+      flex:0 0 86px;
+      width:86px;
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      font-variant-numeric: tabular-nums;
+      font-size:18px;
+    }
     .batt-input-pill input {
       width:100%;
       border:none;
@@ -201,7 +200,7 @@
       background:#eff6ff;
     }
 
-    /* Required capacity pill – same size, just different colours */
+    /* Required capacity pill */
     .batt-required-pill {
       background:#f97316;
       border-color:#ea580c;
@@ -218,7 +217,7 @@
       margin-top:4px;
     }
 
-    /* Tq buttons – match right pills for height + font */
+    /* Tq buttons */
     .batt-tq-buttons {
       display:flex;
       gap:8px;
@@ -229,8 +228,8 @@
       border-radius:999px;
       border:1px solid #d1d5db;
       background:#f9fafb;
-      padding:10px 16px;              /* same height as pills */
-      font-size:18px;                 /* same font size as right pills */
+      padding:10px 16px;
+      font-size:18px;
       cursor:pointer;
     }
     .batt-tq-btn.active {
@@ -240,28 +239,28 @@
       font-weight:600;
     }
 
-@media (max-width: 480px) {
-  .batt-input-pill,
-  .batt-required-pill {
-    flex:0 0 78px;
-    width:78px;
-    padding:9px 14px;
-    font-size:16px;
-  }
-  .batt-input-pill input {
-    font-size:16px;
-  }
-  .batt-required-pill {
-    font-size:16px;
-  }
-  .batt-label-pill {
-    font-size:13px;
-  }
-  .batt-tq-btn {
-    font-size:16px;
-    padding:9px 14px;
-  }
-} 
+    @media (max-width: 480px) {
+      .batt-input-pill,
+      .batt-required-pill {
+        flex:0 0 78px;
+        width:78px;
+        padding:9px 14px;
+        font-size:16px;
+      }
+      .batt-input-pill input {
+        font-size:16px;
+      }
+      .batt-required-pill {
+        font-size:16px;
+      }
+      .batt-label-pill {
+        font-size:13px;
+      }
+      .batt-tq-btn {
+        font-size:16px;
+        padding:9px 14px;
+      }
+    }
 
     @keyframes authFadeIn {
       from { opacity:0; transform:translateY(-2px); }
@@ -277,7 +276,7 @@
       <div class="small">Offline-friendly parts and quote helper</div>
     </div>
     <div class="ver">
-      v5.3.9
+      v5.3.10
       <span id="authBanner" class="auth-pill" style="display:inline-block;">Authorised users only</span>
     </div>
   </header>
@@ -311,6 +310,14 @@
             <div class="home-tile-title">Settings</div>
             <div class="home-tile-caption">App version, CSV data, diagnostics.</div>
           </button>
+
+          <!-- New Feedback home tile -->
+          <button id="btnHomeFeedback"
+                  class="home-tile"
+                  onclick="appNav.feedback()">
+            <div class="home-tile-title">Feedback</div>
+            <div class="home-tile-caption">Send a quick note back to Ian.</div>
+          </button>
         </div>
       </div>
     </div>
@@ -341,7 +348,7 @@
 
           <!-- Ia -->
           <div class="batt-row">
-            <div class="batt-label-pill">Alarm Mode Current (Ia)</div>
+            <div class="batt-label-pill">Alarm Bode Current (Ia)</div>
             <div class="batt-input-pill">
               <input id="battIa" type="number" step="0.01" inputmode="decimal" placeholder="0.00">
             </div>
@@ -373,7 +380,7 @@
 
           <!-- Age factor -->
           <div class="batt-row">
-            <div class="batt-label-pill">Age Factor (Capacity × 1.25)</div>
+            <div class="batt-label-pill">Age Factor (capacity × 1.25)</div>
             <div class="batt-input-pill">
               <span id="battAgeCap">0.00 Ah</span>
             </div>
@@ -392,6 +399,34 @@
             <button id="battBtnTq24" class="batt-tq-btn active">Tq @ 24 Hr</button>
             <button id="battBtnTq72" class="batt-tq-btn">Tq @ 72 Hr</button>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feedback page -->
+    <div id="feedbackPage" style="display:none;">
+      <div style="margin-bottom:8px; display:flex; gap:8px;">
+        <button class="btn btn-ghost" id="goHomeFromFeedback" style="flex:1;">← Home</button>
+        <button class="btn btn-primary" style="flex:1; background:#3b82f6; color:white;" disabled>
+          Feedback
+        </button>
+      </div>
+
+      <div class="card">
+        <h2 style="margin-top:0; font-size:18px; text-align:center;">Feedback</h2>
+        <p class="small" style="font-size:12px; text-align:center;">
+          Leave a quick note about issues, ideas, or parts you’d like added.
+        </p>
+
+        <div style="margin-top:8px;">
+          <label class="small" for="feedbackText">Feedback details</label>
+          <textarea id="feedbackText" class="bc-textarea" placeholder="Type your feedback here..."></textarea>
+        </div>
+
+        <div style="margin-top:10px; display:flex; gap:8px; justify-content:space-between; flex-wrap:wrap;">
+          <button id="feedbackCancel" class="btn btn-ghost" style="flex:1;">Cancel</button>
+          <button id="feedbackClear" class="btn btn-secondary" style="flex:1;">Clear</button>
+          <button id="feedbackSend" class="btn btn-primary" style="flex:1;">Send</button>
         </div>
       </div>
     </div>
@@ -590,9 +625,9 @@
         <!-- Software versions -->
         <div class="card" style="margin-top:8px;">
           <h3 style="margin:0 0 6px 0; font-size:14px;">Software versions</h3>
-          <p class="small"><strong>App version (app.js):</strong> <span>v5.3.9</span></p>
-          <p class="small"><strong>Index.html version:</strong> <span id="diagIdxVersion">v5.3.9</span></p>
-          <p class="small"><strong>Service worker cache:</strong> <span id="diagSwVersion">fpl-v5-3-9</span></p>
+          <p class="small"><strong>App version (app.js):</strong> <span>v5.3.10</span></p>
+          <p class="small"><strong>Index.html version:</strong> <span id="diagIdxVersion">v5.3.10</span></p>
+          <p class="small"><strong>Service worker cache:</strong> <span id="diagSwVersion">fpl-v5-3-10</span></p>
         </div>
 
         <!-- Data & status -->
@@ -635,36 +670,36 @@
       </div>
     </div>
 
-<!-- Build Case: Step 1 -->
-<div id="buildcase1Page" style="display:none;">
-  <div class="card">
-    <p class="step-title">Build case - Step 1</p>
-    <p class="muted">Notes collection. Notes to estimator is auto filled with current quote line items.</p>
+    <!-- Build Case: Step 1 -->
+    <div id="buildcase1Page" style="display:none;">
+      <div class="card">
+        <p class="step-title">Build case - Step 1</p>
+        <p class="muted">Notes collection. Notes to estimator is auto filled with current quote line items.</p>
 
-    <div class="card" style="margin-top:8px;">
-      <label class="small" for="notesCustomer">Notes to customer</label>
-      <textarea id="notesCustomer" class="bc-textarea" placeholder="Enter notes to customer..."></textarea>
-    </div>
+        <div class="card" style="margin-top:8px;">
+          <label class="small" for="notesCustomer">Notes to customer</label>
+          <textarea id="notesCustomer" class="bc-textarea" placeholder="Enter notes to customer..."></textarea>
+        </div>
 
-    <div class="card" style="margin-top:8px;">
-      <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-        <label class="small" for="notesEstimator">Notes to estimator</label>
-        <span id="bc1ItemsCount" class="pill">Items: 0</span>
+        <div class="card" style="margin-top:8px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+            <label class="small" for="notesEstimator">Notes to estimator</label>
+            <span id="bc1ItemsCount" class="pill">Items: 0</span>
+          </div>
+          <textarea id="notesEstimator" class="bc-textarea" placeholder="Auto filled with quote line items..."></textarea>
+        </div>
+
+        <!-- Navigation for Step 1 -->
+        <div style="margin-top:10px; display:flex; gap:8px; justify-content:space-between; flex-wrap:wrap;">
+          <button id="btnBackToQuote" class="btn" style="border-color:#6b7280; color:#374151;">
+            Back to Quote
+          </button>
+          <button id="btnToBuild2" class="btn" style="border-color:#16a34a; color:#166534; background:#ecfdf5;">
+            Continue to Step 2
+          </button>
+        </div>
       </div>
-      <textarea id="notesEstimator" class="bc-textarea" placeholder="Auto filled with quote line items..."></textarea>
     </div>
-
-    <!-- Navigation for Step 1 -->
-    <div style="margin-top:10px; display:flex; gap:8px; justify-content:space-between; flex-wrap:wrap;">
-      <button id="btnBackToQuote" class="btn" style="border-color:#6b7280; color:#374151;">
-        Back to Quote
-      </button>
-      <button id="btnToBuild2" class="btn" style="border-color:#16a34a; color:#166534; background:#ecfdf5;">
-        Continue to Step 2
-      </button>
-    </div>
-  </div>
-</div>
 
     <!-- Build Case: Step 2 -->
     <div id="buildcase2Page" style="display:none;">
@@ -762,14 +797,14 @@
           <textarea id="notesEstimator3" class="bc-textarea" placeholder="Estimator notes..."></textarea>
         </div>
 
-<div style="margin-top:10px; display:flex; gap:8px; justify-content:space-between; flex-wrap:wrap;">
-  <button id="btnBackToBuild2" class="btn" style="border-color:#6b7280; color:#374151;">
-    Back to Step 2
-  </button>
-  <button id="btnBackToQuoteFrom3" class="btn" style="border-color:#3b82f6; color:#1d4ed8;">
-    Back to Quote
-  </button>
-</div>
+        <div style="margin-top:10px; display:flex; gap:8px; justify-content:space-between; flex-wrap:wrap;">
+          <button id="btnBackToBuild2" class="btn" style="border-color:#6b7280; color:#374151;">
+            Back to Step 2
+          </button>
+          <button id="btnBackToQuoteFrom3" class="btn" style="border-color:#3b82f6; color:#1d4ed8;">
+            Back to Quote
+          </button>
+        </div>
       </div>
     </div>
   </main>
@@ -784,3 +819,71 @@
   </script>
 </body>
 </html>
+
+2. Updated sw.js for v5.3.10
+
+Here is a complete sw.js using relative paths and a navigation fallback, with the cache bumped to fpl-v5-3-10 and app.js v=5.3.10:
+
+// sw.js
+const CACHE = 'fpl-v5-3-10';
+
+const ASSETS = [
+  './',
+  'index.html',
+  'app.js?v=5.3.10',
+  'manifest.json',
+  'icon-192.png',
+  'icon-512.png',
+  'Parts.csv'
+];
+
+self.addEventListener('install', e => {
+  e.waitUntil(
+    caches.open(CACHE)
+      .then(c => c.addAll(ASSETS))
+      .then(() => self.skipWaiting())
+  );
+});
+
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(
+        keys.map(k => (k === CACHE ? null : caches.delete(k)))
+      )
+    ).then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('fetch', e => {
+  const url = new URL(e.request.url);
+  const isHTML =
+    e.request.mode === 'navigate' ||
+    (e.request.headers.get('accept') || '').includes('text/html');
+  const isApp =
+    url.pathname.endsWith('/app.js') ||
+    url.pathname.endsWith('app.js') ||
+    url.searchParams.has('v');
+
+  // Network first for HTML + app.js so updates appear quickly
+  if (isHTML || isApp) {
+    e.respondWith(
+      fetch(e.request)
+        .then(resp => {
+          const copy = resp.clone();
+          caches.open(CACHE).then(c => c.put(e.request, copy));
+          return resp;
+        })
+        .catch(() =>
+          // Explicit navigation fallback
+          caches.match('index.html')
+        )
+    );
+    return;
+  }
+
+  // Cache first for everything else
+  e.respondWith(
+    caches.match(e.request).then(r => r || fetch(e.request))
+  );
+});
