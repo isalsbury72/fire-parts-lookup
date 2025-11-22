@@ -800,6 +800,7 @@ function hideAllPages() {
   if (els.buildcase1Page) els.buildcase1Page.style.display = 'none';
   if (els.buildcase2Page) els.buildcase2Page.style.display = 'none';
   if (els.buildcase3Page) els.buildcase3Page.style.display = 'none';
+  if (els.feedbackPage)   els.feedbackPage.style.display = 'none';
 }
 
 function showHomePage() {
@@ -812,6 +813,12 @@ function showBatteryPage() {
   hideAllPages();
   if (els.batteryPage) els.batteryPage.style.display = 'block';
   recalcBattery();
+  renderDiagnostics();
+}
+
+function showFeedbackPage() {
+  hideAllPages();
+  if (els.feedbackPage) els.feedbackPage.style.display = 'block';
   renderDiagnostics();
 }
 
@@ -893,11 +900,12 @@ function showBuild3() {
 
 // Simple global nav helper so HTML buttons can call these directly
 window.appNav = {
-  home:    showHomePage,
-  parts:   showPartsPage,
-  quote:   showQuotePage,
-  battery: showBatteryPage,
-  settings: showSettingsPage
+  home:     showHomePage,
+  parts:    showPartsPage,
+  quote:    showQuotePage,
+  battery:  showBatteryPage,
+  settings: showSettingsPage,
+  feedback: showFeedbackPage
 };
 
 /* Tab click handlers */
@@ -915,6 +923,36 @@ if (els.goHomeFromParts)    els.goHomeFromParts.addEventListener('click', showHo
 if (els.goHomeFromQuote)    els.goHomeFromQuote.addEventListener('click', showHomePage);
 if (els.goHomeFromBattery)  els.goHomeFromBattery.addEventListener('click', showHomePage);
 if (els.goHomeFromSettings) els.goHomeFromSettings.addEventListener('click', showHomePage);
+
+// Feedback page buttons
+if (els.goHomeFromFeedback) {
+  els.goHomeFromFeedback.addEventListener('click', showHomePage);
+}
+
+if (els.feedbackCancel) {
+  els.feedbackCancel.addEventListener('click', showHomePage);
+}
+
+if (els.feedbackClear) {
+  els.feedbackClear.addEventListener('click', () => {
+    if (els.feedbackText) {
+      els.feedbackText.value = '';
+    }
+  });
+}
+
+// Send is just a placeholder for now – we’ll wire real sending later
+if (els.feedbackSend) {
+  els.feedbackSend.addEventListener('click', () => {
+    const txt = (els.feedbackText?.value || '').trim();
+    if (!txt) {
+      toast('Enter some feedback before sending.', false);
+      return;
+    }
+    // No backend yet – just acknowledge so user knows it "worked"
+    toast('Feedback noted (no send target yet).', true);
+  });
+}
 
 /* Build case navigation */
 
