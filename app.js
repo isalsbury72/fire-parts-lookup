@@ -512,6 +512,17 @@ function clearAllData() {
     loadedAt: null
   };
 
+  // 🔹 Also clear any SW caches starting with "fpl-"
+  if ('caches' in window) {
+    caches.keys().then(keys => {
+      keys.forEach(k => {
+        if (k.startsWith('fpl-')) {
+          caches.delete(k);
+        }
+      });
+    });
+  }
+
   renderParts();
   renderQuote();
   updateAddToQuoteState();
