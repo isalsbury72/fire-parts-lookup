@@ -29,32 +29,29 @@ self.addEventListener('activate', e => {
   );
 });
 
-self.addEventListener('fetch', e => {
-  const url = new URL(e.request.url);
-  const isHTML =
-    e.request.mode === 'navigate' ||
-    (e.request.headers.get('accept') || '').includes('text/html');
-  const isApp =
-    url.pathname.endsWith('/app.js') ||
-    url.pathname.endsWith('app.js') ||
-    url.searchParams.has('v');
+self.addEventListener('fetch', event => {
+  const url = new URL(event.request.url);
 
-  // Network first for HTML + app.js so updates appear quickly
-  if (isHTML || isApp) {
-    e.respondWith(
-      fetch(e.request)
-        .then(resp => {
-          const copy = resp.clone();
-          caches.open(CACHE).then(c => c.put(e.request, copy));
-          return resp;
+  // 🔹 Special case: always try network first for Parts.csv so new rows show up
+  if (url.pathname.endsWith('/Parts.csv')) {
+    event.respondWith(
+      fetch(event.request.clone())
+        .then(response => {
+          // Cache the fresh CSV for offline use as well
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+          return response;
         })
-        .catch(() =>
-          // Explicit navigation fallback
-          caches.match('index.html')
-        )
+        .catch(() => {
+          // If offline, fall back to cached CSV if we have it
+          return caches.match(event.request);
+        })
     );
-    return;
+    return; // Important: don't fall through to the generic handler
   }
+
+  // ... your existing fetch logic for navigations, app.js, other assets ...
+});
 
   // Cache first for everything else
   e.respondWith(
