@@ -947,7 +947,6 @@ if (els.emailPoRequest) {
 
     window.location.href = mailtoUrl;
   });
-}
 
 /* Build case helpers */
 
