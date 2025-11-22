@@ -1,11 +1,11 @@
-/* Fire Parts Lookup v5.3.9
+/* Fire Parts Lookup v5.3.10
    - Quote and build case saved/restored from localStorage
    - CSV metadata (source, last loaded) tracked for diagnostics
    - Settings/Diagnostics tab + Copy debug info
    - Optional home + battery calculator page support
 */
 
-const APP_VERSION = '5.3.9';
+const APP_VERSION = '5.3.10';
 
 const state = {
   rows: [],
@@ -190,6 +190,14 @@ const els = {
   homePage: document.getElementById('homePage'),
   btnHomeParts: document.getElementById('btnHomeParts'),
   btnHomeBattery: document.getElementById('btnHomeBattery'),
+
+     // Feedback page
+  feedbackPage: document.getElementById('feedbackPage'),
+  feedbackText: document.getElementById('feedbackText'),
+  feedbackCancel: document.getElementById('feedbackCancel'),
+  feedbackClear: document.getElementById('feedbackClear'),
+  feedbackSend: document.getElementById('feedbackSend'),
+  goHomeFromFeedback: document.getElementById('goHomeFromFeedback'),
 
   // Battery
   batteryPage: document.getElementById('batteryPage'),
