@@ -1,14 +1,14 @@
 // sw.js
-const CACHE = 'fpl-v5-3-9';
+const CACHE = 'fpl-v5-3-10';
 
 const ASSETS = [
   './',
-  './index.html',
-  './app.js?v=5.3.9',
-  './manifest.json',
-  './icon-192.png',
-  './icon-512.png',
-  './Parts.csv'
+  'index.html',
+  'app.js?v=5.3.10',
+  'manifest.json',
+  'icon-192.png',
+  'icon-512.png',
+  'Parts.csv'
 ];
 
 self.addEventListener('install', e => {
@@ -31,18 +31,16 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
-  const accept = e.request.headers.get('accept') || '';
   const isHTML =
     e.request.mode === 'navigate' ||
-    accept.includes('text/html');
-
-  const isAppJs =
+    (e.request.headers.get('accept') || '').includes('text/html');
+  const isApp =
     url.pathname.endsWith('/app.js') ||
     url.pathname.endsWith('app.js') ||
     url.searchParams.has('v');
 
-  // Network-first for HTML and app.js, with explicit index.html fallback
-  if (isHTML || isAppJs) {
+  // Network first for HTML + app.js so updates appear quickly
+  if (isHTML || isApp) {
     e.respondWith(
       fetch(e.request)
         .then(resp => {
@@ -51,17 +49,14 @@ self.addEventListener('fetch', e => {
           return resp;
         })
         .catch(() =>
-          caches.match(e.request).then(hit => {
-            if (hit) return hit;
-            // Navigation fallback to cached index.html if available
-            return caches.match('./index.html');
-          })
+          // Explicit navigation fallback
+          caches.match('index.html')
         )
     );
     return;
   }
 
-  // Cache-first for everything else
+  // Cache first for everything else
   e.respondWith(
     caches.match(e.request).then(r => r || fetch(e.request))
   );
