@@ -1149,7 +1149,7 @@ window.appNav = {
   quote:    showQuotePage,
   battery:  showBatteryPage,
   settings: showSettingsPage,
-  feedback: showFeedbackPage
+  feedback: showFeedbackPage,
 };
 
 /* Tab click handlers */
