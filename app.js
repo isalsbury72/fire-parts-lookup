@@ -43,6 +43,7 @@ const LS_KEYS = {
   QUOTE: 'quote_data_v1',
   BUILDCASE: 'buildcase_state_v1',
   ACCESS: 'hasAccess'
+   HAYMANS_STORE: 'haymans_store_preference'
 };
 
 function toast(msg, ok = false) {
@@ -713,10 +714,32 @@ if (els.btnEmailPoRequest) {
     // Delivery address
     const delivery = (els.deliveryAddress?.value || '').trim();
 
-    // Supplier: use first item’s supplier, strip any 20xx year tokens
-    const firstSupRaw = (state.quote[0].SUPPLIER || '').toString();
-    let supplierClean = firstSupRaw.replace(/\b20\d{2}\b/g, '').trim();
-    if (!supplierClean) supplierClean = 'Supplier';
+// Supplier: use first item’s supplier, strip years
+const firstSupRaw = (state.quote[0].SUPPLIER || '').toString();
+let supplierClean = firstSupRaw.replace(/\b20\d{2}\b/g, '').trim();
+if (!supplierClean) supplierClean = 'Supplier';
+
+// Haymans store memory
+let haymansSuffix = '';
+
+if (supplierClean.toUpperCase() === 'HAYMANS') {
+  // Check if we have a saved store
+  let saved = localStorage.getItem(LS_KEYS.HAYMANS_STORE);
+
+  if (saved && saved.trim()) {
+    haymansSuffix = ' ' + saved.trim();
+  } else {
+    // Ask user
+    const store = prompt('Which Haymans store should the PO be sent to? (e.g., Archerfield, Rocklea, Ipswich)');
+    if (store && store.trim()) {
+      localStorage.setItem(LS_KEYS.HAYMANS_STORE, store.trim());
+      haymansSuffix = ' ' + store.trim();
+    }
+  }
+}
+
+// Apply suffix to supplier name (only for Haymans)
+supplierClean += haymansSuffix;
 
     // Subject line
     const subject = job
