@@ -8,7 +8,6 @@ const ASSETS = [
   'manifest.json',
   'icon-192.png',
   'icon-512.png',
-  'Parts.csv'
 ];
 
 self.addEventListener('install', e => {
