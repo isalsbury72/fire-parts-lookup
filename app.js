@@ -725,7 +725,7 @@ if (els.copyQuoteEmail) els.copyQuoteEmail.addEventListener('click', () => {
   copyText(lines.join('\n').trimEnd(), 'Email PO copied.');
 });
 
-// 🔹 FIXED: Added function declaration wrapper
+// 🔹 Haymans store chooser with inline prediction
 async function chooseHaymansStore() {
   return new Promise(resolve => {
     const dlg = els.haymansDialog;
@@ -757,11 +757,30 @@ async function chooseHaymansStore() {
       input.setSelectionRange(input.value.length, input.value.length);
     }, 0);
 
+    // Simple type-ahead prediction: if a saved store starts with what you type,
+    // auto-complete it and select the extra text.
+    input.oninput = () => {
+      const raw = input.value || '';
+      const query = raw.toLowerCase();
+      if (!query) return;
+
+      const match = stores.find(s =>
+        s.toLowerCase().startsWith(query)
+      );
+      if (!match) return;
+
+      if (match.toLowerCase() === query) return;
+
+      input.value = match;
+      input.setSelectionRange(query.length, match.length);
+    };
+
     function cleanup(result) {
       dlg.style.display = 'none';
       btnOk.onclick = null;
       btnCancel.onclick = null;
       input.onkeydown = null;
+      input.oninput = null;
       resolve(result);
     }
 
