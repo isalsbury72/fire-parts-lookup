@@ -752,10 +752,18 @@ async function chooseHaymansStore() {
     input.value = stores[stores.length - 1] || '';
     dlg.style.display = 'flex';
 
-    setTimeout(() => {
-      input.focus();
-      input.setSelectionRange(input.value.length, input.value.length);
-    }, 0);
+setTimeout(() => {
+  input.focus();
+  input.setSelectionRange(input.value.length, input.value.length);
+}, 0);
+
+// Select all text on click / tap / focus
+input.onfocus = () => {
+  setTimeout(() => {
+    input.select();
+  }, 0);
+};
+
 
     // Simple type-ahead prediction: if a saved store starts with what you type,
     // auto-complete it and select the extra text.
