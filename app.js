@@ -113,7 +113,6 @@ function formatLastLoaded(iso) {
   });
 }
 
-// 👇 ADD DEBOUNCE HERE
 function debounce(fn, delay) {
   let timeout;
   return function(...args) {
@@ -121,11 +120,6 @@ function debounce(fn, delay) {
     timeout = setTimeout(() => fn.apply(this, args), delay);
   };
 }
-// 👆 END DEBOUNCE
-
-function getHaymansStores() {
-  try {
-    const raw = localStorage.getItem(LS_KEYS.HAYMANS_STORES);
 
 function getHaymansStores() {
   try {
@@ -200,6 +194,20 @@ function saveBuildcase() {
     toast('Warning: Build case not saved (storage full?)', false);
   }
 }
+
+function loadSavedState() {
+  try {
+    const m = localStorage.getItem(LS_KEYS.CSV_META);
+    if (m) {
+      const parsed = JSON.parse(m);
+      if (parsed && typeof parsed === 'object') {
+        state.csvMeta = {
+          source: parsed.source || 'Unknown',
+          loadedAt: parsed.loadedAt || null
+        };
+      }
+    }
+  } catch {}
 
   try {
     const q = localStorage.getItem(LS_KEYS.QUOTE);
