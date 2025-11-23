@@ -758,7 +758,7 @@ if (els.copyQuoteEmail) els.copyQuoteEmail.addEventListener('click', () => {
   copyText(lines.join('\n').trimEnd(), 'Email PO copied.');
 });
 
-
+async function chooseHaymansStore() { 
   return new Promise(resolve => {
     const dlg   = els.haymansDialog;
     const input = els.haymansStoreInput;
