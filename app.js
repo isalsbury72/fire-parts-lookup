@@ -758,7 +758,7 @@ if (els.copyQuoteEmail) els.copyQuoteEmail.addEventListener('click', () => {
   copyText(lines.join('\n').trimEnd(), 'Email PO copied.');
 });
 
-function chooseHaymansStore() {
+
   return new Promise(resolve => {
     const dlg   = els.haymansDialog;
     const input = els.haymansStoreInput;
@@ -773,8 +773,10 @@ function chooseHaymansStore() {
       return;
     }
 
-    // Fill datalist with previously used stores
+    // Load previously used stores
     const stores = getHaymansStores();
+
+    // Rebuild datalist options
     list.innerHTML = '';
     stores.forEach(s => {
       const opt = document.createElement('option');
@@ -784,14 +786,21 @@ function chooseHaymansStore() {
 
     // Pre-fill with last used store (if any)
     input.value = stores[stores.length - 1] || '';
-    input.focus();
 
+    // Show dialog
     dlg.style.display = 'flex';
+
+    // Make sure keyboard focus goes into the input
+    setTimeout(() => {
+      input.focus();
+      input.setSelectionRange(input.value.length, input.value.length);
+    }, 0);
 
     function cleanup(result) {
       dlg.style.display = 'none';
       btnOk.onclick = null;
       btnCancel.onclick = null;
+      input.onkeydown = null;
       resolve(result);
     }
 
@@ -806,6 +815,17 @@ function chooseHaymansStore() {
 
     btnCancel.onclick = () => {
       cleanup(null);
+    };
+
+    // Allow Esc to cancel, Enter to accept
+    input.onkeydown = (ev) => {
+      if (ev.key === 'Escape') {
+        ev.preventDefault();
+        cleanup(null);
+      } else if (ev.key === 'Enter') {
+        ev.preventDefault();
+        btnOk.click();
+      }
     };
   });
 }
@@ -830,15 +850,14 @@ if (els.emailPoRequest) {
 
     let haymansSuffix = '';
 
-    if (supplierClean.toUpperCase() === 'HAYMANS') {
-      // Use our autocomplete dialog
+    // If supplier is Haymans, use the dialog (with autocomplete)
+    if (supplierClean.toUpperCase().startsWith('HAYMANS')) {
       let store = await chooseHaymansStore();
       if (!store) {
         toast('Haymans store not set. Email not created.', false);
         return;
       }
 
-      // Normalise whitespace
       store = store.trim();
       if (!store) {
         toast('Haymans store not set. Email not created.', false);
@@ -856,14 +875,17 @@ if (els.emailPoRequest) {
       }
     }
 
+    // Append Haymans suffix (or stay as-is for non-Haymans)
     supplierClean += haymansSuffix;
 
     const subject = job
       ? `PO for job ${job}`
       : 'PO request';
 
+    // Parts details from Step 1 "Notes to estimator"
     let partsBlock = (els.notesEstimator?.value || '').trim();
     if (!partsBlock) {
+      // Fallback: rebuild from current quote
       partsBlock = buildItemsOnlyLines().join('\n');
     }
 
@@ -897,56 +919,6 @@ if (els.emailPoRequest) {
     window.location.href = mailtoUrl;
   });
 }
-
-    // For non-Haymans, haymansSuffix stays empty
-    supplierClean += haymansSuffix;
-
-    // Subject line
-    const subject = job
-      ? `PO for job ${job}`
-      : 'PO request';
-
-    // Parts details from Step 1 "Notes to estimator"
-    let partsBlock = (els.notesEstimator?.value || '').trim();
-    if (!partsBlock) {
-      // Fallback: rebuild from current quote
-      partsBlock = buildItemsOnlyLines().join('\n');
-    }
-
-    const lines = [];
-
-    // First line
-    if (job) {
-      lines.push(`Please forward a PO to ${supplierClean} for job ${job}`);
-    } else {
-      lines.push(`Please forward a PO to ${supplierClean} for this job`);
-    }
-
-    // Blank line
-    lines.push('');
-
-    // Parts details (from Notes to estimator / fallback)
-    if (partsBlock) {
-      lines.push(partsBlock);
-      lines.push(''); // blank line after parts
-    }
-
-    // Delivery address
-    if (delivery) {
-      lines.push(delivery);
-      lines.push(''); // trailing blank line
-    }
-
-    const body = lines.join('\n');
-
-    // Open default mail client (no fixed "to" address)
-    const mailtoUrl =
-      'mailto:?' +
-      'subject=' + encodeURIComponent(subject) +
-      '&body=' + encodeURIComponent(body);
-
-    window.location.href = mailtoUrl;
-  });
 
 /* Build case helpers */
 
