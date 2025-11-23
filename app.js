@@ -720,6 +720,7 @@ if (els.copyQuoteRaw) els.copyQuoteRaw.addEventListener('click', () => {
   copyText(lines.join('\n'), 'Items copied.');
 });
 
+
 /* Copy for Email PO - grouped by supplier */
 if (els.copyQuoteEmail) els.copyQuoteEmail.addEventListener('click', () => {
   if (!state.quote.length) return toast('No items to copy.', false);
